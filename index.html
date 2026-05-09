@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mercadinho</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f3;
+      --surface: #ffffff;
+      --surface-2: #eef3e8;
+      --text: #172018;
+      --muted: #647067;
+      --line: #d8dfd3;
+      --accent: #178047;
+      --accent-2: #2459a8;
+      --danger: #b3261e;
+      --shadow: 0 10px 28px rgba(23, 32, 24, .12);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    button, input { font: inherit; }
+    button {
+      border: 0;
+      border-radius: 7px;
+      padding: 10px 12px;
+      background: var(--surface-2);
+      color: var(--text);
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button.primary { background: var(--accent); color: #fff; }
+    button.secondary { background: var(--accent-2); color: #fff; }
+    button.danger { background: transparent; color: var(--danger); }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+
+    .app {
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr) auto;
+      min-height: 100vh;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      display: grid;
+      gap: 10px;
+      padding: 14px;
+      background: rgba(246, 247, 243, .96);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(10px);
+    }
+
+    .title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: 0;
+    }
+
+    .cart-pill {
+      min-width: 88px;
+      text-align: center;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .search {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+    }
+
+    input {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 10px 12px;
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface);
+    }
+
+    .tabs button {
+      white-space: nowrap;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+    }
+    .tabs button.active {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    main {
+      display: grid;
+      gap: 10px;
+      align-content: start;
+      padding: 14px;
+      padding-bottom: 120px;
+    }
+
+    .product {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      min-height: 86px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .product h2 {
+      margin: 0 0 5px;
+      font-size: 16px;
+      letter-spacing: 0;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .price {
+      margin-top: 8px;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .qty {
+      display: grid;
+      grid-template-columns: 36px 34px 36px;
+      align-items: center;
+      gap: 4px;
+      text-align: center;
+    }
+
+    .qty button {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      font-size: 20px;
+    }
+
+    .empty {
+      padding: 22px;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--muted);
+      text-align: center;
+    }
+
+    footer {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 4;
+      display: grid;
+      gap: 8px;
+      padding: 12px 14px 14px;
+      border-top: 1px solid var(--line);
+      background: rgba(255, 255, 255, .97);
+      box-shadow: 0 -12px 28px rgba(23, 32, 24, .12);
+    }
+
+    .summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .summary strong {
+      color: var(--text);
+      font-size: 18px;
+    }
+
+    @media (min-width: 760px) {
+      .app {
+        max-width: 980px;
+        margin: 0 auto;
+      }
+      main {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .empty {
+        grid-column: 1 / -1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="title-row">
+        <h1>Mercadinho</h1>
+        <button class="cart-pill" id="cartButton" type="button">0 itens</button>
+      </div>
+      <div class="search">
+        <input id="search" type="search" placeholder="Buscar produto" autocomplete="off">
+        <button id="clearSearch" type="button">Limpar</button>
+      </div>
+    </header>
+
+    <nav class="tabs" id="tabs" aria-label="Categorias"></nav>
+    <main id="products"></main>
+
+    <footer>
+      <div class="summary">
+        <span id="itemsCount">Carrinho vazio</span>
+        <strong id="total">R$ 0,00</strong>
+      </div>
+      <button class="primary" id="sendCart" type="button" disabled>Enviar carrinho para o Telegram</button>
+      <button class="danger" id="clearCart" type="button" disabled>Limpar carrinho</button>
+    </footer>
+  </div>
+
+  <script>
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+    }
+
+    const state = {
+      products: [],
+      section: 'todos',
+      query: '',
+      cart: new Map()
+    };
+
+    const els = {
+      tabs: document.getElementById('tabs'),
+      products: document.getElementById('products'),
+      search: document.getElementById('search'),
+      clearSearch: document.getElementById('clearSearch'),
+      cartButton: document.getElementById('cartButton'),
+      itemsCount: document.getElementById('itemsCount'),
+      total: document.getElementById('total'),
+      sendCart: document.getElementById('sendCart'),
+      clearCart: document.getElementById('clearCart')
+    };
+
+    function money(value) {
+      return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function priceOf(product) {
+      const promo = Number(product.preco_promocional || product.precoPromocional || 0);
+      const normal = Number(product.preco || product.preco_normal || product.precoVendaAtual || 0);
+      return promo > 0 && (product.promocao === true || product.promocao_ativa === true) ? promo : normal;
+    }
+
+    function stockOf(product) {
+      return Number(product.estoque_pronta_entrega ?? product.estoque ?? product.estoque_atual ?? 0);
+    }
+
+    function isGroup(product) {
+      return product.produto_principal === true || product.tipo === 'principal';
+    }
+
+    function normalizeProducts(raw) {
+      return Object.entries(raw || {}).flatMap(([section, list]) =>
+        (Array.isArray(list) ? list : []).map((product, index) => ({ section, index, product }))
+      ).filter(({ product }) =>
+        product &&
+        product.ativo !== false &&
+        !isGroup(product) &&
+        priceOf(product) > 0 &&
+        stockOf(product) > 0
+      ).map(({ section, index, product }) => ({
+        id: `${section}_${index}`,
+        section,
+        index,
+        name: product.nome_completo || product.nomeCompleto || product.nome || 'Produto',
+        group: product.grupo_nome || product.produto_pai_nome || product.nome_principal || section,
+        brand: product.marca || '',
+        unit: product.tamanho || product.peso || product.unidadeMedida || '',
+        price: priceOf(product),
+        stock: stockOf(product)
+      })).sort((a, b) => a.group.localeCompare(b.group) || a.name.localeCompare(b.name));
+    }
+
+    async function loadProducts() {
+      try {
+        const res = await fetch('./produtos.json', { cache: 'no-store' });
+        if (!res.ok) throw new Error('catalogo indisponivel');
+        state.products = normalizeProducts(await res.json());
+      } catch (err) {
+        state.products = [];
+      }
+      render();
+    }
+
+    function sections() {
+      const names = Array.from(new Set(state.products.map(item => item.group))).filter(Boolean);
+      return ['todos', ...names.sort((a, b) => a.localeCompare(b))];
+    }
+
+    function filteredProducts() {
+      const query = state.query.trim().toLowerCase();
+      return state.products.filter(item => {
+        const sectionOk = state.section === 'todos' || item.group === state.section;
+        const queryOk = !query || `${item.name} ${item.group} ${item.brand} ${item.unit}`.toLowerCase().includes(query);
+        return sectionOk && queryOk;
+      });
+    }
+
+    function cartQty(id) {
+      return state.cart.get(id) || 0;
+    }
+
+    function changeQty(id, delta) {
+      const product = state.products.find(item => item.id === id);
+      if (!product) return;
+      const next = Math.max(0, Math.min(product.stock, cartQty(id) + delta));
+      if (next > 0) state.cart.set(id, next);
+      else state.cart.delete(id);
+      renderProducts();
+      renderSummary();
+    }
+
+    function cartItems() {
+      return Array.from(state.cart.entries()).map(([id, quantity]) => {
+        const product = state.products.find(item => item.id === id);
+        return product ? { ...product, quantity } : null;
+      }).filter(Boolean);
+    }
+
+    function cartTotal() {
+      return cartItems().reduce((sum, item) => sum + item.price * item.quantity, 0);
+    }
+
+    function renderTabs() {
+      els.tabs.innerHTML = '';
+      sections().forEach(section => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = section === state.section ? 'active' : '';
+        button.textContent = section === 'todos' ? 'Tudo' : section;
+        button.addEventListener('click', () => {
+          state.section = section;
+          render();
+        });
+        els.tabs.appendChild(button);
+      });
+    }
+
+    function renderProducts() {
+      const products = filteredProducts();
+      els.products.innerHTML = '';
+      if (!products.length) {
+        const empty = document.createElement('div');
+        empty.className = 'empty';
+        empty.textContent = state.products.length ? 'Nenhum produto encontrado.' : 'Catalogo indisponivel agora. Tente atualizar a pagina.';
+        els.products.appendChild(empty);
+        return;
+      }
+      products.forEach(item => {
+        const card = document.createElement('article');
+        card.className = 'product';
+        const qty = cartQty(item.id);
+        card.innerHTML = `
+          <div>
+            <h2></h2>
+            <div class="meta"></div>
+            <div class="price"></div>
+          </div>
+          <div class="qty">
+            <button type="button" data-action="minus">-</button>
+            <span>${qty}</span>
+            <button type="button" data-action="plus">+</button>
+          </div>
+        `;
+        card.querySelector('h2').textContent = item.name;
+        card.querySelector('.meta').textContent = [item.group, item.brand, item.unit, `${item.stock} disp.`].filter(Boolean).join(' | ');
+        card.querySelector('.price').textContent = money(item.price);
+        card.querySelector('[data-action="minus"]').disabled = qty <= 0;
+        card.querySelector('[data-action="plus"]').disabled = qty >= item.stock;
+        card.querySelector('[data-action="minus"]').addEventListener('click', () => changeQty(item.id, -1));
+        card.querySelector('[data-action="plus"]').addEventListener('click', () => changeQty(item.id, 1));
+        els.products.appendChild(card);
+      });
+    }
+
+    function renderSummary() {
+      const items = cartItems();
+      const count = items.reduce((sum, item) => sum + item.quantity, 0);
+      els.cartButton.textContent = `${count} ${count === 1 ? 'item' : 'itens'}`;
+      els.itemsCount.textContent = count ? `${count} ${count === 1 ? 'item' : 'itens'} no carrinho` : 'Carrinho vazio';
+      els.total.textContent = money(cartTotal());
+      els.sendCart.disabled = count < 1;
+      els.clearCart.disabled = count < 1;
+    }
+
+    function render() {
+      renderTabs();
+      renderProducts();
+      renderSummary();
+    }
+
+    els.search.addEventListener('input', event => {
+      state.query = event.target.value;
+      renderProducts();
+    });
+
+    els.clearSearch.addEventListener('click', () => {
+      state.query = '';
+      els.search.value = '';
+      renderProducts();
+    });
+
+    els.clearCart.addEventListener('click', () => {
+      state.cart.clear();
+      renderProducts();
+      renderSummary();
+    });
+
+    els.sendCart.addEventListener('click', () => {
+      const items = cartItems().map(item => ({
+        produto_id: item.id,
+        secao: item.section,
+        index: item.index,
+        nome: item.name,
+        quantidade: item.quantity
+      }));
+      const payload = {
+        type: 'mercadinho_cart',
+        source: 'telegram_mini_app_html',
+        items,
+        total: cartTotal()
+      };
+      if (tg && typeof tg.sendData === 'function') {
+        tg.sendData(JSON.stringify(payload));
+        tg.close();
+      } else {
+        alert('Abra esta loja pelo bot no Telegram para enviar o carrinho.');
+      }
+    });
+
+    loadProducts();
+  </script>
+</body>
+</html>
