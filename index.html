@@ -735,6 +735,10 @@
     if (tg) {
       tg.ready();
       tg.expand();
+      if (tg.MainButton) {
+        tg.MainButton.setText('Enviar pedido ao Telegram');
+        tg.MainButton.onClick(() => sendCartToTelegram());
+      }
     }
 
     const CART_KEY = 'mj_mercadinho_cart_v2';
@@ -1086,6 +1090,14 @@
       [els.sendCart, els.sendCartDrawer, els.clearCart, els.clearCartDrawer].forEach(button => {
         button.disabled = count < 1;
       });
+      if (tg?.MainButton) {
+        if (count > 0) {
+          tg.MainButton.setText(`Enviar ${label} - ${money(total)}`);
+          tg.MainButton.show();
+        } else {
+          tg.MainButton.hide();
+        }
+      }
       els.heroProducts.textContent = `${state.products.length} produtos disponíveis`;
       els.heroSections.textContent = `${Math.max(0, sections().length - 1)} seções`;
       renderCart();
@@ -1124,13 +1136,14 @@
         items,
         total: cartTotal()
       };
-      if (tg && typeof tg.sendData === 'function') {
-        tg.sendData(JSON.stringify(payload));
-        tg.close();
-      } else {
+      if (!tg || typeof tg.sendData !== 'function') {
         showToast('Abra esta loja pelo bot no Telegram para enviar o pedido');
         setCartOpen(true);
+        return;
       }
+      tg.sendData(JSON.stringify(payload));
+      showToast('Pedido enviado ao Telegram');
+      setTimeout(() => tg.close(), 650);
     }
 
     els.search.addEventListener('input', event => {
