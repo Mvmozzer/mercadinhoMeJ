@@ -287,6 +287,55 @@
       gap: 10px;
     }
 
+    .nav-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 10px;
+    }
+
+    .menu-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      min-height: 84px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 8px 22px rgba(35, 28, 15, .08);
+      text-align: left;
+    }
+
+    .menu-card strong {
+      display: block;
+      color: var(--ink);
+      font-size: 16px;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
+    .menu-card small {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+      font-weight: 600;
+    }
+
+    .menu-card .arrow {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--green-2);
+      color: var(--green);
+      font-size: 20px;
+      font-weight: 800;
+    }
+
     .section-head {
       display: flex;
       align-items: end;
@@ -617,6 +666,10 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
+      .nav-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
       .product {
         grid-template-columns: 92px minmax(0, 1fr);
         min-height: 132px;
@@ -745,7 +798,8 @@
 
     const state = {
       products: [],
-      section: 'todos',
+      section: '',
+      group: '',
       query: '',
       cart: new Map(),
       cartOpen: false
@@ -821,6 +875,13 @@
       return raw.replace(/^\/+/, '');
     }
 
+    function titleFromId(value) {
+      return String(value || 'Outros')
+        .replace(/[_-]+/g, ' ')
+        .trim()
+        .replace(/\b\w/g, char => char.toUpperCase());
+    }
+
     function normalizeProducts(raw) {
       return Object.entries(raw || {}).flatMap(([section, list]) =>
         (Array.isArray(list) ? list : []).map((product, index) => ({ section, index, product }))
@@ -831,10 +892,12 @@
       }).map(({ section, index, product }) => {
         const prices = priceInfo(product);
         const group = product.grupo_nome || product.produto_pai_nome || product.nome_principal || product.categoria || section;
+        const sectionLabel = product.secao_nome || product.secaoNome || titleFromId(product.secao_id || section);
         const name = product.nome_completo || product.nomeCompleto || product.nome || 'Produto';
         return {
           id: `${section}_${index}`,
           section,
+          sectionLabel,
           index,
           name,
           group,
@@ -847,9 +910,10 @@
           promotion: prices.active,
           stock: stockOf(product),
           image: imageUrl(product),
-          keywords: normalizeText(`${name} ${group} ${product.marca || ''} ${product.tamanho || ''} ${product.codigoBarras || ''} ${product.sku || ''}`)
+          keywords: normalizeText(`${name} ${sectionLabel} ${group} ${product.marca || ''} ${product.tamanho || ''} ${product.codigoBarras || ''} ${product.sku || ''}`)
         };
       }).sort((a, b) =>
+        a.sectionLabel.localeCompare(b.sectionLabel, 'pt-BR') ||
         a.group.localeCompare(b.group, 'pt-BR') ||
         a.name.localeCompare(b.name, 'pt-BR')
       );
@@ -898,24 +962,51 @@
       render();
     }
 
-    function sections() {
-      const names = Array.from(new Set(state.products.map(item => item.group))).filter(Boolean);
-      return ['todos', ...names.sort((a, b) => a.localeCompare(b, 'pt-BR'))];
+    function sectionItems() {
+      const map = new Map();
+      state.products.forEach(item => {
+        if (!map.has(item.section)) {
+          map.set(item.section, {
+            id: item.section,
+            name: item.sectionLabel || titleFromId(item.section),
+            products: 0,
+            groups: new Set()
+          });
+        }
+        const section = map.get(item.section);
+        section.products += 1;
+        section.groups.add(item.group);
+      });
+      return Array.from(map.values())
+        .map(section => ({ ...section, groupCount: section.groups.size }))
+        .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+    }
+
+    function groupItems(sectionId) {
+      const map = new Map();
+      state.products
+        .filter(item => item.section === sectionId)
+        .forEach(item => {
+          if (!map.has(item.group)) map.set(item.group, { name: item.group, products: 0 });
+          map.get(item.group).products += 1;
+        });
+      return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
     }
 
     function filteredProducts() {
       const query = normalizeText(state.query.trim());
       return state.products.filter(item => {
-        const sectionOk = state.section === 'todos' || item.group === state.section;
+        const sectionOk = !state.section || item.section === state.section;
+        const groupOk = !state.group || item.group === state.group;
         const queryOk = !query || item.keywords.includes(query);
-        return sectionOk && queryOk;
+        return sectionOk && groupOk && queryOk;
       });
     }
 
     function groupedProducts() {
       const groups = new Map();
       filteredProducts().forEach(item => {
-        const key = state.section === 'todos' ? item.group : state.section;
+        const key = state.group ? item.group : `${item.sectionLabel} / ${item.group}`;
         if (!groups.has(key)) groups.set(key, []);
         groups.get(key).push(item);
       });
@@ -962,18 +1053,94 @@
 
     function renderTabs() {
       els.tabs.innerHTML = '';
-      sections().forEach(section => {
+      const buttons = [{ label: 'Inicio', section: '', group: '' }];
+      if (state.section) {
+        const currentSection = sectionItems().find(item => item.id === state.section);
+        buttons.push({ label: currentSection?.name || titleFromId(state.section), section: state.section, group: '' });
+      }
+      if (state.group) buttons.push({ label: state.group, section: state.section, group: state.group });
+
+      buttons.forEach(item => {
         const button = document.createElement('button');
         button.type = 'button';
-        button.className = section === state.section ? 'active' : '';
-        button.textContent = section === 'todos' ? 'Todos' : section;
+        button.className = item.section === state.section && item.group === state.group ? 'active' : '';
+        button.textContent = item.label;
         button.addEventListener('click', () => {
-          state.section = section;
+          state.section = item.section;
+          state.group = item.group;
           renderTabs();
           renderProducts();
         });
         els.tabs.appendChild(button);
       });
+    }
+
+    function menuCard({ title, subtitle, onClick }) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'menu-card';
+      button.innerHTML = `
+        <span>
+          <strong>${escapeHtml(title)}</strong>
+          <small>${escapeHtml(subtitle)}</small>
+        </span>
+        <span class="arrow">›</span>
+      `;
+      button.addEventListener('click', onClick);
+      return button;
+    }
+
+    function renderSectionMenu() {
+      const wrapper = document.createElement('section');
+      wrapper.className = 'section-block';
+      wrapper.innerHTML = `
+        <div class="section-head">
+          <h2>Escolha uma seção</h2>
+          <span>${sectionItems().length} seções</span>
+        </div>
+        <div class="nav-grid"></div>
+      `;
+      const grid = wrapper.querySelector('.nav-grid');
+      sectionItems().forEach(section => {
+        grid.appendChild(menuCard({
+          title: section.name,
+          subtitle: `${section.groupCount} grupo${section.groupCount === 1 ? '' : 's'} | ${section.products} produto${section.products === 1 ? '' : 's'}`,
+          onClick: () => {
+            state.section = section.id;
+            state.group = '';
+            renderTabs();
+            renderProducts();
+          }
+        }));
+      });
+      els.products.appendChild(wrapper);
+    }
+
+    function renderGroupMenu() {
+      const currentSection = sectionItems().find(item => item.id === state.section);
+      const groups = groupItems(state.section);
+      const wrapper = document.createElement('section');
+      wrapper.className = 'section-block';
+      wrapper.innerHTML = `
+        <div class="section-head">
+          <h2>${escapeHtml(currentSection?.name || titleFromId(state.section))}</h2>
+          <span>${groups.length} grupos</span>
+        </div>
+        <div class="nav-grid"></div>
+      `;
+      const grid = wrapper.querySelector('.nav-grid');
+      groups.forEach(group => {
+        grid.appendChild(menuCard({
+          title: group.name,
+          subtitle: `${group.products} produto${group.products === 1 ? '' : 's'} disponível${group.products === 1 ? '' : 'eis'}`,
+          onClick: () => {
+            state.group = group.name;
+            renderTabs();
+            renderProducts();
+          }
+        }));
+      });
+      els.products.appendChild(wrapper);
     }
 
     function productCard(item) {
@@ -1027,6 +1194,14 @@
       const products = filteredProducts();
       if (!state.products.length) {
         els.products.innerHTML = '<div class="empty">Catálogo indisponível agora. Tente atualizar a página ou chamar o suporte pelo Telegram.</div>';
+        return;
+      }
+      if (!state.query.trim() && !state.section) {
+        renderSectionMenu();
+        return;
+      }
+      if (!state.query.trim() && state.section && !state.group) {
+        renderGroupMenu();
         return;
       }
       if (!products.length) {
@@ -1099,7 +1274,7 @@
         }
       }
       els.heroProducts.textContent = `${state.products.length} produtos disponíveis`;
-      els.heroSections.textContent = `${Math.max(0, sections().length - 1)} seções`;
+      els.heroSections.textContent = `${sectionItems().length} seções`;
       renderCart();
     }
 
@@ -1154,6 +1329,9 @@
     els.clearSearch.addEventListener('click', () => {
       state.query = '';
       els.search.value = '';
+      state.section = '';
+      state.group = '';
+      renderTabs();
       renderProducts();
     });
 
