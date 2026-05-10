@@ -551,6 +551,37 @@
       font-size: 20px;
     }
 
+    .payment-box {
+      display: grid;
+      gap: 8px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      padding: 10px;
+    }
+
+    .payment-option {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-height: 40px;
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .payment-option input {
+      width: auto;
+      min-height: auto;
+      accent-color: var(--green);
+    }
+
+    .payment-box small {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
     .bottom-bar {
       position: fixed;
       left: 0;
@@ -750,6 +781,13 @@
         <span id="itemsCount">Carrinho vazio</span>
         <strong id="drawerTotal">R$ 0,00</strong>
       </div>
+      <div class="payment-box" aria-label="Forma de pagamento">
+        <label class="payment-option">
+          <input id="paymentPix" type="radio" name="paymentMethod" value="pix" checked>
+          Pix copia e cola
+        </label>
+        <small>Depois de enviar o pedido, o codigo Pix chega no Telegram para copiar e pagar no banco.</small>
+      </div>
       <button class="primary" id="sendCartDrawer" type="button" disabled>Enviar pedido ao Telegram</button>
       <button class="danger" id="clearCartDrawer" type="button" disabled>Limpar carrinho</button>
     </div>
@@ -792,6 +830,7 @@
       query: '',
       cart: new Map(),
       cartOpen: false,
+      paymentMethod: 'pix',
       miniappToken: localStorage.getItem(MINIAPP_TOKEN_KEY) || '',
       authOk: false,
       authMode: 'pending',
@@ -815,6 +854,7 @@
       drawerTotal: document.getElementById('drawerTotal'),
       sendCart: document.getElementById('sendCart'),
       sendCartDrawer: document.getElementById('sendCartDrawer'),
+      paymentPix: document.getElementById('paymentPix'),
       clearCart: document.getElementById('clearCart'),
       clearCartDrawer: document.getElementById('clearCartDrawer'),
       reviewCart: document.getElementById('reviewCart'),
@@ -1312,6 +1352,9 @@
         type: 'mercadinho_cart',
         source: 'telegram_mini_app_html',
         client_order_id: `miniapp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        forma_pagamento: state.paymentMethod,
+        metodo_pagamento: state.paymentMethod,
+        pagamento: { metodo: state.paymentMethod },
         items,
         total: cartTotal()
       };
@@ -1368,6 +1411,9 @@
     els.closeCart.addEventListener('click', () => setCartOpen(false));
     els.clearCart.addEventListener('click', clearCart);
     els.clearCartDrawer.addEventListener('click', clearCart);
+    els.paymentPix?.addEventListener('change', () => {
+      state.paymentMethod = 'pix';
+    });
     els.sendCart.addEventListener('click', sendCartToTelegram);
     els.sendCartDrawer.addEventListener('click', sendCartToTelegram);
     els.ordersList.addEventListener('click', event => {
