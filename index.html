@@ -287,55 +287,6 @@
       gap: 10px;
     }
 
-    .nav-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      gap: 10px;
-    }
-
-    .menu-card {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 12px;
-      align-items: center;
-      min-height: 84px;
-      padding: 14px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: var(--surface);
-      box-shadow: 0 8px 22px rgba(35, 28, 15, .08);
-      text-align: left;
-    }
-
-    .menu-card strong {
-      display: block;
-      color: var(--ink);
-      font-size: 16px;
-      line-height: 1.2;
-      overflow-wrap: anywhere;
-    }
-
-    .menu-card small {
-      display: block;
-      margin-top: 4px;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.35;
-      font-weight: 600;
-    }
-
-    .menu-card .arrow {
-      display: grid;
-      place-items: center;
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      background: var(--green-2);
-      color: var(--green);
-      font-size: 20px;
-      font-weight: 800;
-    }
-
     .section-head {
       display: flex;
       align-items: end;
@@ -699,10 +650,6 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
-      .nav-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
       .product {
         grid-template-columns: 92px minmax(0, 1fr);
         min-height: 132px;
@@ -842,7 +789,6 @@
     const state = {
       products: [],
       section: '',
-      group: '',
       query: '',
       cart: new Map(),
       cartOpen: false,
@@ -1045,7 +991,6 @@
           sectionLabel,
           index,
           name,
-          group,
           brand: product.marca || '',
           unit: product.tamanho || product.peso || product.unidadeMedida || product.unidade || '',
           description: product.descricao || '',
@@ -1059,7 +1004,6 @@
         };
       }).sort((a, b) =>
         a.sectionLabel.localeCompare(b.sectionLabel, 'pt-BR') ||
-        a.group.localeCompare(b.group, 'pt-BR') ||
         a.name.localeCompare(b.name, 'pt-BR')
       );
     }
@@ -1114,48 +1058,33 @@
           map.set(item.section, {
             id: item.section,
             name: item.sectionLabel || titleFromId(item.section),
-            products: 0,
-            groups: new Set()
+            products: 0
           });
         }
         const section = map.get(item.section);
         section.products += 1;
-        section.groups.add(item.group);
       });
       return Array.from(map.values())
-        .map(section => ({ ...section, groupCount: section.groups.size }))
         .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
-    }
-
-    function groupItems(sectionId) {
-      const map = new Map();
-      state.products
-        .filter(item => item.section === sectionId)
-        .forEach(item => {
-          if (!map.has(item.group)) map.set(item.group, { name: item.group, products: 0 });
-          map.get(item.group).products += 1;
-        });
-      return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
     }
 
     function filteredProducts() {
       const query = normalizeText(state.query.trim());
       return state.products.filter(item => {
         const sectionOk = !state.section || item.section === state.section;
-        const groupOk = !state.group || item.group === state.group;
         const queryOk = !query || item.keywords.includes(query);
-        return sectionOk && groupOk && queryOk;
+        return sectionOk && queryOk;
       });
     }
 
-    function groupedProducts() {
-      const groups = new Map();
+    function productsBySection() {
+      const sections = new Map();
       filteredProducts().forEach(item => {
-        const key = state.group ? item.group : `${item.sectionLabel} / ${item.group}`;
-        if (!groups.has(key)) groups.set(key, []);
-        groups.get(key).push(item);
+        const key = item.sectionLabel || titleFromId(item.section);
+        if (!sections.has(key)) sections.set(key, []);
+        sections.get(key).push(item);
       });
-      return groups;
+      return sections;
     }
 
     function cartQty(id) {
@@ -1198,94 +1127,28 @@
 
     function renderTabs() {
       els.tabs.innerHTML = '';
-      const buttons = [{ label: 'Inicio', section: '', group: '' }];
-      if (state.section) {
-        const currentSection = sectionItems().find(item => item.id === state.section);
-        buttons.push({ label: currentSection?.name || titleFromId(state.section), section: state.section, group: '' });
-      }
-      if (state.group) buttons.push({ label: state.group, section: state.section, group: state.group });
+      const buttons = [
+        { label: 'Todos', section: '', count: state.products.length },
+        ...sectionItems().map(section => ({
+          label: section.name,
+          section: section.id,
+          count: section.products
+        }))
+      ];
 
       buttons.forEach(item => {
         const button = document.createElement('button');
         button.type = 'button';
-        button.className = item.section === state.section && item.group === state.group ? 'active' : '';
+        button.className = item.section === state.section ? 'active' : '';
         button.textContent = item.label;
+        button.setAttribute('aria-label', `${item.label}: ${item.count || 0} produtos`);
         button.addEventListener('click', () => {
           state.section = item.section;
-          state.group = item.group;
           renderTabs();
           renderProducts();
         });
         els.tabs.appendChild(button);
       });
-    }
-
-    function menuCard({ title, subtitle, onClick }) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'menu-card';
-      button.innerHTML = `
-        <span>
-          <strong>${escapeHtml(title)}</strong>
-          <small>${escapeHtml(subtitle)}</small>
-        </span>
-        <span class="arrow">›</span>
-      `;
-      button.addEventListener('click', onClick);
-      return button;
-    }
-
-    function renderSectionMenu() {
-      const wrapper = document.createElement('section');
-      wrapper.className = 'section-block';
-      wrapper.innerHTML = `
-        <div class="section-head">
-          <h2>Escolha uma seção</h2>
-          <span>${sectionItems().length} seções</span>
-        </div>
-        <div class="nav-grid"></div>
-      `;
-      const grid = wrapper.querySelector('.nav-grid');
-      sectionItems().forEach(section => {
-        grid.appendChild(menuCard({
-          title: section.name,
-          subtitle: `${section.groupCount} grupo${section.groupCount === 1 ? '' : 's'} | ${section.products} produto${section.products === 1 ? '' : 's'}`,
-          onClick: () => {
-            state.section = section.id;
-            state.group = '';
-            renderTabs();
-            renderProducts();
-          }
-        }));
-      });
-      els.products.appendChild(wrapper);
-    }
-
-    function renderGroupMenu() {
-      const currentSection = sectionItems().find(item => item.id === state.section);
-      const groups = groupItems(state.section);
-      const wrapper = document.createElement('section');
-      wrapper.className = 'section-block';
-      wrapper.innerHTML = `
-        <div class="section-head">
-          <h2>${escapeHtml(currentSection?.name || titleFromId(state.section))}</h2>
-          <span>${groups.length} grupos</span>
-        </div>
-        <div class="nav-grid"></div>
-      `;
-      const grid = wrapper.querySelector('.nav-grid');
-      groups.forEach(group => {
-        grid.appendChild(menuCard({
-          title: group.name,
-          subtitle: `${group.products} produto${group.products === 1 ? '' : 's'} disponível${group.products === 1 ? '' : 'eis'}`,
-          onClick: () => {
-            state.group = group.name;
-            renderTabs();
-            renderProducts();
-          }
-        }));
-      });
-      els.products.appendChild(wrapper);
     }
 
     function productCard(item) {
@@ -1310,7 +1173,7 @@
         <div class="product-body">
           <div class="product-title">
             <h3>${escapeHtml(item.name)}</h3>
-            <small>${escapeHtml(details || item.group)}</small>
+            <small>${escapeHtml(details || item.sectionLabel)}</small>
           </div>
           <div class="price-row">
             ${price}
@@ -1341,25 +1204,17 @@
         els.products.innerHTML = '<div class="empty">Catálogo indisponível agora. Tente atualizar a página ou chamar o suporte pelo Telegram.</div>';
         return;
       }
-      if (!state.query.trim() && !state.section) {
-        renderSectionMenu();
-        return;
-      }
-      if (!state.query.trim() && state.section && !state.group) {
-        renderGroupMenu();
-        return;
-      }
       if (!products.length) {
         els.products.innerHTML = '<div class="empty">Nenhum produto encontrado. Tente buscar por outro nome ou escolha uma seção.</div>';
         return;
       }
 
-      groupedProducts().forEach((items, group) => {
+      productsBySection().forEach((items, sectionName) => {
         const section = document.createElement('section');
         section.className = 'section-block';
         section.innerHTML = `
           <div class="section-head">
-            <h2>${escapeHtml(group)}</h2>
+            <h2>${escapeHtml(sectionName)}</h2>
             <span>${items.length} produto${items.length === 1 ? '' : 's'}</span>
           </div>
           <div class="product-grid"></div>
@@ -1504,7 +1359,6 @@
       state.query = '';
       els.search.value = '';
       state.section = '';
-      state.group = '';
       renderTabs();
       renderProducts();
     });
