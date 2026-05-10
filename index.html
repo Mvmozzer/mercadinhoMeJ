@@ -483,6 +483,39 @@
       line-height: 1.45;
     }
 
+    .orders-panel {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 8px 22px rgba(35, 28, 15, .08);
+    }
+
+    .orders-panel[hidden] {
+      display: none;
+    }
+
+    .order-mini {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .order-mini:first-child {
+      border-top: 0;
+    }
+
+    .order-mini strong,
+    .order-mini small {
+      display: block;
+      overflow-wrap: anywhere;
+    }
+
     .cart-drawer {
       position: fixed;
       inset: auto 0 0 0;
@@ -747,6 +780,14 @@
         </div>
       </section>
 
+      <section class="orders-panel" id="ordersPanel" hidden>
+        <div class="section-head">
+          <h2>Seus pedidos</h2>
+          <span id="authStatus">Conectando</span>
+        </div>
+        <div id="ordersList"></div>
+      </section>
+
       <div id="products"></div>
     </main>
   </div>
@@ -786,15 +827,17 @@
   <script>
     const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
     if (tg) {
-      tg.ready();
       tg.expand();
+      applyTelegramTheme(tg);
       if (tg.MainButton) {
         tg.MainButton.setText('Enviar pedido ao Telegram');
         tg.MainButton.onClick(() => sendCartToTelegram());
       }
     }
+    window.addEventListener('load', () => tg?.ready?.());
 
     const CART_KEY = 'mj_mercadinho_cart_v2';
+    const MINIAPP_TOKEN_KEY = 'mj_mercadinho_miniapp_token_v1';
 
     const state = {
       products: [],
@@ -802,7 +845,13 @@
       group: '',
       query: '',
       cart: new Map(),
-      cartOpen: false
+      cartOpen: false,
+      miniappToken: localStorage.getItem(MINIAPP_TOKEN_KEY) || '',
+      authOk: false,
+      authMode: 'pending',
+      orders: [],
+      sending: false,
+      pollTimer: null
     };
 
     const els = {
@@ -825,6 +874,9 @@
       reviewCart: document.getElementById('reviewCart'),
       heroProducts: document.getElementById('heroProducts'),
       heroSections: document.getElementById('heroSections'),
+      ordersPanel: document.getElementById('ordersPanel'),
+      ordersList: document.getElementById('ordersList'),
+      authStatus: document.getElementById('authStatus'),
       toast: document.getElementById('toast')
     };
 
@@ -835,6 +887,99 @@
       els.toast.classList.add('show');
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => els.toast.classList.remove('show'), 2400);
+    }
+
+    function applyTelegramTheme(webApp) {
+      const theme = webApp.themeParams || {};
+      if (theme.bg_color) document.documentElement.style.setProperty('--bg', theme.bg_color);
+      if (theme.text_color) document.documentElement.style.setProperty('--text', theme.text_color);
+      if (theme.button_color) document.documentElement.style.setProperty('--green', theme.button_color);
+      document.documentElement.dataset.telegramScheme = webApp.colorScheme || 'light';
+    }
+
+    function apiBase() {
+      const url = new URL(window.location.href);
+      const fromQuery = url.searchParams.get('apiBase');
+      if (fromQuery) {
+        const clean = fromQuery.replace(/\/+$/, '');
+        localStorage.setItem('mj_mercadinho_api_base', clean);
+        return clean;
+      }
+      return (localStorage.getItem('mj_mercadinho_api_base') || '').replace(/\/+$/, '');
+    }
+
+    async function apiFetch(path, options = {}) {
+      const response = await fetch(`${apiBase()}${path}`, {
+        ...options,
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(state.miniappToken ? { Authorization: `Bearer ${state.miniappToken}` } : {}),
+          ...(options.headers || {})
+        }
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.ok === false) {
+        throw new Error(data.erro || data.error || `Falha HTTP ${response.status}`);
+      }
+      return data;
+    }
+
+    async function authenticateMiniApp() {
+      try {
+        const initData = tg?.initData || '';
+        const data = await apiFetch('/api/telegram/auth', {
+          method: 'POST',
+          body: JSON.stringify({
+            initData,
+            devUser: !initData ? { id: 'dev_telegram_1', first_name: 'Cliente', last_name: 'Dev' } : undefined
+          })
+        });
+        state.authOk = true;
+        state.authMode = data.modoDev ? 'dev' : 'telegram';
+        state.miniappToken = data.token || '';
+        if (state.miniappToken) localStorage.setItem(MINIAPP_TOKEN_KEY, state.miniappToken);
+        els.authStatus.textContent = data.modoDev ? 'Modo dev' : 'Telegram conectado';
+        await loadOrders();
+        state.pollTimer = setInterval(loadOrders, 5000);
+      } catch (_) {
+        state.authOk = false;
+        state.authMode = 'fallback';
+        els.authStatus.textContent = tg ? 'Envio pelo Telegram' : 'Abra pelo Telegram';
+      }
+      renderOrders();
+    }
+
+    async function loadOrders() {
+      if (!state.authOk) return;
+      try {
+        const data = await apiFetch('/api/miniapp/orders');
+        state.orders = Array.isArray(data.pedidos) ? data.pedidos : [];
+      } catch (_) {
+        state.orders = [];
+      }
+      renderOrders();
+    }
+
+    function renderOrders() {
+      els.ordersPanel.hidden = !state.authOk && !state.orders.length;
+      if (els.ordersPanel.hidden) return;
+      if (!state.orders.length) {
+        els.ordersList.innerHTML = '<div class="empty">Quando seu primeiro pedido for enviado, o acompanhamento aparece aqui.</div>';
+        return;
+      }
+      els.ordersList.innerHTML = state.orders.slice(0, 5).map(order => {
+        const status = order.statusDetalhe?.label || order.status || 'aguardando';
+        return `
+          <div class="order-mini">
+            <span>
+              <strong>Pedido #${escapeHtml(order.id)}</strong>
+              <small>${escapeHtml(status)} | ${escapeHtml(money(order.total))}</small>
+            </span>
+            <button class="ghost" type="button" data-order-id="${escapeHtml(order.id)}">Atualizar</button>
+          </div>
+        `;
+      }).join('');
     }
 
     function money(value) {
@@ -1263,11 +1408,13 @@
       els.total.textContent = money(total);
       els.drawerTotal.textContent = money(total);
       [els.sendCart, els.sendCartDrawer, els.clearCart, els.clearCartDrawer].forEach(button => {
-        button.disabled = count < 1;
+        button.disabled = count < 1 || state.sending;
       });
+      els.sendCart.textContent = state.sending ? 'Enviando...' : (state.authOk ? 'Enviar pedido' : 'Enviar ao Telegram');
+      els.sendCartDrawer.textContent = state.sending ? 'Enviando...' : (state.authOk ? 'Enviar pedido' : 'Enviar pedido ao Telegram');
       if (tg?.MainButton) {
         if (count > 0) {
-          tg.MainButton.setText(`Enviar ${label} - ${money(total)}`);
+          tg.MainButton.setText(state.sending ? 'Enviando...' : `Enviar ${label} - ${money(total)}`);
           tg.MainButton.show();
         } else {
           tg.MainButton.hide();
@@ -1293,7 +1440,8 @@
       showToast('Carrinho limpo');
     }
 
-    function sendCartToTelegram() {
+    async function sendCartToTelegram() {
+      if (state.sending) return;
       const items = cartItems().map(item => ({
         produto_id: item.id,
         secao: item.section,
@@ -1308,14 +1456,40 @@
       const payload = {
         type: 'mercadinho_cart',
         source: 'telegram_mini_app_html',
+        client_order_id: `miniapp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
         items,
         total: cartTotal()
       };
+      if (state.authOk) {
+        state.sending = true;
+        renderSummary();
+        try {
+          const data = await apiFetch('/api/miniapp/orders', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+          });
+          state.cart.clear();
+          persistCart();
+          await loadOrders();
+          render();
+          showToast(data.pedido?.id
+            ? `Pedido #${data.pedido.id} enviado${data.telegramNotificado === false ? ' no painel' : ''}`
+            : 'Pedido enviado');
+          return;
+        } catch (err) {
+          showToast(err.message || 'Falha na API. Tentando pelo Telegram.');
+        } finally {
+          state.sending = false;
+          renderSummary();
+        }
+      }
       if (!tg || typeof tg.sendData !== 'function') {
         showToast('Abra esta loja pelo bot no Telegram para enviar o pedido');
         setCartOpen(true);
         return;
       }
+      state.sending = true;
+      renderSummary();
       tg.sendData(JSON.stringify(payload));
       showToast('Pedido enviado ao Telegram');
       setTimeout(() => tg.close(), 650);
@@ -1342,8 +1516,18 @@
     els.clearCartDrawer.addEventListener('click', clearCart);
     els.sendCart.addEventListener('click', sendCartToTelegram);
     els.sendCartDrawer.addEventListener('click', sendCartToTelegram);
+    els.ordersList.addEventListener('click', event => {
+      const btn = event.target.closest('[data-order-id]');
+      if (!btn) return;
+      loadOrders();
+      showToast('Status atualizado');
+    });
+    window.addEventListener('beforeunload', () => {
+      if (state.pollTimer) clearInterval(state.pollTimer);
+    });
 
     loadProducts();
+    authenticateMiniApp();
   </script>
 </body>
 </html>
