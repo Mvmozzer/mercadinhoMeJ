@@ -857,6 +857,8 @@
       miniappToken: localStorage.getItem(MINIAPP_TOKEN_KEY) || '',
       authOk: false,
       authMode: 'pending',
+      catalogLoading: true,
+      catalogSource: 'loading',
       orders: [],
       cliente: null,
       usePointsDiscount: false,
@@ -958,6 +960,7 @@
         els.authStatus.textContent = data.modoDev ? 'Modo dev' : 'Telegram conectado';
         const me = await apiFetch('/api/miniapp/me').catch(() => null);
         state.cliente = me?.cliente || data.cliente || null;
+        renderSummary();
         await loadOrders();
         state.pollTimer = setInterval(loadOrders, 5000);
       } catch (_) {
@@ -1061,7 +1064,8 @@
       const raw = String(product.imagem || product.imagem_url || product.imagemUrl || '').trim();
       if (!raw) return '';
       if (/^https?:\/\//i.test(raw)) return raw;
-      return raw.replace(/^\/+/, '');
+      if (/^(javascript|data|vbscript|file|blob):/i.test(raw)) return '';
+      return encodeURI(raw.replace(/^\/+/, ''));
     }
 
     function titleFromId(value) {
@@ -1094,7 +1098,7 @@
             points: Number(product.points_preview || 0),
             stock: Number(product.estoque || 0),
             image: imageUrl(product),
-            keywords: normalizeText(`${product.nome || ''} ${sectionInfo.nome || ''} ${product.grupo || ''} ${product.marca || ''} ${product.tamanho || ''} ${product.codigoBarras || ''} ${product.sku || ''}`)
+            keywords: normalizeText(`${product.nome || ''} ${product.secao_nome || sectionInfo.nome || ''} ${product.grupo || ''} ${product.marca || ''} ${product.tamanho || ''} ${product.codigoBarras || ''} ${product.sku || ''}`)
           };
         }).filter(item => item.id && item.price > 0 && item.stock > 0)
           .sort((a, b) => Number(a.sectionOrder || 0) - Number(b.sectionOrder || 0) || a.sectionLabel.localeCompare(b.sectionLabel, 'pt-BR') || a.name.localeCompare(b.name, 'pt-BR'));
@@ -1173,19 +1177,34 @@
 
     async function loadProducts() {
       restoreCart();
+      state.catalogLoading = true;
+      state.catalogSource = 'loading';
+      render();
       try {
         const res = await fetch(`${apiBase()}/api/miniapp/catalog`, { cache: 'no-store' });
         if (!res.ok) throw new Error('catalogo indisponivel');
         state.products = normalizeCatalogPayload(await res.json());
+        state.catalogSource = 'api';
       } catch (err) {
         try {
-          const res = await fetch('./produtos.json', { cache: 'no-store' });
+          const res = await fetch('./catalogo.json', { cache: 'no-store' });
           if (!res.ok) throw new Error('catalogo indisponivel');
           state.products = normalizeCatalogPayload(await res.json());
+          state.catalogSource = 'static';
         } catch (_) {
-          state.products = [];
+          try {
+            const res = await fetch('./produtos.json', { cache: 'no-store' });
+            if (!res.ok) throw new Error('catalogo indisponivel');
+            state.products = normalizeCatalogPayload(await res.json());
+            state.catalogSource = 'legacy';
+          } catch (_) {
+            state.products = [];
+            state.catalogSource = 'empty';
+          }
         }
       }
+      state.catalogLoading = false;
+      if (state.section && !sectionItems().some(section => section.id === state.section)) state.section = '';
       pruneCart();
       render();
     }
@@ -1220,11 +1239,19 @@
     function productsBySection() {
       const sections = new Map();
       filteredProducts().forEach(item => {
-        const key = item.sectionLabel || titleFromId(item.section);
-        if (!sections.has(key)) sections.set(key, []);
-        sections.get(key).push(item);
+        const key = item.section || item.sectionLabel || 'outros';
+        if (!sections.has(key)) {
+          sections.set(key, {
+            id: key,
+            label: item.sectionLabel || titleFromId(item.section),
+            order: Number(item.sectionOrder || 0),
+            items: []
+          });
+        }
+        sections.get(key).items.push(item);
       });
-      return sections;
+      return Array.from(sections.values())
+        .sort((a, b) => Number(a.order || 0) - Number(b.order || 0) || a.label.localeCompare(b.label, 'pt-BR'));
     }
 
     function cartQty(id) {
@@ -1320,7 +1347,7 @@
       card.dataset.productId = item.id;
 
       const media = item.image
-        ? `<img src="${item.image}" alt="">`
+        ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}" loading="lazy" referrerpolicy="no-referrer">`
         : `<span>${item.name.slice(0, 1).toUpperCase()}</span>`;
       const details = [item.brand, item.unit, `${item.stock} disp.`].filter(Boolean).join(' | ');
       const price = item.promotion
@@ -1363,6 +1390,10 @@
     function renderProducts() {
       els.products.innerHTML = '';
       const products = filteredProducts();
+      if (state.catalogLoading) {
+        els.products.innerHTML = '<div class="empty">Carregando catálogo...</div>';
+        return;
+      }
       if (!state.products.length) {
         els.products.innerHTML = '<div class="empty">Catálogo indisponível agora. Tente atualizar a página ou chamar o suporte pelo Telegram.</div>';
         return;
@@ -1372,18 +1403,18 @@
         return;
       }
 
-      productsBySection().forEach((items, sectionName) => {
+      productsBySection().forEach(group => {
         const section = document.createElement('section');
         section.className = 'section-block';
         section.innerHTML = `
           <div class="section-head">
-            <h2>${escapeHtml(sectionName)}</h2>
-            <span>${items.length} produto${items.length === 1 ? '' : 's'}</span>
+            <h2>${escapeHtml(group.label)}</h2>
+            <span>${group.items.length} produto${group.items.length === 1 ? '' : 's'}</span>
           </div>
           <div class="product-grid"></div>
         `;
         const grid = section.querySelector('.product-grid');
-        items.forEach(item => grid.appendChild(productCard(item)));
+        group.items.forEach(item => grid.appendChild(productCard(item)));
         els.products.appendChild(section);
       });
     }
@@ -1441,6 +1472,7 @@
       }
       els.heroProducts.textContent = `${state.products.length} produtos disponíveis`;
       els.heroSections.textContent = `${sectionItems().length} seções`;
+      if (state.catalogSource === 'static') els.heroSections.textContent = `${sectionItems().length} seções | modo estático`;
       renderCart();
     }
 
@@ -1544,9 +1576,11 @@
     });
     els.usePointsDiscount?.addEventListener('change', () => {
       state.usePointsDiscount = els.usePointsDiscount.checked;
+      renderPointsOptions();
     });
     els.usePointsFreeDelivery?.addEventListener('change', () => {
       state.usePointsFreeDelivery = els.usePointsFreeDelivery.checked;
+      renderPointsOptions();
     });
     els.sendCart.addEventListener('click', sendCartToTelegram);
     els.sendCartDrawer.addEventListener('click', sendCartToTelegram);

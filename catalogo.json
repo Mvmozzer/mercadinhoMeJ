@@ -1,0 +1,71 @@
+{
+  "ok": true,
+  "catalogo": {
+    "secoes": [
+      {
+        "id": "mercearia",
+        "nome": "Mercearia",
+        "emoji": "",
+        "ativo": true,
+        "ordem": 0
+      },
+      {
+        "id": "padaria",
+        "nome": "padaria",
+        "emoji": "",
+        "ativo": true,
+        "ordem": 2
+      }
+    ],
+    "produtos": [
+      {
+        "id": "mercearia_0",
+        "produto_id": "mercearia_0",
+        "secao": "mercearia",
+        "secao_nome": "Mercearia",
+        "secao_ordem": 0,
+        "index": 0,
+        "nome": "Arroz Teste MiniApp",
+        "grupo": "Arroz Teste MiniApp",
+        "marca": "",
+        "tamanho": "",
+        "descricao": "",
+        "preco": 10,
+        "preco_base": 10,
+        "preco_normal": 10,
+        "preco_promocional": 0,
+        "promocao": false,
+        "estoque": 20,
+        "imagem": "",
+        "codigoBarras": "789TESTE",
+        "sku": "MERC-ARRO-001",
+        "points_label_text": "",
+        "points_preview": 0
+      },
+      {
+        "id": "padaria_0",
+        "produto_id": "padaria_0",
+        "secao": "padaria",
+        "secao_nome": "padaria",
+        "secao_ordem": 2,
+        "index": 0,
+        "nome": "Pao Teste MiniApp",
+        "grupo": "Pao Teste MiniApp",
+        "marca": "",
+        "tamanho": "",
+        "descricao": "",
+        "preco": 1.5,
+        "preco_base": 1.5,
+        "preco_normal": 1.5,
+        "preco_promocional": 0,
+        "promocao": false,
+        "estoque": 12,
+        "imagem": "",
+        "codigoBarras": "",
+        "sku": "PADA-PAOT-001",
+        "points_label_text": "",
+        "points_preview": 0
+      }
+    ]
+  }
+}
