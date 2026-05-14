@@ -1031,7 +1031,18 @@
       };
     }
 
+    function productPointOffer(product, id = '') {
+      const offer = product.product_point_offer || product.productPointOffer || {};
+      const points = Math.max(0, Math.floor(Number(offer.points ?? offer.pontos ?? product.product_point_offer_points ?? product.points_fixed_amount ?? 0) || 0));
+      const minimumOrderValue = Math.max(0, Number(offer.minimumOrderValue ?? offer.minimum_order_value ?? product.product_point_offer_minimum_order_value ?? product.points_minimum_order_value ?? 0) || 0);
+      const activeRaw = offer.isActive ?? offer.is_active ?? product.product_point_offer_active ?? product.points_enabled;
+      const isActive = activeRaw === true || activeRaw === 'true' || activeRaw === '1' || activeRaw === 1;
+      return { productId: id || product.produto_id || product.id || '', points, minimumOrderValue, isActive };
+    }
+
     function pointsAmount(product, price, quantity = 1) {
+      const offer = productPointOffer(product);
+      if (offer.isActive && offer.points > 0) return offer.points;
       if (product.points_enabled !== true) return 0;
       const qty = Math.max(1, Number(quantity || 1));
       if (String(product.points_type || 'fixed') === 'per_currency') {
@@ -1041,6 +1052,10 @@
     }
 
     function pointsLabel(product, price) {
+      const offer = productPointOffer(product);
+      if (offer.isActive && offer.points > 0) {
+        return `+${offer.points} pontos em compras acima de ${money(offer.minimumOrderValue)}`;
+      }
       if (product.points_enabled !== true || product.points_display_enabled !== true) return '';
       const points = pointsAmount(product, price, 1);
       if (points <= 0) return '';
@@ -1087,6 +1102,8 @@
             sectionOrder: Number(product.secao_ordem ?? sectionInfo.ordem ?? 0),
             index: Number(product.index || 0),
             name: product.nome || 'Produto',
+            sku: product.sku || '',
+            barcode: product.codigoBarras || product.codigo_barras || '',
             brand: product.marca || '',
             unit: product.tamanho || '',
             description: product.descricao || '',
@@ -1096,6 +1113,7 @@
             promotion: product.promocao === true,
             pointsLabel: product.points_label_text || '',
             points: Number(product.points_preview || 0),
+            pointOffer: productPointOffer(product, product.produto_id || product.id),
             stock: Number(product.estoque || 0),
             image: imageUrl(product),
             keywords: normalizeText(`${product.nome || ''} ${product.secao_nome || sectionInfo.nome || ''} ${product.grupo || ''} ${product.marca || ''} ${product.tamanho || ''} ${product.codigoBarras || ''} ${product.sku || ''}`)
@@ -1125,6 +1143,8 @@
           sectionOrder: Number(product.secao_ordem ?? product.ordem_secao ?? 0),
           index,
           name,
+          sku: product.sku || '',
+          barcode: product.codigoBarras || product.codigo_barras || '',
           brand: product.marca || '',
           unit: product.tamanho || product.peso || product.unidadeMedida || product.unidade || '',
           description: product.descricao || '',
@@ -1134,6 +1154,7 @@
           promotion: prices.active,
           pointsLabel: pointsLabel(product, prices.price),
           points: pointsAmount(product, prices.price, 1),
+          pointOffer: productPointOffer(product, `${section}_${index}`),
           stock: stockOf(product),
           image: imageUrl(product),
           keywords: normalizeText(`${name} ${sectionLabel} ${group} ${product.marca || ''} ${product.tamanho || ''} ${product.codigoBarras || ''} ${product.sku || ''}`)
@@ -1284,6 +1305,40 @@
 
     function cartCount() {
       return cartItems().reduce((sum, item) => sum + item.quantity, 0);
+    }
+
+    function promotionalPointsPreview() {
+      const total = cartTotal();
+      const earned = [];
+      const pending = [];
+      cartItems().forEach(item => {
+        const offer = item.pointOffer || {};
+        if (offer.isActive !== true || Number(offer.points || 0) <= 0) return;
+        const entry = {
+          productId: item.id,
+          productName: item.name,
+          points: Number(offer.points || 0),
+          minimumOrderValue: Number(offer.minimumOrderValue || 0)
+        };
+        if (total >= entry.minimumOrderValue) earned.push(entry);
+        else pending.push({ ...entry, missingValue: Number((entry.minimumOrderValue - total).toFixed(2)) });
+      });
+      return {
+        totalPromotionalPoints: earned.reduce((sum, item) => sum + item.points, 0),
+        earned,
+        pending
+      };
+    }
+
+    function promotionalPointsText(preview = promotionalPointsPreview()) {
+      if (preview.totalPromotionalPoints > 0) {
+        return `Você ganhou +${preview.totalPromotionalPoints} pontos com produtos selecionados.`;
+      }
+      if (preview.pending.length) {
+        const item = preview.pending[0];
+        return `Faltam ${money(item.missingValue)} para ganhar +${item.points} pontos${item.productName ? ` de ${item.productName}` : ''}.`;
+      }
+      return '';
     }
 
     function renderPointsOptions() {
@@ -1445,6 +1500,13 @@
         row.querySelector('[data-action="plus"]').toggleAttribute('disabled', item.quantity >= item.stock);
         els.cartList.appendChild(row);
       });
+      const pointsText = promotionalPointsText();
+      if (pointsText) {
+        const box = document.createElement('div');
+        box.className = 'payment-box';
+        box.innerHTML = `<strong>${escapeHtml(pointsText)}</strong><small>Os pontos entram após confirmação do pedido.</small>`;
+        els.cartList.appendChild(box);
+      }
     }
 
     function renderSummary() {
@@ -1498,6 +1560,8 @@
         secao: item.section,
         index: item.index,
         nome: item.name,
+        sku: item.sku || '',
+        codigoBarras: item.barcode || '',
         quantidade: item.quantity
       }));
       if (!items.length) {
@@ -1516,6 +1580,7 @@
         items,
         total: cartTotal()
       };
+      payload.promotional_points_preview = promotionalPointsPreview();
       if (state.authOk) {
         state.sending = true;
         renderSummary();
