@@ -1,6 +1,11 @@
 {
   "ok": true,
   "catalogo": {
+    "loja": {
+      "status": "aberta",
+      "mensagem": "Loja aberta. Pode fazer seu pedido.",
+      "aceitaPedidos": true
+    },
     "secoes": [
       {
         "id": "ofertas",
@@ -386,30 +391,6 @@
         "secao_nome": "🍫 Doces",
         "secao_ordem": 12,
         "index": 0,
-        "nome": "Chocolate ao Leite 90g",
-        "grupo": "Chocolate ao Leite 90g",
-        "marca": "Teste",
-        "tamanho": "un",
-        "descricao": "Produto de teste",
-        "preco": 5.99,
-        "preco_base": 5.99,
-        "preco_normal": 5.99,
-        "preco_promocional": 0,
-        "promocao": false,
-        "estoque": 22,
-        "imagem": "",
-        "codigoBarras": "7891000000014",
-        "sku": "TEST-014",
-        "points_label_text": "",
-        "points_preview": 0
-      },
-      {
-        "id": "doces_1",
-        "produto_id": "doces_1",
-        "secao": "doces",
-        "secao_nome": "🍫 Doces",
-        "secao_ordem": 12,
-        "index": 1,
         "nome": "Pa?oca unidade",
         "grupo": "Pa?oca unidade",
         "marca": "Teste",

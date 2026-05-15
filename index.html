@@ -162,6 +162,18 @@
       color: var(--green);
     }
 
+    .pill.warn {
+      border-color: rgba(184, 135, 52, .35);
+      background: rgba(184, 135, 52, .14);
+      color: var(--brand-dark);
+    }
+
+    .pill.closed {
+      border-color: rgba(185, 28, 28, .24);
+      background: rgba(185, 28, 28, .1);
+      color: #b91c1c;
+    }
+
     .cart-button {
       min-width: 88px;
       border: 1px solid rgba(184, 135, 52, .38);
@@ -864,7 +876,13 @@
       usePointsDiscount: false,
       usePointsFreeDelivery: false,
       sending: false,
-      pollTimer: null
+      pollTimer: null,
+      storeStatusTimer: null,
+      loja: {
+        status: 'aberta',
+        mensagem: '',
+        aceitaPedidos: true
+      }
     };
 
     const els = {
@@ -892,6 +910,7 @@
       reviewCart: document.getElementById('reviewCart'),
       heroProducts: document.getElementById('heroProducts'),
       heroSections: document.getElementById('heroSections'),
+      storeStatus: document.getElementById('storeStatus'),
       ordersPanel: document.getElementById('ordersPanel'),
       ordersList: document.getElementById('ordersList'),
       authStatus: document.getElementById('authStatus'),
@@ -1005,6 +1024,30 @@
 
     function money(value) {
       return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function normalizarStatusLojaPayload(payload = {}) {
+      const loja = payload?.catalogo?.loja || payload?.loja || payload || {};
+      const status = ['aberta', 'pausada', 'fechada'].includes(loja.status) ? loja.status : 'aberta';
+      return {
+        status,
+        mensagem: String(loja.mensagem || '').trim(),
+        aceitaPedidos: loja.aceitaPedidos !== false && status === 'aberta'
+      };
+    }
+
+    function atualizarStatusLoja(payload = {}) {
+      state.loja = normalizarStatusLojaPayload(payload);
+      if (!els.storeStatus) return;
+      const textos = {
+        aberta: 'Aberto para pedidos',
+        pausada: 'Pedidos pausados',
+        fechada: 'Fechado para pedidos'
+      };
+      els.storeStatus.textContent = textos[state.loja.status] || textos.aberta;
+      els.storeStatus.classList.remove('ok', 'warn', 'closed');
+      els.storeStatus.classList.add(state.loja.aceitaPedidos ? 'ok' : (state.loja.status === 'pausada' ? 'warn' : 'closed'));
+      els.storeStatus.title = state.loja.mensagem || '';
     }
 
     function normalizeText(value) {
@@ -1204,13 +1247,17 @@
       try {
         const res = await fetch(`${apiBase()}/api/miniapp/catalog`, { cache: 'no-store' });
         if (!res.ok) throw new Error('catalogo indisponivel');
-        state.products = normalizeCatalogPayload(await res.json());
+        const payload = await res.json();
+        atualizarStatusLoja(payload);
+        state.products = normalizeCatalogPayload(payload);
         state.catalogSource = 'api';
       } catch (err) {
         try {
           const res = await fetch('./catalogo.json', { cache: 'no-store' });
           if (!res.ok) throw new Error('catalogo indisponivel');
-          state.products = normalizeCatalogPayload(await res.json());
+          const payload = await res.json();
+          atualizarStatusLoja(payload);
+          state.products = normalizeCatalogPayload(payload);
           state.catalogSource = 'static';
         } catch (_) {
           try {
@@ -1228,6 +1275,15 @@
       if (state.section && !sectionItems().some(section => section.id === state.section)) state.section = '';
       pruneCart();
       render();
+    }
+
+    async function sincronizarStatusLoja() {
+      try {
+        const res = await fetch(`${apiBase()}/loja/status`, { cache: 'no-store' });
+        if (!res.ok) return;
+        atualizarStatusLoja(await res.json());
+        renderSummary();
+      } catch (_) {}
     }
 
     function sectionItems() {
@@ -1519,13 +1575,19 @@
       els.total.textContent = money(total);
       els.drawerTotal.textContent = money(total);
       renderPointsOptions();
-      [els.sendCart, els.sendCartDrawer, els.clearCart, els.clearCartDrawer].forEach(button => {
+      [els.sendCart, els.sendCartDrawer].forEach(button => {
+        button.disabled = count < 1 || state.sending || !state.loja.aceitaPedidos;
+      });
+      [els.clearCart, els.clearCartDrawer].forEach(button => {
         button.disabled = count < 1 || state.sending;
       });
-      els.sendCart.textContent = state.sending ? 'Enviando...' : (state.authOk ? 'Enviar pedido' : 'Enviar ao Telegram');
-      els.sendCartDrawer.textContent = state.sending ? 'Enviando...' : (state.authOk ? 'Enviar pedido' : 'Enviar pedido ao Telegram');
+      const textoEnvio = !state.loja.aceitaPedidos
+        ? (state.loja.status === 'pausada' ? 'Pedidos pausados' : 'Loja fechada')
+        : (state.authOk ? 'Enviar pedido' : 'Enviar ao Telegram');
+      els.sendCart.textContent = state.sending ? 'Enviando...' : textoEnvio;
+      els.sendCartDrawer.textContent = state.sending ? 'Enviando...' : (!state.loja.aceitaPedidos ? textoEnvio : (state.authOk ? 'Enviar pedido' : 'Enviar pedido ao Telegram'));
       if (tg?.MainButton) {
-        if (count > 0) {
+        if (count > 0 && state.loja.aceitaPedidos) {
           tg.MainButton.setText(state.sending ? 'Enviando...' : `Enviar ${label} - ${money(total)}`);
           tg.MainButton.show();
         } else {
@@ -1555,6 +1617,10 @@
 
     async function sendCartToTelegram() {
       if (state.sending) return;
+      if (!state.loja.aceitaPedidos) {
+        showToast(state.loja.mensagem || 'A loja não está recebendo pedidos agora.');
+        return;
+      }
       const items = cartItems().map(item => ({
         produto_id: item.id,
         secao: item.section,
@@ -1657,9 +1723,12 @@
     });
     window.addEventListener('beforeunload', () => {
       if (state.pollTimer) clearInterval(state.pollTimer);
+      if (state.storeStatusTimer) clearInterval(state.storeStatusTimer);
     });
 
     loadProducts();
+    sincronizarStatusLoja();
+    state.storeStatusTimer = setInterval(sincronizarStatusLoja, 15000);
     authenticateMiniApp();
   </script>
 </body>
