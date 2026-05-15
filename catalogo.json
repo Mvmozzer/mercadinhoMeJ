@@ -259,30 +259,6 @@
         "sku": "TEST-016",
         "points_label_text": "",
         "points_preview": 0
-      },
-      {
-        "id": "limpeza_2",
-        "produto_id": "limpeza_2",
-        "secao": "limpeza",
-        "secao_nome": "🧼 Limpeza",
-        "secao_ordem": 19,
-        "index": 2,
-        "nome": "Sab?o em P? 1kg",
-        "grupo": "Sab?o em P? 1kg",
-        "marca": "Teste",
-        "tamanho": "un",
-        "descricao": "Produto de teste",
-        "preco": 12.9,
-        "preco_base": 12.9,
-        "preco_normal": 12.9,
-        "preco_promocional": 0,
-        "promocao": false,
-        "estoque": 12,
-        "imagem": "",
-        "codigoBarras": "7891000000017",
-        "sku": "TEST-017",
-        "points_label_text": "",
-        "points_preview": 0
       }
     ]
   }
