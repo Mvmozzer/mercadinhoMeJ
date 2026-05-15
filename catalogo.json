@@ -22,13 +22,6 @@
         "ordem": 2
       },
       {
-        "id": "padaria",
-        "nome": "🥖 Padaria",
-        "emoji": "",
-        "ativo": true,
-        "ordem": 3
-      },
-      {
         "id": "frios_e_laticnios",
         "nome": "🧀 Frios e Laticínios",
         "emoji": "",
@@ -261,30 +254,6 @@
         "imagem": "",
         "codigoBarras": "7891000000004",
         "sku": "TEST-004",
-        "points_label_text": "",
-        "points_preview": 0
-      },
-      {
-        "id": "padaria_0",
-        "produto_id": "padaria_0",
-        "secao": "padaria",
-        "secao_nome": "🥖 Padaria",
-        "secao_ordem": 3,
-        "index": 0,
-        "nome": "Bolo de Cenoura fatia",
-        "grupo": "Bolo de Cenoura fatia",
-        "marca": "Teste",
-        "tamanho": "un",
-        "descricao": "Produto de teste",
-        "preco": 5.5,
-        "preco_base": 5.5,
-        "preco_normal": 5.5,
-        "preco_promocional": 0,
-        "promocao": false,
-        "estoque": 10,
-        "imagem": "",
-        "codigoBarras": "7891000000006",
-        "sku": "TEST-006",
         "points_label_text": "",
         "points_preview": 0
       },
