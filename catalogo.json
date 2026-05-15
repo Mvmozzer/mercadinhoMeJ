@@ -6,40 +6,7 @@
       "mensagem": "Loja aberta. Pode fazer seu pedido.",
       "aceitaPedidos": true
     },
-    "secoes": [
-      {
-        "id": "higiene",
-        "nome": "🧴 Higiene",
-        "emoji": "",
-        "ativo": true,
-        "ordem": 18
-      }
-    ],
-    "produtos": [
-      {
-        "id": "higiene_0",
-        "produto_id": "higiene_0",
-        "secao": "higiene",
-        "secao_nome": "🧴 Higiene",
-        "secao_ordem": 18,
-        "index": 0,
-        "nome": "Papel Higi?nico 4 rolos",
-        "grupo": "Papel Higi?nico 4 rolos",
-        "marca": "Teste",
-        "tamanho": "un",
-        "descricao": "Produto de teste",
-        "preco": 6.99,
-        "preco_base": 6.99,
-        "preco_normal": 6.99,
-        "preco_promocional": 0,
-        "promocao": false,
-        "estoque": 18,
-        "imagem": "",
-        "codigoBarras": "7891000000019",
-        "sku": "TEST-019",
-        "points_label_text": "",
-        "points_preview": 0
-      }
-    ]
+    "secoes": [],
+    "produtos": []
   }
 }
