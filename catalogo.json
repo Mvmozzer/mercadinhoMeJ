@@ -8,13 +8,6 @@
     },
     "secoes": [
       {
-        "id": "mercearia",
-        "nome": "🛒 Mercearia",
-        "emoji": "",
-        "ativo": true,
-        "ordem": 9
-      },
-      {
         "id": "bebidas",
         "nome": "🥤 Bebidas",
         "emoji": "",
@@ -30,30 +23,6 @@
       }
     ],
     "produtos": [
-      {
-        "id": "mercearia_0",
-        "produto_id": "mercearia_0",
-        "secao": "mercearia",
-        "secao_nome": "🛒 Mercearia",
-        "secao_ordem": 9,
-        "index": 0,
-        "nome": "Feij?o Carioca 1kg",
-        "grupo": "Feij?o Carioca 1kg",
-        "marca": "Teste",
-        "tamanho": "un",
-        "descricao": "Produto de teste",
-        "preco": 8.99,
-        "preco_base": 8.99,
-        "preco_normal": 8.99,
-        "preco_promocional": 0,
-        "promocao": false,
-        "estoque": 16,
-        "imagem": "",
-        "codigoBarras": "7891000000010",
-        "sku": "TEST-010",
-        "points_label_text": "",
-        "points_preview": 0
-      },
       {
         "id": "bebidas_0",
         "produto_id": "bebidas_0",
