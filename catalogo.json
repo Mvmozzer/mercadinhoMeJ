@@ -29,13 +29,6 @@
         "ordem": 9
       },
       {
-        "id": "doces",
-        "nome": "🍫 Doces",
-        "emoji": "",
-        "ativo": true,
-        "ordem": 12
-      },
-      {
         "id": "bebidas",
         "nome": "🥤 Bebidas",
         "emoji": "",
@@ -271,30 +264,6 @@
         "imagem": "",
         "codigoBarras": "7891000000008",
         "sku": "TEST-008",
-        "points_label_text": "",
-        "points_preview": 0
-      },
-      {
-        "id": "doces_0",
-        "produto_id": "doces_0",
-        "secao": "doces",
-        "secao_nome": "🍫 Doces",
-        "secao_ordem": 12,
-        "index": 0,
-        "nome": "Pa?oca unidade",
-        "grupo": "Pa?oca unidade",
-        "marca": "Teste",
-        "tamanho": "un",
-        "descricao": "Produto de teste",
-        "preco": 1.2,
-        "preco_base": 1.2,
-        "preco_normal": 1.2,
-        "preco_promocional": 0,
-        "promocao": false,
-        "estoque": 40,
-        "imagem": "",
-        "codigoBarras": "7891000000015",
-        "sku": "TEST-015",
         "points_label_text": "",
         "points_preview": 0
       },
