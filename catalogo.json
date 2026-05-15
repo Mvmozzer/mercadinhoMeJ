@@ -8,13 +8,6 @@
     },
     "secoes": [
       {
-        "id": "frios_e_laticnios",
-        "nome": "🧀 Frios e Laticínios",
-        "emoji": "",
-        "ativo": true,
-        "ordem": 4
-      },
-      {
         "id": "mercearia",
         "nome": "🛒 Mercearia",
         "emoji": "",
@@ -82,30 +75,6 @@
         "imagem": "",
         "codigoBarras": "7891000000012",
         "sku": "TEST-012",
-        "points_label_text": "",
-        "points_preview": 0
-      },
-      {
-        "id": "frios_e_laticnios_0",
-        "produto_id": "frios_e_laticnios_0",
-        "secao": "frios_e_laticnios",
-        "secao_nome": "🧀 Frios e Laticínios",
-        "secao_ordem": 4,
-        "index": 0,
-        "nome": "Iogurte Morango 170g",
-        "grupo": "Iogurte Morango 170g",
-        "marca": "Teste",
-        "tamanho": "un",
-        "descricao": "Produto de teste",
-        "preco": 3.29,
-        "preco_base": 3.29,
-        "preco_normal": 3.29,
-        "preco_promocional": 0,
-        "promocao": false,
-        "estoque": 24,
-        "imagem": "",
-        "codigoBarras": "7891000000008",
-        "sku": "TEST-008",
         "points_label_text": "",
         "points_preview": 0
       },
