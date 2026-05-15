@@ -8,13 +8,6 @@
     },
     "secoes": [
       {
-        "id": "hortifruti",
-        "nome": "🥬 Hortifruti",
-        "emoji": "",
-        "ativo": true,
-        "ordem": 2
-      },
-      {
         "id": "frios_e_laticnios",
         "nome": "🧀 Frios e Laticínios",
         "emoji": "",
@@ -168,30 +161,6 @@
         "imagem": "",
         "codigoBarras": "7891000000013",
         "sku": "TEST-013",
-        "points_label_text": "",
-        "points_preview": 0
-      },
-      {
-        "id": "hortifruti_0",
-        "produto_id": "hortifruti_0",
-        "secao": "hortifruti",
-        "secao_nome": "🥬 Hortifruti",
-        "secao_ordem": 2,
-        "index": 0,
-        "nome": "Tomate Italiano kg",
-        "grupo": "Tomate Italiano kg",
-        "marca": "Teste",
-        "tamanho": "kg",
-        "descricao": "Produto de teste",
-        "preco": 8.49,
-        "preco_base": 8.49,
-        "preco_normal": 8.49,
-        "preco_promocional": 0,
-        "promocao": false,
-        "estoque": 15,
-        "imagem": "",
-        "codigoBarras": "7891000000004",
-        "sku": "TEST-004",
         "points_label_text": "",
         "points_preview": 0
       },
