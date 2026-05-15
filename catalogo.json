@@ -1,40 +1,7 @@
 {
   "ok": true,
   "catalogo": {
-    "secoes": [
-      {
-        "id": "mercearia",
-        "nome": "mercearia",
-        "emoji": "",
-        "ativo": true,
-        "ordem": 0
-      }
-    ],
-    "produtos": [
-      {
-        "id": "mercearia_0",
-        "produto_id": "mercearia_0",
-        "secao": "mercearia",
-        "secao_nome": "mercearia",
-        "secao_ordem": 0,
-        "index": 0,
-        "nome": "Feijao",
-        "grupo": "Feijao",
-        "marca": "",
-        "tamanho": "",
-        "descricao": "",
-        "preco": 12,
-        "preco_base": 12,
-        "preco_normal": 12,
-        "preco_promocional": 0,
-        "promocao": false,
-        "estoque": 10,
-        "imagem": "",
-        "codigoBarras": "",
-        "sku": "feijao",
-        "points_label_text": "",
-        "points_preview": 0
-      }
-    ]
+    "secoes": [],
+    "produtos": []
   }
 }
