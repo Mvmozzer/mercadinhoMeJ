@@ -8,13 +8,6 @@
     },
     "secoes": [
       {
-        "id": "bebidas",
-        "nome": "🥤 Bebidas",
-        "emoji": "",
-        "ativo": true,
-        "ordem": 14
-      },
-      {
         "id": "higiene",
         "nome": "🧴 Higiene",
         "emoji": "",
@@ -23,30 +16,6 @@
       }
     ],
     "produtos": [
-      {
-        "id": "bebidas_0",
-        "produto_id": "bebidas_0",
-        "secao": "bebidas",
-        "secao_nome": "🥤 Bebidas",
-        "secao_ordem": 14,
-        "index": 0,
-        "nome": "Refrigerante Cola 2L",
-        "grupo": "Refrigerante Cola 2L",
-        "marca": "Teste",
-        "tamanho": "un",
-        "descricao": "Produto de teste",
-        "preco": 9.99,
-        "preco_base": 9.99,
-        "preco_normal": 9.99,
-        "preco_promocional": 0,
-        "promocao": false,
-        "estoque": 18,
-        "imagem": "",
-        "codigoBarras": "7891000000012",
-        "sku": "TEST-012",
-        "points_label_text": "",
-        "points_preview": 0
-      },
       {
         "id": "higiene_0",
         "produto_id": "higiene_0",
