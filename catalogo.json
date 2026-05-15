@@ -6,7 +6,40 @@
       "mensagem": "Loja aberta. Pode fazer seu pedido.",
       "aceitaPedidos": true
     },
-    "secoes": [],
-    "produtos": []
+    "secoes": [
+      {
+        "id": "limpeza",
+        "nome": "🧼 Limpeza",
+        "emoji": "",
+        "ativo": true,
+        "ordem": 19
+      }
+    ],
+    "produtos": [
+      {
+        "id": "limpeza_1",
+        "produto_id": "limpeza_1",
+        "secao": "limpeza",
+        "secao_nome": "🧼 Limpeza",
+        "secao_ordem": 19,
+        "index": 1,
+        "nome": "Sabão em Pasta Corcovado 500g",
+        "grupo": "Detergentes e Lava-louças",
+        "marca": "Vitral",
+        "tamanho": "500",
+        "descricao": "",
+        "preco": 12.49,
+        "preco_base": 12.49,
+        "preco_normal": 14.39,
+        "preco_promocional": 12.49,
+        "promocao": true,
+        "estoque": 10,
+        "imagem": "https://prezunic.vtexassets.com/arquivos/ids/183410-800-auto?v=638368818615600000&width=800&height=auto&aspect=true",
+        "codigoBarras": "7896085200649",
+        "sku": "LIMP-SABA-002",
+        "points_label_text": "+6 pontos em compras acima de R$ 25,00",
+        "points_preview": 0
+      }
+    ]
   }
 }
