@@ -8,13 +8,6 @@
     },
     "secoes": [
       {
-        "id": "ofertas",
-        "nome": "🏷️ Ofertas",
-        "emoji": "",
-        "ativo": true,
-        "ordem": 1
-      },
-      {
         "id": "hortifruti",
         "nome": "🥬 Hortifruti",
         "emoji": "",
@@ -182,30 +175,6 @@
         "imagem": "",
         "codigoBarras": "7891000000013",
         "sku": "TEST-013",
-        "points_label_text": "",
-        "points_preview": 0
-      },
-      {
-        "id": "ofertas_0",
-        "produto_id": "ofertas_0",
-        "secao": "ofertas",
-        "secao_nome": "🏷️ Ofertas",
-        "secao_ordem": 1,
-        "index": 0,
-        "nome": "Leite Integral 1L",
-        "grupo": "Leite Integral 1L",
-        "marca": "Teste",
-        "tamanho": "un",
-        "descricao": "Produto de teste",
-        "preco": 4.79,
-        "preco_base": 4.79,
-        "preco_normal": 4.79,
-        "preco_promocional": 4.79,
-        "promocao": true,
-        "estoque": 20,
-        "imagem": "",
-        "codigoBarras": "7891000000002",
-        "sku": "TEST-002",
         "points_label_text": "",
         "points_preview": 0
       },
