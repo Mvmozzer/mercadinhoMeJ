@@ -34,13 +34,6 @@
         "emoji": "",
         "ativo": true,
         "ordem": 18
-      },
-      {
-        "id": "limpeza",
-        "nome": "🧼 Limpeza",
-        "emoji": "",
-        "ativo": true,
-        "ordem": 19
       }
     ],
     "produtos": [
@@ -233,30 +226,6 @@
         "imagem": "",
         "codigoBarras": "7891000000019",
         "sku": "TEST-019",
-        "points_label_text": "",
-        "points_preview": 0
-      },
-      {
-        "id": "limpeza_1",
-        "produto_id": "limpeza_1",
-        "secao": "limpeza",
-        "secao_nome": "🧼 Limpeza",
-        "secao_ordem": 19,
-        "index": 1,
-        "nome": "Detergente Neutro 500ml",
-        "grupo": "Detergente Neutro 500ml",
-        "marca": "Teste",
-        "tamanho": "un",
-        "descricao": "Produto de teste",
-        "preco": 2.49,
-        "preco_base": 2.49,
-        "preco_normal": 2.49,
-        "preco_promocional": 0,
-        "promocao": false,
-        "estoque": 25,
-        "imagem": "",
-        "codigoBarras": "7891000000016",
-        "sku": "TEST-016",
         "points_label_text": "",
         "points_preview": 0
       }
