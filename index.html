@@ -25,7 +25,7 @@
       --warn: #9a6a16;
       --shadow: 0 12px 30px rgba(28, 22, 12, .12);
       --radius: 8px;
-      --footer-space: 146px;
+      --footer-space: 88px;
     }
 
     * { box-sizing: border-box; }
@@ -1039,12 +1039,6 @@
       line-height: 1;
     }
 
-    .bottom-actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-
     .toast {
       position: fixed;
       left: 12px;
@@ -1139,14 +1133,7 @@
         border-radius: 12px 12px 0 0;
       }
 
-      .bottom-bar {
-        grid-template-columns: minmax(0, 1fr) auto;
-        align-items: center;
-      }
-
-      .bottom-actions {
-        width: 360px;
-      }
+      .bottom-bar { align-items: center; }
     }
   </style>
 </head>
@@ -1252,7 +1239,7 @@
         <strong id="drawerTotal">R$ 0,00</strong>
       </div>
       <div class="checkout-stage" id="cartStepPanel">
-        <small>Revise os itens antes de escolher como deseja receber.</small>
+        <small>Confira os itens antes de escolher como deseja receber.</small>
         <button class="primary" id="continueToDelivery" type="button" disabled>Continuar para entrega</button>
       </div>
       <div class="checkout-stage" id="deliveryStepPanel" hidden>
@@ -1282,16 +1269,9 @@
         </label>
         <small id="pointsSummary">Saldo de pontos indisponivel.</small>
       </div>
-      <div class="payment-box" aria-label="Forma de pagamento">
-        <label class="payment-option">
-          <input id="paymentPix" type="radio" name="paymentMethod" value="pix" checked>
-          Pix copia e cola
-        </label>
-        <small>O QR Code e o código Pix aparecerão na próxima etapa, dentro do Mini App.</small>
-      </div>
       <div class="checkout-actions">
         <button class="ghost" id="backToCart" type="button">Voltar ao carrinho</button>
-        <button class="primary" id="sendCartDrawer" type="button" disabled>Ir para pagamento</button>
+        <button class="primary" id="sendCartDrawer" type="button" disabled>Continuar para pagamento</button>
       </div>
       </div>
       <button class="danger" id="clearCartDrawer" type="button" disabled>Limpar carrinho</button>
@@ -1316,11 +1296,7 @@
         <span id="bottomCount">Carrinho vazio</span>
         <strong id="total">R$ 0,00</strong>
       </div>
-      <button class="gold" id="reviewCart" type="button">Revisar</button>
-    </div>
-    <div class="bottom-actions">
-      <button class="ghost" id="clearCart" type="button" disabled>Limpar</button>
-      <button class="primary" id="sendCart" type="button" disabled>Revisar carrinho</button>
+      <button class="gold" id="reviewCart" type="button">Carrinho</button>
     </div>
   </footer>
 
@@ -1332,7 +1308,7 @@
       tg.expand();
       applyTelegramTheme(tg);
       if (tg.MainButton) {
-        tg.MainButton.setText('Revisar carrinho');
+        tg.MainButton.setText('Carrinho');
         tg.MainButton.onClick(() => acaoBotaoPrincipalTelegram());
       }
     }
@@ -1423,7 +1399,6 @@
       deliveryStepPanel: document.getElementById('deliveryStepPanel'),
       continueToDelivery: document.getElementById('continueToDelivery'),
       backToCart: document.getElementById('backToCart'),
-      sendCart: document.getElementById('sendCart'),
       sendCartDrawer: document.getElementById('sendCartDrawer'),
       paymentPix: document.getElementById('paymentPix'),
       pointsBox: document.getElementById('pointsBox'),
@@ -1439,7 +1414,6 @@
       deliveryComplemento: document.getElementById('deliveryComplemento'),
       deliveryBairro: document.getElementById('deliveryBairro'),
       deliverySummary: document.getElementById('deliverySummary'),
-      clearCart: document.getElementById('clearCart'),
       clearCartDrawer: document.getElementById('clearCartDrawer'),
       reviewCart: document.getElementById('reviewCart'),
       viniAiOutdoor: document.getElementById('viniAiOutdoor'),
@@ -1575,7 +1549,7 @@
         const labels = {
           cadastro: 'Primeiro acesso',
           catalogo: 'Escolha produtos',
-          carrinho: 'Revise itens',
+          carrinho: 'Carrinho',
           entrega: 'Defina recebimento',
           pagamento: 'Pague no Mini App',
           confirmacao: 'Acompanhe o pedido'
@@ -2700,6 +2674,7 @@
           <strong>${money(pix.valor)}</strong>
           <small>${escapeHtml(pix.recebedor || 'Recebedor Pix')}${pix.cidade ?` · ${escapeHtml(pix.cidade)}` : ''}</small>
         </div>
+        <small>Pix copia e cola</small>
         <textarea class="pix-code" id="miniappPixCode" readonly>${escapeHtml(pix.copiaECola || '')}</textarea>
         <div class="payment-actions">
           <button class="primary" id="copyMiniappPix" type="button">Copiar código Pix</button>
@@ -2795,30 +2770,25 @@
       const count = cartCount();
       const total = cartTotal();
       const label = count ?`${count} ${count === 1 ?'item' : 'itens'}` : 'Carrinho vazio';
-      els.cartButton.textContent = label;
+      els.cartButton.textContent = count ?`Carrinho · ${count}` : 'Carrinho';
       els.itemsCount.textContent = count ?`${label} no carrinho` : 'Carrinho vazio';
       els.bottomCount.textContent = count ?`${label} selecionados` : 'Carrinho vazio';
       els.total.textContent = money(total);
       els.drawerTotal.textContent = money(total);
       renderPointsOptions();
-      if (els.sendCart) els.sendCart.disabled = count < 1 || state.sending || !state.loja.aceitaPedidos || clientePrecisaCadastro();
-      [els.clearCart, els.clearCartDrawer].forEach(button => {
+      [els.clearCartDrawer].forEach(button => {
         button.disabled = count < 1 || state.sending;
       });
-      const textoEnvio = !state.loja.aceitaPedidos
-        ?(state.loja.status === 'pausada' ?'Pedidos pausados' : 'Loja fechada')
-        : 'Revisar carrinho';
-      els.sendCart.textContent = state.sending ?'Enviando...' : textoEnvio;
-      els.sendCartDrawer.textContent = state.sending ?'Enviando...' : 'Ir para pagamento';
+      els.sendCartDrawer.textContent = state.sending ?'Enviando...' : 'Continuar para pagamento';
       if (tg?.MainButton) {
         if (count > 0 && state.loja.aceitaPedidos) {
           const textoPrincipal = state.sending
             ?'Enviando...'
             : state.checkoutStep === 'delivery'
-              ?`Ir para pagamento - ${money(total)}`
+              ?`Continuar para pagamento - ${money(total)}`
               : state.checkoutStep === 'cart'
                 ?'Continuar para entrega'
-                : `Revisar ${label} - ${money(total)}`;
+                : `Carrinho - ${money(total)}`;
           tg.MainButton.setText(textoPrincipal);
           tg.MainButton.show();
         } else {
@@ -2961,7 +2931,6 @@
     els.reviewCart.addEventListener('click', iniciarCheckout);
     els.closeCart.addEventListener('click', () => setCartOpen(false));
     els.closePayment.addEventListener('click', () => setPaymentOpen(false));
-    els.clearCart.addEventListener('click', clearCart);
     els.clearCartDrawer.addEventListener('click', clearCart);
     els.paymentPix?.addEventListener('change', () => {
       state.paymentMethod = 'pix';
@@ -2994,7 +2963,6 @@
     els.registrationForm?.addEventListener('submit', salvarCadastroMiniApp);
     els.continueToDelivery?.addEventListener('click', irParaEntrega);
     els.backToCart?.addEventListener('click', voltarAoCarrinho);
-    els.sendCart.addEventListener('click', iniciarCheckout);
     els.sendCartDrawer.addEventListener('click', sendCartToTelegram);
     els.ordersList.addEventListener('click', event => {
       const pagamentoBtn = event.target.closest('[data-payment-id]');
