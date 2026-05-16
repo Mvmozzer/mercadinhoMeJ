@@ -325,84 +325,95 @@
       font-weight: 800;
     }
 
-    .vini-ai-actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
     .vini-ai-outdoor button {
       position: relative;
       z-index: 1;
     }
 
-    .vini-ai-card {
+    .vini-ai-copy {
       display: grid;
-      gap: 10px;
-      padding: 12px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: var(--surface);
-      box-shadow: 0 8px 22px rgba(35, 28, 15, .08);
+      gap: 7px;
+      min-width: 0;
     }
 
-    .vini-ai-head {
+    .vini-ai-reel {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+      padding: 11px;
+      border: 1px solid rgba(227, 189, 114, .28);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, .09);
+      backdrop-filter: blur(10px);
+    }
+
+    .vini-ai-outdoor .pill {
+      width: fit-content;
+      border-color: rgba(227, 189, 114, .38);
+      background: rgba(255, 255, 255, .08);
+      color: #fff;
+    }
+
+    .vini-ai-slide {
+      display: grid;
+      gap: 9px;
+      min-width: 0;
+    }
+
+    .vini-ai-slide strong {
+      display: block;
+      color: #fff;
+      font-size: 16px;
+      line-height: 1.2;
+    }
+
+    .vini-ai-slide small {
+      color: rgba(255, 255, 255, .72);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .vini-ai-slide-row {
       display: flex;
-      align-items: start;
+      align-items: center;
       justify-content: space-between;
       gap: 10px;
     }
 
-    .vini-ai-head h2,
-    .vini-ai-head h3 {
-      margin: 0;
-      color: var(--ink);
+    .vini-ai-price {
+      color: var(--gold-2);
       font-size: 17px;
+      font-weight: 800;
     }
 
-    .vini-ai-message {
-      margin: 0;
-      color: var(--text);
-      font-size: 14px;
-      line-height: 1.4;
+    .vini-ai-slide .gold {
+      min-width: 110px;
     }
 
-    .vini-ai-recommendations {
-      display: grid;
-      gap: 8px;
-    }
-
-    .vini-ai-item {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 10px;
+    .vini-ai-dots {
+      display: flex;
+      gap: 6px;
       align-items: center;
-      padding: 9px 10px;
-      border: 1px solid var(--line);
-      border-radius: 7px;
-      background: var(--surface-2);
     }
 
-    .vini-ai-item strong {
-      display: block;
-      color: var(--ink);
-      font-size: 14px;
-      line-height: 1.2;
+    .vini-ai-dot {
+      width: 8px;
+      min-height: 8px;
+      height: 8px;
+      padding: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, .34);
     }
 
-    .vini-ai-item small {
-      color: var(--muted);
-      font-size: 12px;
+    .vini-ai-dot.active {
+      background: var(--gold-2);
     }
 
     .vini-ai-state {
-      color: var(--muted);
+      color: rgba(255, 255, 255, .78);
       font-size: 13px;
-    }
-
-    .cart-vini-ai {
-      margin: 0 14px;
     }
 
     .section-block {
@@ -883,28 +894,20 @@
     <nav class="category-strip" id="tabs" aria-label="Categorias"></nav>
 
     <main>
-      <section class="vini-ai-outdoor" aria-label="Vini AI no Mini App">
-        <div>
+      <section class="vini-ai-outdoor" id="viniAiOutdoor" aria-label="Vini AI no Mini App">
+        <div class="vini-ai-copy">
           <span class="vini-ai-kicker">Assistente de compras</span>
           <h2>Vini AI agora está no Mini App</h2>
           <p>Seu assistente inteligente para encontrar produtos, montar o carrinho e comprar melhor.</p>
-          <p>O Vini AI entende sua compra, sugere itens úteis e ajuda você do início ao fim, com Pix, entrega e acompanhamento integrados ao Mercadinho.</p>
+          <p id="viniAiMessage">Carregando recomendações...</p>
         </div>
-        <div class="vini-ai-actions">
-          <button class="gold" id="viniAiCta" type="button">Ver recomendações do Vini AI</button>
-        </div>
-      </section>
-
-      <section class="vini-ai-card" id="viniAiAdvisor" aria-live="polite">
-        <div class="vini-ai-head">
-          <div>
-            <span class="pill">Vini AI</span>
-            <h2>Consultor inteligente</h2>
-          </div>
+        <div class="vini-ai-reel" aria-live="polite">
           <span class="pill" id="viniAiContext">Início</span>
+          <div class="vini-ai-slide" id="viniAiSlide">
+            <div class="vini-ai-state">Buscando produtos disponíveis...</div>
+          </div>
+          <div class="vini-ai-dots" id="viniAiDots"></div>
         </div>
-        <p class="vini-ai-message" id="viniAiMessage">Carregando recomendações...</p>
-        <div class="vini-ai-recommendations" id="viniAiRecommendations"></div>
       </section>
 
       <section class="orders-panel" id="ordersPanel" hidden>
@@ -925,7 +928,6 @@
       <button class="ghost" id="closeCart" type="button">Fechar</button>
     </div>
     <div class="cart-list" id="cartList"></div>
-    <section class="vini-ai-card cart-vini-ai" id="cartViniAiAdvisor" aria-live="polite"></section>
     <div class="cart-foot">
       <div class="summary-line">
         <span id="itemsCount">Carrinho vazio</span>
@@ -1012,7 +1014,10 @@
       viniAi: {
         focusedProductId: '',
         viewedSections: new Map(),
-        interactedProducts: new Set()
+        interactedProducts: new Set(),
+        slideIndex: 0,
+        slideSignature: '',
+        slideTimer: null
       }
     };
 
@@ -1039,12 +1044,11 @@
       clearCart: document.getElementById('clearCart'),
       clearCartDrawer: document.getElementById('clearCartDrawer'),
       reviewCart: document.getElementById('reviewCart'),
-      viniAiCta: document.getElementById('viniAiCta'),
-      viniAiAdvisor: document.getElementById('viniAiAdvisor'),
+      viniAiOutdoor: document.getElementById('viniAiOutdoor'),
       viniAiContext: document.getElementById('viniAiContext'),
       viniAiMessage: document.getElementById('viniAiMessage'),
-      viniAiRecommendations: document.getElementById('viniAiRecommendations'),
-      cartViniAiAdvisor: document.getElementById('cartViniAiAdvisor'),
+      viniAiSlide: document.getElementById('viniAiSlide'),
+      viniAiDots: document.getElementById('viniAiDots'),
       storeStatus: document.getElementById('storeStatus'),
       ordersPanel: document.getElementById('ordersPanel'),
       ordersList: document.getElementById('ordersList'),
@@ -1609,52 +1613,82 @@
       };
     }
 
-    function recommendationMarkup(items = []) {
-      return items.map(item => `
-        <div class="vini-ai-item">
-          <div>
-            <strong>${escapeHtml(item.name)}</strong>
-            <small>${escapeHtml(item.sectionLabel)} · ${money(item.price)}</small>
-          </div>
-          <button class="ghost" type="button" data-vini-add="${escapeHtml(item.id)}">Adicionar</button>
-        </div>
-      `).join('');
+    function viniAISlideSignature(model = {}) {
+      return `${model.contextLabel || ''}:${(model.items || []).map(item => item.id).join('|')}`;
     }
 
-    function bindViniAIAddButtons(scope) {
-      scope?.querySelectorAll('[data-vini-add]').forEach(button => {
-        button.addEventListener('click', () => changeQty(button.dataset.viniAdd, 1));
+    function renderViniAISlide(model = viniAIRecommendationModel()) {
+      if (!els.viniAiSlide) return;
+      const items = model.items || [];
+      if (model.status === 'loading') {
+        els.viniAiSlide.innerHTML = '<div class="vini-ai-state">Buscando produtos disponíveis...</div>';
+        els.viniAiDots.innerHTML = '';
+        return;
+      }
+      if (!items.length) {
+        els.viniAiSlide.innerHTML = '<div class="vini-ai-state">Sem recomendações no momento.</div>';
+        els.viniAiDots.innerHTML = '';
+        return;
+      }
+      const item = items[Math.min(state.viniAi.slideIndex, items.length - 1)];
+      els.viniAiSlide.innerHTML = `
+        <div>
+          <strong>${escapeHtml(item.name)}</strong>
+          <small>${escapeHtml(item.sectionLabel)} · ${item.stock} disp.</small>
+        </div>
+        <div class="vini-ai-slide-row">
+          <span class="vini-ai-price">${money(item.price)}</span>
+          <button class="gold" type="button" data-vini-add="${escapeHtml(item.id)}">Adicionar</button>
+        </div>
+      `;
+      els.viniAiSlide.querySelector('[data-vini-add]')?.addEventListener('click', () => changeQty(item.id, 1));
+      els.viniAiDots.innerHTML = items.length > 1
+        ? items.map((_, index) => `
+          <button
+            class="vini-ai-dot ${index === state.viniAi.slideIndex ? 'active' : ''}"
+            type="button"
+            data-vini-slide="${index}"
+            aria-label="Ver recomendação ${index + 1}"
+          ></button>
+        `).join('')
+        : '';
+      els.viniAiDots.querySelectorAll('[data-vini-slide]').forEach(button => {
+        button.addEventListener('click', () => {
+          state.viniAi.slideIndex = Number(button.dataset.viniSlide || 0);
+          renderViniAISlide(model);
+          iniciarViniAISlider(model);
+        });
       });
     }
 
-    function renderViniAIAdvisor() {
-      const model = viniAIRecommendationModel();
-      els.viniAiContext.textContent = model.contextLabel;
-      els.viniAiMessage.textContent = model.message;
-      els.viniAiRecommendations.innerHTML = model.status === 'loading'
-        ? '<div class="vini-ai-state">Buscando produtos disponíveis...</div>'
-        : model.items.length
-          ? recommendationMarkup(model.items)
-          : '<div class="vini-ai-state">Sem recomendações no momento.</div>';
-      bindViniAIAddButtons(els.viniAiRecommendations);
+    function iniciarViniAISlider(model = viniAIRecommendationModel()) {
+      if (state.viniAi.slideTimer) clearInterval(state.viniAi.slideTimer);
+      if ((model.items || []).length < 2) {
+        state.viniAi.slideTimer = null;
+        return;
+      }
+      state.viniAi.slideTimer = setInterval(() => {
+        const atual = viniAIRecommendationModel();
+        if (viniAISlideSignature(atual) !== state.viniAi.slideSignature || atual.items.length < 2) {
+          renderViniAIOutdoor();
+          return;
+        }
+        state.viniAi.slideIndex = (state.viniAi.slideIndex + 1) % atual.items.length;
+        renderViniAISlide(atual);
+      }, 12000);
     }
 
-    function renderCartViniAIAdvisor() {
-      if (!els.cartViniAiAdvisor) return;
-      const model = viniAIRecommendationModel(state.cartOpen && cartItems().length ? 'checkout' : 'cart');
-      els.cartViniAiAdvisor.innerHTML = `
-        <div class="vini-ai-head">
-          <div>
-            <span class="pill">Vini AI</span>
-            <h3>${escapeHtml(model.contextLabel)}</h3>
-          </div>
-        </div>
-        <p class="vini-ai-message">${escapeHtml(model.message)}</p>
-        <div class="vini-ai-recommendations">
-          ${model.items.length ? recommendationMarkup(model.items.slice(0, 2)) : '<div class="vini-ai-state">Sem recomendações no momento.</div>'}
-        </div>
-      `;
-      bindViniAIAddButtons(els.cartViniAiAdvisor);
+    function renderViniAIOutdoor() {
+      const model = viniAIRecommendationModel();
+      const signature = viniAISlideSignature(model);
+      if (signature !== state.viniAi.slideSignature) {
+        state.viniAi.slideSignature = signature;
+        state.viniAi.slideIndex = 0;
+      }
+      els.viniAiContext.textContent = model.contextLabel;
+      els.viniAiMessage.textContent = model.message;
+      renderViniAISlide(model);
+      iniciarViniAISlider(model);
     }
 
     function cartQty(id) {
@@ -1751,8 +1785,7 @@
       state.cartOpen = open;
       els.cartDrawer.classList.toggle('open', open);
       renderCart();
-      renderViniAIAdvisor();
-      renderCartViniAIAdvisor();
+      renderViniAIOutdoor();
     }
 
     function renderTabs() {
@@ -1780,7 +1813,7 @@
           }
           renderTabs();
           renderProducts();
-          renderViniAIAdvisor();
+          renderViniAIOutdoor();
         });
         els.tabs.appendChild(button);
       });
@@ -1821,7 +1854,7 @@
         if (event.target.closest('button')) return;
         state.viniAi.focusedProductId = item.id;
         state.viniAi.interactedProducts.add(item.id);
-        renderViniAIAdvisor();
+        renderViniAIOutdoor();
       });
       card.querySelector('[data-action="minus"]')?.addEventListener('click', () => changeQty(item.id, -1));
       card.querySelector('[data-action="plus"]')?.addEventListener('click', () => changeQty(item.id, 1));
@@ -1936,8 +1969,7 @@
         }
       }
       renderCart();
-      renderViniAIAdvisor();
-      renderCartViniAIAdvisor();
+      renderViniAIOutdoor();
     }
 
     function render() {
@@ -2027,7 +2059,7 @@
     els.search.addEventListener('input', event => {
       state.query = event.target.value;
       renderProducts();
-      renderViniAIAdvisor();
+      renderViniAIOutdoor();
     });
 
     els.clearSearch.addEventListener('click', () => {
@@ -2036,11 +2068,7 @@
       state.section = '';
       renderTabs();
       renderProducts();
-      renderViniAIAdvisor();
-    });
-
-    els.viniAiCta?.addEventListener('click', () => {
-      els.viniAiAdvisor?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      renderViniAIOutdoor();
     });
 
     els.cartButton.addEventListener('click', () => setCartOpen(true));
@@ -2070,6 +2098,7 @@
     window.addEventListener('beforeunload', () => {
       if (state.pollTimer) clearInterval(state.pollTimer);
       if (state.storeStatusTimer) clearInterval(state.storeStatusTimer);
+      if (state.viniAi.slideTimer) clearInterval(state.viniAi.slideTimer);
     });
 
     loadProducts();
