@@ -2278,11 +2278,11 @@
       if (els.deliveryFields) els.deliveryFields.hidden = !entrega;
       if (!els.deliverySummary) return;
       if (!entrega) {
-        els.deliverySummary.textContent = 'Retirada no local selecionada.';
+        els.deliverySummary.textContent = `Retirada no local selecionada - subtotal ${money(cartTotal())} - total ${money(cartTotal())}`;
         return;
       }
       if (state.deliveryQuote?.entregaDisponivel) {
-        els.deliverySummary.textContent = `Entrega disponível · frete ${money(state.deliveryQuote.frete || 0)} · total ${money(state.deliveryQuote.total || cartTotal())}`;
+        els.deliverySummary.textContent = `Subtotal ${money(cartTotal())} - frete ${money(state.deliveryQuote.frete || 0)} - total ${money(state.deliveryQuote.total || cartTotal())}`;
       } else if (state.deliveryQuote?.motivo) {
         els.deliverySummary.textContent = state.deliveryQuote.motivo;
       } else {
