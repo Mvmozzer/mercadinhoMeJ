@@ -2832,16 +2832,8 @@
           renderSummary();
         }
       }
-      if (!tg || typeof tg.sendData !== 'function') {
-        showToast('Abra esta loja pelo Mini App para enviar o pedido');
-        setCartOpen(true);
-        return;
-      }
-      state.sending = true;
-      renderSummary();
-      tg.sendData(JSON.stringify(payload));
-      showToast('Pedido enviado');
-      setTimeout(() => tg.close(), 650);
+      showToast('Conecte a API do Mini App para finalizar a compra aqui.');
+      setCartOpen(true);
     }
 
     els.search.addEventListener('input', event => {
