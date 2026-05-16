@@ -8,6 +8,13 @@
     },
     "secoes": [
       {
+        "id": "e2e_secao",
+        "nome": "Secao E2E",
+        "emoji": "",
+        "ativo": true,
+        "ordem": 0
+      },
+      {
         "id": "biscoitos",
         "nome": "🍪 Biscoitos",
         "emoji": "",
@@ -68,6 +75,30 @@
         "imagem": "https://americanas.vtexassets.com/arquivos/ids/435238-768-auto/7088329547_1_xlarge.webp?v=638972657351170000&quality=9",
         "codigoBarras": "7896024761309",
         "sku": "BISC-BISC-002",
+        "points_label_text": "",
+        "points_preview": 0
+      },
+      {
+        "id": "e2e_secao_1",
+        "produto_id": "e2e_secao_1",
+        "secao": "e2e_secao",
+        "secao_nome": "Secao E2E",
+        "secao_ordem": 0,
+        "index": 1,
+        "nome": "Produto E2E",
+        "grupo": "Grupo E2E",
+        "marca": "",
+        "tamanho": "un",
+        "descricao": "",
+        "preco": 9.99,
+        "preco_base": 9.99,
+        "preco_normal": 9.99,
+        "preco_promocional": 0,
+        "promocao": false,
+        "estoque": 5,
+        "imagem": "",
+        "codigoBarras": "",
+        "sku": "sku_e2e",
         "points_label_text": "",
         "points_preview": 0
       }
