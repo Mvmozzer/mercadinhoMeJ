@@ -613,6 +613,12 @@
       overflow-wrap: anywhere;
     }
 
+    .order-mini .actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
     .cart-drawer {
       position: fixed;
       inset: auto 0 0 0;
@@ -624,6 +630,79 @@
       background: var(--paper);
       box-shadow: 0 -18px 42px rgba(23, 18, 11, .22);
       overflow: hidden;
+    }
+
+    .payment-drawer {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 31;
+      display: none;
+      max-height: min(88vh, 760px);
+      border-radius: 12px 12px 0 0;
+      background: var(--paper);
+      box-shadow: 0 -18px 42px rgba(23, 18, 11, .22);
+      overflow: hidden;
+    }
+
+    .payment-drawer.open {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    .payment-body {
+      display: grid;
+      gap: 10px;
+      padding: 12px 14px calc(14px + env(safe-area-inset-bottom));
+      overflow: auto;
+    }
+
+    .pix-box {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .pix-qr {
+      width: min(220px, 100%);
+      justify-self: center;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .pix-code {
+      width: 100%;
+      min-height: 74px;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 9px;
+      background: var(--surface-2);
+      color: var(--text);
+      font: 12px Consolas, monospace;
+    }
+
+    .payment-actions {
+      display: grid;
+      gap: 8px;
+    }
+
+    .proof-upload {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .proof-upload input {
+      width: 100%;
+      min-height: 40px;
     }
 
     .cart-drawer.open {
@@ -847,6 +926,16 @@
         border-radius: 12px;
       }
 
+      .payment-drawer {
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        bottom: 18px;
+        width: min(480px, calc(100vw - 32px));
+        border: 1px solid var(--line);
+        border-radius: 12px;
+      }
+
       .bottom-bar {
         left: 50%;
         transform: translateX(-50%);
@@ -956,6 +1045,18 @@
     </div>
   </aside>
 
+  <aside class="payment-drawer" id="paymentDrawer" aria-label="Pagamento">
+    <div class="cart-head">
+      <h2>Pagamento do pedido</h2>
+      <button class="ghost" id="closePayment" type="button">Fechar</button>
+    </div>
+    <div class="payment-body">
+      <div class="pix-box" id="miniappPaymentContent">
+        <div class="empty">Nenhum pagamento aberto.</div>
+      </div>
+    </div>
+  </aside>
+
   <footer class="bottom-bar">
     <div class="bottom-main">
       <div class="bottom-total">
@@ -1004,6 +1105,11 @@
       usePointsDiscount: false,
       usePointsFreeDelivery: false,
       sending: false,
+      paymentOpen: false,
+      paymentOrderId: '',
+      paymentData: null,
+      paymentLoading: false,
+      proofUploading: false,
       pollTimer: null,
       storeStatusTimer: null,
       loja: {
@@ -1029,6 +1135,9 @@
       cartButton: document.getElementById('cartButton'),
       cartDrawer: document.getElementById('cartDrawer'),
       closeCart: document.getElementById('closeCart'),
+      paymentDrawer: document.getElementById('paymentDrawer'),
+      closePayment: document.getElementById('closePayment'),
+      miniappPaymentContent: document.getElementById('miniappPaymentContent'),
       cartList: document.getElementById('cartList'),
       itemsCount: document.getElementById('itemsCount'),
       bottomCount: document.getElementById('bottomCount'),
@@ -1149,13 +1258,18 @@
       }
       els.ordersList.innerHTML = state.orders.slice(0, 5).map(order => {
         const status = order.statusDetalhe?.label || order.status || 'aguardando';
+        const statusPagamento = String(order.pagamento?.status || '').toLowerCase();
+        const podePagar = order.pagamento?.metodo === 'pix' && ['pendente', 'aguardando_comprovante', 'comprovante_recusado'].includes(statusPagamento);
         return `
           <div class="order-mini">
             <span>
               <strong>Pedido #${escapeHtml(order.id)}</strong>
               <small>${escapeHtml(status)} | ${escapeHtml(money(order.total))}</small>
             </span>
-            <button class="ghost" type="button" data-order-id="${escapeHtml(order.id)}">Atualizar</button>
+            <div class="actions">
+              ${podePagar ? `<button class="primary" type="button" data-payment-id="${escapeHtml(order.id)}">Pagar</button>` : ''}
+              <button class="ghost" type="button" data-order-id="${escapeHtml(order.id)}">Atualizar</button>
+            </div>
           </div>
         `;
       }).join('');
@@ -1939,6 +2053,132 @@
       }
     }
 
+    function statusPagamentoLabel(status = '') {
+      const chave = String(status || '').toLowerCase();
+      const labels = {
+        pendente: 'Pendente',
+        aguardando_comprovante: 'Aguardando comprovante',
+        comprovante_recebido: 'Comprovante recebido',
+        comprovante_recusado: 'Comprovante recusado',
+        pago: 'Pago'
+      };
+      return labels[chave] || (status || 'Pendente');
+    }
+
+    function setPaymentOpen(open) {
+      state.paymentOpen = open;
+      els.paymentDrawer.classList.toggle('open', open);
+      if (open) renderMiniAppPayment();
+    }
+
+    async function abrirPagamentoMiniApp(orderId, pagamentoInicial = null) {
+      state.paymentOrderId = String(orderId || '');
+      state.paymentData = pagamentoInicial;
+      state.paymentLoading = !pagamentoInicial;
+      setCartOpen(false);
+      setPaymentOpen(true);
+      if (pagamentoInicial) renderMiniAppPayment();
+      if (!state.paymentOrderId || pagamentoInicial?.pix?.disponivel) return;
+      try {
+        const data = await apiFetch(`/api/miniapp/orders/${encodeURIComponent(state.paymentOrderId)}/payment`);
+        state.paymentData = data.pagamento || null;
+      } catch (err) {
+        showToast(err.message || 'Falha ao carregar pagamento');
+      } finally {
+        state.paymentLoading = false;
+        renderMiniAppPayment();
+      }
+    }
+
+    function renderMiniAppPayment() {
+      if (!els.miniappPaymentContent) return;
+      if (state.paymentLoading) {
+        els.miniappPaymentContent.innerHTML = '<div class="empty">Carregando pagamento...</div>';
+        return;
+      }
+      const pagamento = state.paymentData || {};
+      const pix = pagamento.pix || {};
+      if (!pix.disponivel) {
+        els.miniappPaymentContent.innerHTML = '<div class="empty">Pagamento ainda indisponível. A loja vai conferir o pedido.</div>';
+        return;
+      }
+      const comprovanteRecebido = String(pagamento.status || '').toLowerCase() === 'comprovante_recebido';
+      els.miniappPaymentContent.innerHTML = `
+        <div>
+          <strong>Pedido #${escapeHtml(state.paymentOrderId)}</strong>
+          <small>Status: ${escapeHtml(statusPagamentoLabel(pagamento.status))}</small>
+        </div>
+        ${pix.qrCodeDataUrl ? `<img class="pix-qr" src="${escapeHtml(pix.qrCodeDataUrl)}" alt="QR Code Pix">` : ''}
+        <div>
+          <strong>${money(pix.valor)}</strong>
+          <small>${escapeHtml(pix.recebedor || 'Recebedor Pix')}${pix.cidade ? ` · ${escapeHtml(pix.cidade)}` : ''}</small>
+        </div>
+        <textarea class="pix-code" id="miniappPixCode" readonly>${escapeHtml(pix.copiaECola || '')}</textarea>
+        <div class="payment-actions">
+          <button class="primary" id="copyMiniappPix" type="button">Copiar código Pix</button>
+        </div>
+        <div class="proof-upload">
+          <strong>${comprovanteRecebido ? 'Comprovante enviado' : 'Depois de pagar'}</strong>
+          <small>${comprovanteRecebido ? 'A loja recebeu seu comprovante e vai conferir o pagamento.' : 'Envie o comprovante aqui mesmo para a loja conferir.'}</small>
+          ${comprovanteRecebido ? '' : `
+            <input id="miniappProofFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif,application/pdf">
+            <button class="ghost" id="uploadMiniappProof" type="button">Enviar comprovante</button>
+          `}
+        </div>
+      `;
+      els.miniappPaymentContent.querySelector('#copyMiniappPix')?.addEventListener('click', copiarPixMiniApp);
+      els.miniappPaymentContent.querySelector('#uploadMiniappProof')?.addEventListener('click', enviarComprovanteMiniApp);
+    }
+
+    async function copiarPixMiniApp() {
+      const codigo = String(state.paymentData?.pix?.copiaECola || '').trim();
+      if (!codigo) return;
+      try {
+        await navigator.clipboard.writeText(codigo);
+        showToast('Código Pix copiado');
+      } catch (_) {
+        const campo = els.miniappPaymentContent.querySelector('#miniappPixCode');
+        campo?.select();
+        document.execCommand?.('copy');
+        showToast('Código Pix selecionado para copiar');
+      }
+    }
+
+    async function enviarComprovanteMiniApp() {
+      if (state.proofUploading || !state.paymentOrderId) return;
+      const input = els.miniappPaymentContent.querySelector('#miniappProofFile');
+      const arquivo = input?.files?.[0];
+      if (!arquivo) return showToast('Escolha o comprovante');
+      state.proofUploading = true;
+      const botao = els.miniappPaymentContent.querySelector('#uploadMiniappProof');
+      if (botao) {
+        botao.disabled = true;
+        botao.textContent = 'Enviando...';
+      }
+      try {
+        const formData = new FormData();
+        formData.append('comprovante', arquivo);
+        const response = await fetch(`${apiBase()}/api/miniapp/orders/${encodeURIComponent(state.paymentOrderId)}/payment/proof`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            ...(state.miniappToken ? { Authorization: `Bearer ${state.miniappToken}` } : {})
+          },
+          body: formData
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.ok === false) throw new Error(data.erro || 'Falha ao enviar comprovante');
+        state.paymentData = data.pagamento || state.paymentData;
+        showToast(data.mensagem || 'Comprovante enviado');
+        await loadOrders();
+      } catch (err) {
+        showToast(err.message || 'Falha ao enviar comprovante');
+      } finally {
+        state.proofUploading = false;
+        renderMiniAppPayment();
+      }
+    }
+
     function renderSummary() {
       const count = cartCount();
       const total = cartTotal();
@@ -2033,6 +2273,9 @@
           if (me?.cliente) state.cliente = me.cliente;
           await loadOrders();
           render();
+          if (data.pedido?.id && data.pagamento) {
+            await abrirPagamentoMiniApp(data.pedido.id, data.pagamento);
+          }
           showToast(data.pedido?.id
             ? `Pedido #${data.pedido.id} enviado${data.telegramNotificado === false ? ' no painel' : ''}`
             : 'Pedido enviado');
@@ -2074,6 +2317,7 @@
     els.cartButton.addEventListener('click', () => setCartOpen(true));
     els.reviewCart.addEventListener('click', () => setCartOpen(true));
     els.closeCart.addEventListener('click', () => setCartOpen(false));
+    els.closePayment.addEventListener('click', () => setPaymentOpen(false));
     els.clearCart.addEventListener('click', clearCart);
     els.clearCartDrawer.addEventListener('click', clearCart);
     els.paymentPix?.addEventListener('change', () => {
@@ -2090,6 +2334,11 @@
     els.sendCart.addEventListener('click', sendCartToTelegram);
     els.sendCartDrawer.addEventListener('click', sendCartToTelegram);
     els.ordersList.addEventListener('click', event => {
+      const pagamentoBtn = event.target.closest('[data-payment-id]');
+      if (pagamentoBtn) {
+        abrirPagamentoMiniApp(pagamentoBtn.dataset.paymentId);
+        return;
+      }
       const btn = event.target.closest('[data-order-id]');
       if (!btn) return;
       loadOrders();
