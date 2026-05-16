@@ -721,6 +721,48 @@
       min-height: 40px;
     }
 
+    .delivery-options,
+    .delivery-fields {
+      display: grid;
+      gap: 8px;
+    }
+
+    .delivery-options {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .delivery-choice {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 8px 10px;
+      background: var(--surface);
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .delivery-choice input {
+      width: auto;
+      min-height: auto;
+      accent-color: var(--green);
+    }
+
+    .delivery-fields input {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 8px 10px;
+      background: var(--surface);
+    }
+
+    .delivery-fields[hidden] {
+      display: none;
+    }
+
     .cart-drawer.open {
       display: grid;
       grid-template-rows: auto minmax(0, 1fr) auto;
@@ -1059,6 +1101,21 @@
         </label>
         <small>Depois de enviar o pedido, o código Pix fica disponível para copiar e pagar no banco.</small>
       </div>
+      <div class="payment-box" aria-label="Entrega ou retirada">
+        <strong>Recebimento</strong>
+        <div class="delivery-options">
+          <label class="delivery-choice"><input id="deliveryPickup" type="radio" name="deliveryMode" value="retirada" checked> Retirada</label>
+          <label class="delivery-choice"><input id="deliveryHome" type="radio" name="deliveryMode" value="entrega"> Entrega</label>
+        </div>
+        <div class="delivery-fields" id="deliveryFields" hidden>
+          <input id="deliveryCep" placeholder="CEP">
+          <input id="deliveryRua" placeholder="Rua">
+          <input id="deliveryNumero" placeholder="Número">
+          <input id="deliveryComplemento" placeholder="Complemento (opcional)">
+          <input id="deliveryBairro" placeholder="Bairro">
+        </div>
+        <small id="deliverySummary">Retirada no local selecionada.</small>
+      </div>
       <div class="payment-box" id="pointsBox" hidden>
         <label class="payment-option">
           <input id="usePointsDiscount" type="checkbox">
@@ -1125,6 +1182,8 @@
       cart: new Map(),
       cartOpen: false,
       paymentMethod: 'pix',
+      deliveryMode: 'retirada',
+      deliveryQuote: null,
       miniappToken: localStorage.getItem(MINIAPP_TOKEN_KEY) || '',
       authOk: false,
       authMode: 'pending',
@@ -1182,6 +1241,15 @@
       pointsSummary: document.getElementById('pointsSummary'),
       usePointsDiscount: document.getElementById('usePointsDiscount'),
       usePointsFreeDelivery: document.getElementById('usePointsFreeDelivery'),
+      deliveryPickup: document.getElementById('deliveryPickup'),
+      deliveryHome: document.getElementById('deliveryHome'),
+      deliveryFields: document.getElementById('deliveryFields'),
+      deliveryCep: document.getElementById('deliveryCep'),
+      deliveryRua: document.getElementById('deliveryRua'),
+      deliveryNumero: document.getElementById('deliveryNumero'),
+      deliveryComplemento: document.getElementById('deliveryComplemento'),
+      deliveryBairro: document.getElementById('deliveryBairro'),
+      deliverySummary: document.getElementById('deliverySummary'),
       clearCart: document.getElementById('clearCart'),
       clearCartDrawer: document.getElementById('clearCartDrawer'),
       reviewCart: document.getElementById('reviewCart'),
@@ -1259,6 +1327,7 @@
         els.authStatus.textContent = data.modoDev ? 'Modo dev' : 'Mini App conectado';
         const me = await apiFetch('/api/miniapp/me').catch(() => null);
         state.cliente = me?.cliente || data.cliente || null;
+        preencherEnderecoEntrega();
         renderSummary();
         await loadOrders();
         state.pollTimer = setInterval(loadOrders, 5000);
@@ -1927,10 +1996,80 @@
       els.pointsSummary.textContent = `Saldo: ${saldo} pontos${discount ? ` (${discount})` : ''}. Entrega gratis: ${cfg.free_delivery_points_cost || 0} pontos.`;
     }
 
+    function preencherEnderecoEntrega() {
+      const cliente = state.cliente || {};
+      if (els.deliveryCep && !els.deliveryCep.value) els.deliveryCep.value = cliente.cep || '';
+      if (els.deliveryRua && !els.deliveryRua.value) els.deliveryRua.value = cliente.rua || '';
+      if (els.deliveryNumero && !els.deliveryNumero.value) els.deliveryNumero.value = cliente.numero || '';
+      if (els.deliveryComplemento && !els.deliveryComplemento.value) els.deliveryComplemento.value = cliente.complemento || '';
+      if (els.deliveryBairro && !els.deliveryBairro.value) els.deliveryBairro.value = cliente.bairro || '';
+    }
+
+    function enderecoEntregaPayload() {
+      return {
+        cep: String(els.deliveryCep?.value || '').trim(),
+        rua: String(els.deliveryRua?.value || '').trim(),
+        numero: String(els.deliveryNumero?.value || '').trim(),
+        complemento: String(els.deliveryComplemento?.value || '').trim(),
+        bairro: String(els.deliveryBairro?.value || '').trim()
+      };
+    }
+
+    function renderDeliveryMode() {
+      const entrega = state.deliveryMode === 'entrega';
+      if (els.deliveryFields) els.deliveryFields.hidden = !entrega;
+      if (!els.deliverySummary) return;
+      if (!entrega) {
+        els.deliverySummary.textContent = 'Retirada no local selecionada.';
+        return;
+      }
+      if (state.deliveryQuote?.entregaDisponivel) {
+        els.deliverySummary.textContent = `Entrega disponível · frete ${money(state.deliveryQuote.frete || 0)} · total ${money(state.deliveryQuote.total || cartTotal())}`;
+      } else if (state.deliveryQuote?.motivo) {
+        els.deliverySummary.textContent = state.deliveryQuote.motivo;
+      } else {
+        els.deliverySummary.textContent = 'Informe o endereço para calcular a entrega.';
+      }
+    }
+
+    async function atualizarCotacaoEntrega() {
+      if (state.deliveryMode !== 'entrega' || !state.authOk || !cartItems().length) {
+        state.deliveryQuote = null;
+        renderDeliveryMode();
+        return;
+      }
+      const entrega = enderecoEntregaPayload();
+      if (!entrega.cep || !entrega.rua || !entrega.numero || !entrega.bairro) {
+        state.deliveryQuote = null;
+        renderDeliveryMode();
+        return;
+      }
+      try {
+        const data = await apiFetch('/api/miniapp/delivery/quote', {
+          method: 'POST',
+          body: JSON.stringify({
+            modalidade_entrega: 'entrega',
+            entrega,
+            items: cartItems().map(item => ({
+              produto_id: item.id,
+              secao: item.section,
+              index: item.index,
+              quantidade: item.quantity
+            }))
+          })
+        });
+        state.deliveryQuote = data;
+      } catch (err) {
+        state.deliveryQuote = { entregaDisponivel: false, motivo: err.message || 'Não foi possível calcular a entrega.' };
+      }
+      renderDeliveryMode();
+    }
+
     function setCartOpen(open) {
       state.cartOpen = open;
       els.cartDrawer.classList.toggle('open', open);
       renderCart();
+      renderDeliveryMode();
       renderViniAIOutdoor();
     }
 
@@ -2280,6 +2419,18 @@
         showToast('Adicione ao menos um produto');
         return;
       }
+      if (state.deliveryMode === 'entrega') {
+        const endereco = enderecoEntregaPayload();
+        if (!endereco.cep || !endereco.rua || !endereco.numero || !endereco.bairro) {
+          setCartOpen(true);
+          return showToast('Informe CEP, rua, n?mero e bairro para entrega');
+        }
+        await atualizarCotacaoEntrega();
+        if (!state.deliveryQuote?.entregaDisponivel) {
+          setCartOpen(true);
+          return showToast(state.deliveryQuote?.motivo || 'Entrega indispon?vel para este endere?o');
+        }
+      }
       const payload = {
         type: 'mercadinho_cart',
         source: 'telegram_mini_app_html',
@@ -2287,6 +2438,8 @@
         forma_pagamento: state.paymentMethod,
         metodo_pagamento: state.paymentMethod,
         pagamento: { metodo: state.paymentMethod },
+        modalidade_entrega: state.deliveryMode,
+        entrega: state.deliveryMode === 'entrega' ? enderecoEntregaPayload() : {},
         use_points_discount: state.usePointsDiscount === true,
         use_points_free_delivery: state.usePointsFreeDelivery === true,
         items,
@@ -2357,6 +2510,14 @@
     els.paymentPix?.addEventListener('change', () => {
       state.paymentMethod = 'pix';
     });
+    [els.deliveryPickup, els.deliveryHome].forEach(input => input?.addEventListener('change', () => {
+      state.deliveryMode = els.deliveryHome?.checked ? 'entrega' : 'retirada';
+      state.deliveryQuote = null;
+      renderDeliveryMode();
+      atualizarCotacaoEntrega();
+    }));
+    [els.deliveryCep, els.deliveryRua, els.deliveryNumero, els.deliveryComplemento, els.deliveryBairro]
+      .forEach(input => input?.addEventListener('change', atualizarCotacaoEntrega));
     els.usePointsDiscount?.addEventListener('change', () => {
       state.usePointsDiscount = els.usePointsDiscount.checked;
       renderPointsOptions();
