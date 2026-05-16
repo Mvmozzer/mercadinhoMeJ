@@ -590,6 +590,22 @@
       box-shadow: 0 8px 22px rgba(35, 28, 15, .08);
     }
 
+    .checkout-preview {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 8px 22px rgba(35, 28, 15, .08);
+    }
+
+    .checkout-preview .payment-box {
+      padding: 0;
+      border: 0;
+      background: transparent;
+    }
+
     .orders-panel[hidden] {
       display: none;
     }
@@ -1007,6 +1023,20 @@
         <div id="ordersList"></div>
       </section>
 
+      <section class="checkout-preview" id="checkoutPreview" hidden>
+        <div class="section-head">
+          <h2>Pagamento</h2>
+          <span id="checkoutPreviewStatus">No Mini App</span>
+        </div>
+        <div class="payment-box" aria-label="Forma de pagamento selecionada">
+          <label class="payment-option">
+            <input type="radio" name="paymentMethodPreview" value="pix" checked disabled>
+            Pix copia e cola
+          </label>
+          <small>Ao finalizar, o QR Code e o código Pix aparecem aqui no Mini App.</small>
+        </div>
+      </section>
+
       <div id="products"></div>
     </main>
   </div>
@@ -1138,6 +1168,8 @@
       paymentDrawer: document.getElementById('paymentDrawer'),
       closePayment: document.getElementById('closePayment'),
       miniappPaymentContent: document.getElementById('miniappPaymentContent'),
+      checkoutPreview: document.getElementById('checkoutPreview'),
+      checkoutPreviewStatus: document.getElementById('checkoutPreviewStatus'),
       cartList: document.getElementById('cartList'),
       itemsCount: document.getElementById('itemsCount'),
       bottomCount: document.getElementById('bottomCount'),
@@ -2188,6 +2220,8 @@
       els.bottomCount.textContent = count ? `${label} selecionados` : 'Carrinho vazio';
       els.total.textContent = money(total);
       els.drawerTotal.textContent = money(total);
+      if (els.checkoutPreview) els.checkoutPreview.hidden = count < 1;
+      if (els.checkoutPreviewStatus) els.checkoutPreviewStatus.textContent = count ? `${label} no carrinho` : 'No Mini App';
       renderPointsOptions();
       [els.sendCart, els.sendCartDrawer].forEach(button => {
         button.disabled = count < 1 || state.sending || !state.loja.aceitaPedidos;
