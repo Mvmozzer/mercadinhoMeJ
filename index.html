@@ -300,6 +300,11 @@
     .vini-ai-outdoor {
       position: relative;
       overflow: hidden;
+      min-height: 272px;
+      isolation: isolate;
+      background:
+        linear-gradient(90deg, rgba(16, 13, 9, .96) 0%, rgba(22, 17, 12, .9) 46%, rgba(22, 17, 12, .56) 100%),
+        url('assets/vini-ai-outdoor.png') center right / cover no-repeat;
     }
 
     .vini-ai-outdoor::after {
@@ -311,6 +316,15 @@
       height: 150px;
       border-radius: 50%;
       background: rgba(227, 189, 114, .16);
+      pointer-events: none;
+    }
+
+    .vini-ai-outdoor::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background: linear-gradient(180deg, rgba(0, 0, 0, .08), rgba(0, 0, 0, .34));
       pointer-events: none;
     }
 
@@ -373,6 +387,33 @@
       color: rgba(255, 255, 255, .72);
       font-size: 12px;
       line-height: 1.4;
+    }
+
+    .vini-ai-reason {
+      color: rgba(255, 255, 255, .9);
+    }
+
+    .vini-ai-badges {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .vini-ai-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      border-radius: 999px;
+      padding: 3px 7px;
+      background: rgba(255, 255, 255, .12);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .vini-ai-badge.promo {
+      background: rgba(227, 189, 114, .18);
+      color: var(--gold-2);
     }
 
     .vini-ai-slide-row {
@@ -1974,6 +2015,36 @@
       ));
     }
 
+    function cartProductNames(items = cartItems(), limit = 2) {
+      return items.slice(0, limit).map(item => item.name).filter(Boolean);
+    }
+
+    function recommendationWithReason(product, reason, source = 'catalog') {
+      return product ? { ...product, viniReason: reason, viniSource: source } : null;
+    }
+
+    function promotionRecommendations(excludedIds = new Set()) {
+      return availableProducts()
+        .filter(product => product.promotion && !excludedIds.has(product.id))
+        .sort((a, b) => {
+          const descontoA = Math.max(0, Number(a.normalPrice || 0) - Number(a.price || 0));
+          const descontoB = Math.max(0, Number(b.normalPrice || 0) - Number(b.price || 0));
+          return descontoB - descontoA || a.name.localeCompare(b.name, 'pt-BR');
+        })
+        .map(product => recommendationWithReason(product, 'Está em promoção agora.', 'promotion'));
+    }
+
+    function cartAwareRecommendations(itemsInCart = cartItems()) {
+      const cartIds = new Set(itemsInCart.map(item => item.id));
+      const complements = complementProductsFor(itemsInCart)
+        .map(product => recommendationWithReason(product, 'Combina com o que já está no seu carrinho.', 'cart'));
+      const promotions = promotionRecommendations(cartIds);
+      const fallback = homeRecommendations()
+        .filter(product => !cartIds.has(product.id))
+        .map(product => recommendationWithReason(product, 'Boa opção disponível para completar sua compra.', 'catalog'));
+      return uniqueProducts([...complements, ...promotions, ...fallback]).slice(0, 3);
+    }
+
     function homeRecommendations() {
       const preferredSections = Array.from(state.viniAi.viewedSections.entries())
         .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))
@@ -1989,10 +2060,10 @@
         diversified.push(product);
       });
       return uniqueProducts([
-        ...behaviorBased,
-        ...availableProducts().filter(product => product.promotion),
-        ...diversified,
-        ...availableProducts()
+        ...promotionRecommendations(),
+        ...behaviorBased.map(product => recommendationWithReason(product, 'Você demonstrou interesse nesta seção.', 'behavior')),
+        ...diversified.map(product => recommendationWithReason(product, 'Produto disponível para conhecer.', 'catalog')),
+        ...availableProducts().map(product => recommendationWithReason(product, 'Produto disponível para compra.', 'catalog'))
       ]).slice(0, 3);
     }
 
@@ -2024,30 +2095,33 @@
         };
       }
       if (context === 'checkout') {
+        const itemsInCart = cartItems();
+        const nomes = cartProductNames(itemsInCart);
         return {
           contextLabel: 'Finalização',
-          message: 'Antes de finalizar, confira endereço, forma de pagamento e itens do carrinho.',
-          items: complementProductsFor(cartItems()).slice(0, 2),
+          message: nomes.length
+            ? `Antes de finalizar ${nomes.join(' e ')}, veja se falta algum complemento útil.`
+            : 'Antes de finalizar, confira endereço, forma de pagamento e itens do carrinho.',
+          items: cartAwareRecommendations(itemsInCart).slice(0, 2),
           status: 'ready'
         };
       }
       if (context === 'cart') {
         const itemsInCart = cartItems();
-        const complements = complementProductsFor(itemsInCart);
+        const suggestions = cartAwareRecommendations(itemsInCart);
+        const nomes = cartProductNames(itemsInCart);
         if (!itemsInCart.length) {
           return {
             contextLabel: 'Carrinho',
-            message: 'Posso te ajudar a montar uma compra mais completa com base no catálogo disponível.',
+            message: 'Posso te ajudar a montar uma compra mais completa com base no catálogo e nas promoções de agora.',
             items: homeRecommendations(),
             status: 'ready'
           };
         }
         return {
           contextLabel: 'Carrinho',
-          message: complements.length
-            ?'Seu carrinho já está quase pronto. Posso sugerir alguns complementos úteis.'
-            : 'Seu carrinho está bem encaminhado. Revise os itens antes de finalizar.',
-          items: (complements.length ?complements : homeRecommendations()).slice(0, 3),
+          message: `Vi ${nomes.join(' e ')} no seu carrinho. Separei complementos e ofertas que podem fazer sentido agora.`,
+          items: suggestions,
           status: 'ready'
         };
       }
@@ -2059,7 +2133,9 @@
           message: complements.length
             ?'Boa escolha. Talvez você também precise de itens que costumam acompanhar esse produto.'
             : 'Esse item combina com alguns produtos do catálogo. Quer ver sugestões?',
-          items: (complements.length ?complements : homeRecommendations()).slice(0, 3),
+          items: (complements.length
+            ? complements.map(item => recommendationWithReason(item, `Combina com ${product.name}.`, 'product'))
+            : homeRecommendations()).slice(0, 3),
           status: 'ready'
         };
       }
@@ -2101,10 +2177,20 @@
         return;
       }
       const item = items[Math.min(state.viniAi.slideIndex, items.length - 1)];
+      const promoBadge = item.promotion
+        ? `<span class="vini-ai-badge promo">Promoção</span>`
+        : '';
+      const reason = item.viniReason
+        ? `<small class="vini-ai-reason">${escapeHtml(item.viniReason)}</small>`
+        : '';
       els.viniAiSlide.innerHTML = `
         <div>
           <strong>${escapeHtml(item.name)}</strong>
           <small>${escapeHtml(item.sectionLabel)} · ${item.stock} disp.</small>
+          ${reason}
+        </div>
+        <div class="vini-ai-badges">
+          ${promoBadge}
         </div>
         <div class="vini-ai-slide-row">
           <span class="vini-ai-price">${money(item.price)}</span>
