@@ -8,6 +8,13 @@
     },
     "secoes": [
       {
+        "id": "biscoitos",
+        "nome": "🍪 Biscoitos",
+        "emoji": "",
+        "ativo": true,
+        "ordem": 11
+      },
+      {
         "id": "bebidas",
         "nome": "🥤 Bebidas",
         "emoji": "",
@@ -39,6 +46,30 @@
         "sku": "BEBI-REFR-002",
         "points_label_text": "Compre e ganhe 10 pontos sem validade",
         "points_preview": 10
+      },
+      {
+        "id": "biscoitos_1",
+        "produto_id": "biscoitos_1",
+        "secao": "biscoitos",
+        "secao_nome": "🍪 Biscoitos",
+        "secao_ordem": 11,
+        "index": 1,
+        "nome": "Biscoito Recheio Chocolate Piraquê Pacote 76g",
+        "grupo": "Recheados",
+        "marca": "PIRAQUÊ",
+        "tamanho": "76g",
+        "descricao": "",
+        "preco": 6.39,
+        "preco_base": 6.39,
+        "preco_normal": 6.59,
+        "preco_promocional": 6.39,
+        "promocao": true,
+        "estoque": 5,
+        "imagem": "https://americanas.vtexassets.com/arquivos/ids/435238-768-auto/7088329547_1_xlarge.webp?v=638972657351170000&quality=9",
+        "codigoBarras": "7896024761309",
+        "sku": "BISC-BISC-002",
+        "points_label_text": "",
+        "points_preview": 0
       }
     ],
     "mostrar_produtos_sem_estoque": true
