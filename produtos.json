@@ -84,8 +84,8 @@
       "product_point_offer_active": false,
       "product_point_offer_starts_at": "",
       "product_point_offer_ends_at": "",
-      "points_label_text": "",
-      "pointsLabelText": "",
+      "points_label_text": "Compre e ganhe 10 pontos sem validade",
+      "pointsLabelText": "Compre e ganhe 10 pontos sem validade",
       "points_preview": 10
     }
   ],
