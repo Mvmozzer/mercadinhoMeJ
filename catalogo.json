@@ -6,7 +6,40 @@
       "mensagem": "Loja aberta. Pode fazer seu pedido.",
       "aceitaPedidos": true
     },
-    "secoes": [],
-    "produtos": []
+    "secoes": [
+      {
+        "id": "bebidas",
+        "nome": "🥤 Bebidas",
+        "emoji": "",
+        "ativo": true,
+        "ordem": 14
+      }
+    ],
+    "produtos": [
+      {
+        "id": "bebidas_1",
+        "produto_id": "bebidas_1",
+        "secao": "bebidas",
+        "secao_nome": "🥤 Bebidas",
+        "secao_ordem": 14,
+        "index": 1,
+        "nome": "Refrigerante Coca Cola Original Garrafa 2l",
+        "grupo": "Refrigerantes",
+        "marca": "COCA-COLA",
+        "tamanho": "2l",
+        "descricao": "",
+        "preco": 10.18,
+        "preco_base": 10.18,
+        "preco_normal": 10.18,
+        "preco_promocional": 9.99,
+        "promocao": false,
+        "estoque": 10,
+        "imagem": "https://images.openfoodfacts.org/images/products/789/490/002/7013/front_pt.26.400.jpg",
+        "codigoBarras": "7894900027013",
+        "sku": "BEBI-REFR-002",
+        "points_label_text": "",
+        "points_preview": 0
+      }
+    ]
   }
 }
