@@ -40,6 +40,7 @@
         "points_label_text": "Compre e ganhe 10 pontos sem validade",
         "points_preview": 10
       }
-    ]
+    ],
+    "mostrar_produtos_sem_estoque": true
   }
 }

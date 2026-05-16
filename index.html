@@ -610,6 +610,102 @@
       display: none;
     }
 
+    [hidden] {
+      display: none !important;
+    }
+
+    .journey-progress,
+    .registration-panel,
+    .confirmation-panel {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 8px 22px rgba(35, 28, 15, .08);
+    }
+
+    .journey-steps {
+      display: flex;
+      gap: 7px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .journey-steps::-webkit-scrollbar {
+      display: none;
+    }
+
+    .journey-step {
+      flex: 0 0 auto;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 5px 9px;
+      background: var(--surface-2);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .journey-step.active {
+      border-color: var(--brand);
+      background: var(--brand);
+      color: #fff;
+    }
+
+    .journey-step.done {
+      border-color: rgba(31, 122, 67, .28);
+      background: var(--green-2);
+      color: var(--green);
+    }
+
+    .registration-form,
+    .confirmation-grid {
+      display: grid;
+      gap: 8px;
+    }
+
+    .registration-form label {
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .registration-form input {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 8px 10px;
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    .checkout-stage {
+      display: grid;
+      gap: 8px;
+    }
+
+    .checkout-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .checkout-step-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .stock-empty {
+      color: var(--danger);
+      font-weight: 700;
+    }
+
     .order-mini {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
@@ -1041,6 +1137,32 @@
     <nav class="category-strip" id="tabs" aria-label="Categorias"></nav>
 
     <main>
+      <section class="journey-progress" id="journeyProgress" aria-label="Etapas da compra">
+        <div class="section-head">
+          <h2>Compra no Mini App</h2>
+          <span id="journeyStatus">Preparando</span>
+        </div>
+        <div class="journey-steps" id="journeySteps"></div>
+      </section>
+
+      <section class="registration-panel" id="registrationPanel" hidden>
+        <div class="section-head">
+          <h2>Primeiro acesso</h2>
+          <span>Cadastro r?pido</span>
+        </div>
+        <p>Antes de comprar, confirme seus dados. Eles ser?o usados no pedido e na entrega.</p>
+        <form class="registration-form" id="registrationForm">
+          <label>Nome<input id="profileName" autocomplete="name" required></label>
+          <label>Telefone com DDD<input id="profilePhone" inputmode="tel" autocomplete="tel" required></label>
+          <label>CEP<input id="profileCep" inputmode="numeric" autocomplete="postal-code"></label>
+          <label>Rua<input id="profileRua" autocomplete="street-address"></label>
+          <label>N?mero<input id="profileNumero" autocomplete="address-line2"></label>
+          <label>Complemento<input id="profileComplemento"></label>
+          <label>Bairro<input id="profileBairro"></label>
+          <button class="primary" id="saveProfile" type="submit">Salvar e ver cat?logo</button>
+        </form>
+      </section>
+
       <section class="vini-ai-outdoor" id="viniAiOutdoor" aria-label="Vini AI no Mini App">
         <div class="vini-ai-copy">
           <span class="vini-ai-kicker">Assistente de compras</span>
@@ -1065,18 +1187,12 @@
         <div id="ordersList"></div>
       </section>
 
-      <section class="checkout-preview" id="checkoutPreview" hidden>
+      <section class="confirmation-panel" id="confirmationPanel" hidden>
         <div class="section-head">
-          <h2>Pagamento</h2>
-          <span id="checkoutPreviewStatus">No Mini App</span>
+          <h2>Pedido confirmado</h2>
+          <span id="confirmationStatus">Processando</span>
         </div>
-        <div class="payment-box" aria-label="Forma de pagamento selecionada">
-          <label class="payment-option">
-            <input type="radio" name="paymentMethodPreview" value="pix" checked disabled>
-            Pix copia e cola
-          </label>
-          <small>Ao finalizar, o QR Code e o código Pix aparecem aqui no Mini App.</small>
-        </div>
+        <div class="confirmation-grid" id="confirmationContent"></div>
       </section>
 
       <div id="products"></div>
@@ -1090,17 +1206,16 @@
     </div>
     <div class="cart-list" id="cartList"></div>
     <div class="cart-foot">
+      <span class="checkout-step-label" id="checkoutStepLabel">Etapa 1 de 3 ? Carrinho</span>
       <div class="summary-line">
         <span id="itemsCount">Carrinho vazio</span>
         <strong id="drawerTotal">R$ 0,00</strong>
       </div>
-      <div class="payment-box" aria-label="Forma de pagamento">
-        <label class="payment-option">
-          <input id="paymentPix" type="radio" name="paymentMethod" value="pix" checked>
-          Pix copia e cola
-        </label>
-        <small>Depois de enviar o pedido, o código Pix fica disponível para copiar e pagar no banco.</small>
+      <div class="checkout-stage" id="cartStepPanel">
+        <small>Revise os itens antes de escolher como deseja receber.</small>
+        <button class="primary" id="continueToDelivery" type="button" disabled>Continuar para entrega</button>
       </div>
+      <div class="checkout-stage" id="deliveryStepPanel" hidden>
       <div class="payment-box" aria-label="Entrega ou retirada">
         <strong>Recebimento</strong>
         <div class="delivery-options">
@@ -1127,7 +1242,18 @@
         </label>
         <small id="pointsSummary">Saldo de pontos indisponivel.</small>
       </div>
-      <button class="primary" id="sendCartDrawer" type="button" disabled>Finalizar pedido</button>
+      <div class="payment-box" aria-label="Forma de pagamento">
+        <label class="payment-option">
+          <input id="paymentPix" type="radio" name="paymentMethod" value="pix" checked>
+          Pix copia e cola
+        </label>
+        <small>O QR Code e o c?digo Pix aparecer?o na pr?xima etapa, dentro do Mini App.</small>
+      </div>
+      <div class="checkout-actions">
+        <button class="ghost" id="backToCart" type="button">Voltar ao carrinho</button>
+        <button class="primary" id="sendCartDrawer" type="button" disabled>Ir para pagamento</button>
+      </div>
+      </div>
       <button class="danger" id="clearCartDrawer" type="button" disabled>Limpar carrinho</button>
     </div>
   </aside>
@@ -1154,7 +1280,7 @@
     </div>
     <div class="bottom-actions">
       <button class="ghost" id="clearCart" type="button" disabled>Limpar</button>
-      <button class="primary" id="sendCart" type="button" disabled>Finalizar pedido</button>
+      <button class="primary" id="sendCart" type="button" disabled>Revisar carrinho</button>
     </div>
   </footer>
 
@@ -1166,8 +1292,8 @@
       tg.expand();
       applyTelegramTheme(tg);
       if (tg.MainButton) {
-        tg.MainButton.setText('Finalizar pedido');
-        tg.MainButton.onClick(() => sendCartToTelegram());
+        tg.MainButton.setText('Revisar carrinho');
+        tg.MainButton.onClick(() => iniciarCheckout());
       }
     }
     window.addEventListener('load', () => tg?.ready?.());
@@ -1181,6 +1307,7 @@
       query: '',
       cart: new Map(),
       cartOpen: false,
+      checkoutStep: 'catalog',
       paymentMethod: 'pix',
       deliveryMode: 'retirada',
       deliveryQuote: null,
@@ -1191,6 +1318,7 @@
       catalogSource: 'loading',
       orders: [],
       cliente: null,
+      savingProfile: false,
       usePointsDiscount: false,
       usePointsFreeDelivery: false,
       sending: false,
@@ -1199,6 +1327,8 @@
       paymentData: null,
       paymentLoading: false,
       proofUploading: false,
+      confirmationOrder: null,
+      trackingUrl: '',
       pollTimer: null,
       storeStatusTimer: null,
       loja: {
@@ -1218,6 +1348,18 @@
 
     const els = {
       tabs: document.getElementById('tabs'),
+      journeyStatus: document.getElementById('journeyStatus'),
+      journeySteps: document.getElementById('journeySteps'),
+      registrationPanel: document.getElementById('registrationPanel'),
+      registrationForm: document.getElementById('registrationForm'),
+      profileName: document.getElementById('profileName'),
+      profilePhone: document.getElementById('profilePhone'),
+      profileCep: document.getElementById('profileCep'),
+      profileRua: document.getElementById('profileRua'),
+      profileNumero: document.getElementById('profileNumero'),
+      profileComplemento: document.getElementById('profileComplemento'),
+      profileBairro: document.getElementById('profileBairro'),
+      saveProfile: document.getElementById('saveProfile'),
       products: document.getElementById('products'),
       search: document.getElementById('search'),
       clearSearch: document.getElementById('clearSearch'),
@@ -1227,13 +1369,19 @@
       paymentDrawer: document.getElementById('paymentDrawer'),
       closePayment: document.getElementById('closePayment'),
       miniappPaymentContent: document.getElementById('miniappPaymentContent'),
-      checkoutPreview: document.getElementById('checkoutPreview'),
-      checkoutPreviewStatus: document.getElementById('checkoutPreviewStatus'),
+      confirmationPanel: document.getElementById('confirmationPanel'),
+      confirmationStatus: document.getElementById('confirmationStatus'),
+      confirmationContent: document.getElementById('confirmationContent'),
       cartList: document.getElementById('cartList'),
       itemsCount: document.getElementById('itemsCount'),
       bottomCount: document.getElementById('bottomCount'),
       total: document.getElementById('total'),
       drawerTotal: document.getElementById('drawerTotal'),
+      checkoutStepLabel: document.getElementById('checkoutStepLabel'),
+      cartStepPanel: document.getElementById('cartStepPanel'),
+      deliveryStepPanel: document.getElementById('deliveryStepPanel'),
+      continueToDelivery: document.getElementById('continueToDelivery'),
+      backToCart: document.getElementById('backToCart'),
       sendCart: document.getElementById('sendCart'),
       sendCartDrawer: document.getElementById('sendCartDrawer'),
       paymentPix: document.getElementById('paymentPix'),
@@ -1327,6 +1475,7 @@
         els.authStatus.textContent = data.modoDev ? 'Modo dev' : 'Mini App conectado';
         const me = await apiFetch('/api/miniapp/me').catch(() => null);
         state.cliente = me?.cliente || data.cliente || null;
+        preencherFormularioCadastro();
         preencherEnderecoEntrega();
         renderSummary();
         await loadOrders();
@@ -1336,7 +1485,107 @@
         state.authMode = 'fallback';
         els.authStatus.textContent = tg ? 'Mini App em modo compatível' : 'Abra pelo Mini App';
       }
+      renderJourney();
       renderOrders();
+    }
+
+    function clientePrecisaCadastro() {
+      return state.authOk && state.cliente?.cadastroCompleto !== true;
+    }
+
+    function preencherFormularioCadastro() {
+      const cliente = state.cliente || {};
+      if (els.profileName) els.profileName.value = cliente.nome || '';
+      if (els.profilePhone) els.profilePhone.value = cliente.telefone || '';
+      if (els.profileCep) els.profileCep.value = cliente.cep || '';
+      if (els.profileRua) els.profileRua.value = cliente.rua || '';
+      if (els.profileNumero) els.profileNumero.value = cliente.numero || '';
+      if (els.profileComplemento) els.profileComplemento.value = cliente.complemento || '';
+      if (els.profileBairro) els.profileBairro.value = cliente.bairro || '';
+    }
+
+    function etapaJornadaAtual() {
+      if (clientePrecisaCadastro()) return 'cadastro';
+      if (state.checkoutStep === 'payment') return 'pagamento';
+      if (state.checkoutStep === 'confirmation') return 'confirmacao';
+      if (state.checkoutStep === 'delivery') return 'entrega';
+      if (state.checkoutStep === 'cart') return 'carrinho';
+      return 'catalogo';
+    }
+
+    function renderJourney() {
+      const atual = etapaJornadaAtual();
+      const etapas = [
+        ['cadastro', 'Cadastro'],
+        ['catalogo', 'Catalogo'],
+        ['carrinho', 'Carrinho'],
+        ['entrega', 'Entrega'],
+        ['pagamento', 'Pagamento'],
+        ['confirmacao', 'Confirmacao']
+      ];
+      const indiceAtual = etapas.findIndex(([id]) => id === atual);
+      if (els.journeySteps) {
+        els.journeySteps.innerHTML = etapas.map(([id, label], index) => {
+          const classe = index < indiceAtual ? 'done' : (id === atual ? 'active' : '');
+          return `<span class="journey-step ${classe}">${label}</span>`;
+        }).join('');
+      }
+      if (els.journeyStatus) {
+        const labels = {
+          cadastro: 'Primeiro acesso',
+          catalogo: 'Escolha produtos',
+          carrinho: 'Revise itens',
+          entrega: 'Defina recebimento',
+          pagamento: 'Pague no Mini App',
+          confirmacao: 'Acompanhe o pedido'
+        };
+        els.journeyStatus.textContent = labels[atual] || 'Compra no Mini App';
+      }
+      const bloqueadoPorCadastro = clientePrecisaCadastro();
+      if (els.registrationPanel) els.registrationPanel.hidden = !bloqueadoPorCadastro;
+      [els.tabs, els.viniAiOutdoor, els.products].forEach(el => {
+        if (el) el.hidden = bloqueadoPorCadastro;
+      });
+      if (bloqueadoPorCadastro && state.cartOpen) {
+        state.cartOpen = false;
+        els.cartDrawer?.classList.remove('open');
+      }
+    }
+
+    async function salvarCadastroMiniApp(event) {
+      event?.preventDefault?.();
+      if (!state.authOk || state.savingProfile) return;
+      state.savingProfile = true;
+      if (els.saveProfile) {
+        els.saveProfile.disabled = true;
+        els.saveProfile.textContent = 'Salvando...';
+      }
+      try {
+        const data = await apiFetch('/api/miniapp/profile', {
+          method: 'POST',
+          body: JSON.stringify({
+            nome: String(els.profileName?.value || '').trim(),
+            telefone: String(els.profilePhone?.value || '').trim(),
+            cep: String(els.profileCep?.value || '').trim(),
+            rua: String(els.profileRua?.value || '').trim(),
+            numero: String(els.profileNumero?.value || '').trim(),
+            complemento: String(els.profileComplemento?.value || '').trim(),
+            bairro: String(els.profileBairro?.value || '').trim()
+          })
+        });
+        state.cliente = data.cliente || state.cliente;
+        preencherEnderecoEntrega();
+        renderJourney();
+        showToast('Cadastro salvo. Bem-vindo ao catalogo.');
+      } catch (err) {
+        showToast(err.message || 'Nao foi possivel salvar seu cadastro');
+      } finally {
+        state.savingProfile = false;
+        if (els.saveProfile) {
+          els.saveProfile.disabled = false;
+          els.saveProfile.textContent = 'Salvar e ver catalogo';
+        }
+      }
     }
 
     async function loadOrders() {
@@ -1489,6 +1738,7 @@
 
     function normalizeCatalogPayload(payload) {
       if (payload?.catalogo?.produtos) {
+        const mostrarSemEstoque = payload.catalogo.mostrar_produtos_sem_estoque !== false;
         return payload.catalogo.produtos.map(product => {
           const section = product.secao || product.section || '';
           const sectionInfo = (payload.catalogo.secoes || []).find(item => item.id === section) || {};
@@ -1515,7 +1765,7 @@
             image: imageUrl(product),
             keywords: normalizeText(`${product.nome || ''} ${product.secao_nome || sectionInfo.nome || ''} ${product.grupo || ''} ${product.marca || ''} ${product.tamanho || ''} ${product.codigoBarras || ''} ${product.sku || ''}`)
           };
-        }).filter(item => item.id && item.price > 0 && item.stock > 0)
+        }).filter(item => item.id && item.price > 0 && (mostrarSemEstoque || item.stock > 0))
           .sort((a, b) => Number(a.sectionOrder || 0) - Number(b.sectionOrder || 0) || a.sectionLabel.localeCompare(b.sectionLabel, 'pt-BR') || a.name.localeCompare(b.name, 'pt-BR'));
       }
       return normalizeProducts(payload || {});
@@ -1527,7 +1777,7 @@
       ).filter(({ product }) => {
         if (!product || product.ativo === false || isGroup(product)) return false;
         const price = priceInfo(product).price;
-        return price > 0 && stockOf(product) > 0;
+        return price > 0;
       }).map(({ section, index, product }) => {
         const prices = priceInfo(product);
         const group = product.grupo_nome || product.produto_pai_nome || product.nome_principal || product.categoria || section;
@@ -1591,6 +1841,10 @@
         }
       });
       persistCart();
+    }
+
+    function availableProducts() {
+      return state.products.filter(product => Number(product.stock || 0) > 0);
     }
 
     async function loadProducts() {
@@ -1715,7 +1969,7 @@
         });
       });
       return uniqueProducts(Array.from(terms).flatMap(term =>
-        state.products.filter(product => !selectedIds.has(product.id) && productHasTerm(product, term))
+        availableProducts().filter(product => !selectedIds.has(product.id) && productHasTerm(product, term))
       ));
     }
 
@@ -1724,20 +1978,20 @@
         .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))
         .map(([section]) => section);
       const behaviorBased = preferredSections.flatMap(section =>
-        state.products.filter(product => product.section === section)
+        availableProducts().filter(product => product.section === section)
       );
       const sectionsSeen = new Set();
       const diversified = [];
-      state.products.forEach(product => {
+      availableProducts().forEach(product => {
         if (sectionsSeen.has(product.section)) return;
         sectionsSeen.add(product.section);
         diversified.push(product);
       });
       return uniqueProducts([
         ...behaviorBased,
-        ...state.products.filter(product => product.promotion),
+        ...availableProducts().filter(product => product.promotion),
         ...diversified,
-        ...state.products
+        ...availableProducts()
       ]).slice(0, 3);
     }
 
@@ -1760,7 +2014,7 @@
           status: 'loading'
         };
       }
-      if (!state.products.length) {
+      if (!availableProducts().length) {
         return {
           contextLabel: 'Sem catálogo',
           message: 'Ainda não há produtos disponíveis para recomendar.',
@@ -1809,7 +2063,7 @@
         };
       }
       if (context === 'category') {
-        const categoryItems = state.products.filter(product => product.section === state.section);
+        const categoryItems = availableProducts().filter(product => product.section === state.section);
         return {
           contextLabel: categoryItems[0]?.sectionLabel || 'Categoria',
           message: 'Posso te ajudar a escolher produtos úteis nesta categoria.',
@@ -1913,6 +2167,10 @@
     function changeQty(id, delta) {
       const product = state.products.find(item => item.id === id);
       if (!product) return;
+      if (Number(product.stock || 0) <= 0) {
+        showToast('Produto sem estoque no momento');
+        return;
+      }
       state.viniAi.focusedProductId = id;
       state.viniAi.interactedProducts.add(id);
       const current = cartQty(id);
@@ -2032,16 +2290,67 @@
       }
     }
 
+    function entregaProntaParaPagamento() {
+      if (state.deliveryMode === 'retirada') return true;
+      return state.deliveryQuote?.entregaDisponivel === true;
+    }
+
+    function renderCheckoutStep() {
+      const etapaEntrega = state.checkoutStep === 'delivery';
+      if (els.cartStepPanel) els.cartStepPanel.hidden = etapaEntrega;
+      if (els.deliveryStepPanel) els.deliveryStepPanel.hidden = !etapaEntrega;
+      if (els.checkoutStepLabel) {
+        els.checkoutStepLabel.textContent = etapaEntrega
+          ? 'Etapa 2 de 3 - Entrega'
+          : 'Etapa 1 de 3 - Carrinho';
+      }
+      if (els.continueToDelivery) {
+        els.continueToDelivery.disabled = cartCount() < 1 || state.sending;
+      }
+      if (els.sendCartDrawer) {
+        els.sendCartDrawer.disabled = cartCount() < 1 || state.sending || !state.loja.aceitaPedidos || !entregaProntaParaPagamento();
+      }
+      renderJourney();
+    }
+
+    function iniciarCheckout() {
+      if (clientePrecisaCadastro()) {
+        showToast('Conclua seu cadastro para comprar');
+        return;
+      }
+      if (!cartItems().length) {
+        showToast('Adicione ao menos um produto');
+        return;
+      }
+      state.checkoutStep = 'cart';
+      setCartOpen(true);
+      renderCheckoutStep();
+    }
+
+    async function irParaEntrega() {
+      if (!cartItems().length) return showToast('Adicione ao menos um produto');
+      state.checkoutStep = 'delivery';
+      renderCheckoutStep();
+      await atualizarCotacaoEntrega();
+    }
+
+    function voltarAoCarrinho() {
+      state.checkoutStep = 'cart';
+      renderCheckoutStep();
+    }
+
     async function atualizarCotacaoEntrega() {
       if (state.deliveryMode !== 'entrega' || !state.authOk || !cartItems().length) {
         state.deliveryQuote = null;
         renderDeliveryMode();
+        renderCheckoutStep();
         return;
       }
       const entrega = enderecoEntregaPayload();
       if (!entrega.cep || !entrega.rua || !entrega.numero || !entrega.bairro) {
         state.deliveryQuote = null;
         renderDeliveryMode();
+        renderCheckoutStep();
         return;
       }
       try {
@@ -2063,13 +2372,17 @@
         state.deliveryQuote = { entregaDisponivel: false, motivo: err.message || 'Não foi possível calcular a entrega.' };
       }
       renderDeliveryMode();
+      renderCheckoutStep();
     }
 
     function setCartOpen(open) {
       state.cartOpen = open;
+      if (open && !['cart', 'delivery'].includes(state.checkoutStep)) state.checkoutStep = 'cart';
+      if (!open && ['cart', 'delivery'].includes(state.checkoutStep)) state.checkoutStep = 'catalog';
       els.cartDrawer.classList.toggle('open', open);
       renderCart();
       renderDeliveryMode();
+      renderCheckoutStep();
       renderViniAIOutdoor();
     }
 
@@ -2113,11 +2426,14 @@
       const media = item.image
         ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}" loading="lazy" referrerpolicy="no-referrer">`
         : `<span>${item.name.slice(0, 1).toUpperCase()}</span>`;
-      const details = [item.brand, item.unit, `${item.stock} disp.`].filter(Boolean).join(' | ');
+      const semEstoque = Number(item.stock || 0) <= 0;
+      const details = [item.brand, item.unit, semEstoque ? 'Sem estoque' : `${item.stock} disp.`].filter(Boolean).join(' | ');
       const price = item.promotion
         ? `<div class="price"><del>${money(item.normalPrice)}</del><strong>${money(item.price)}</strong></div>`
         : `<div class="price"><strong>${money(item.price)}</strong></div>`;
-      const control = qty > 0
+      const control = semEstoque
+        ? '<span class="stock-empty">Indisponivel</span>'
+        : qty > 0
         ? `<div class="qty"><button type="button" data-action="minus">-</button><span>${qty}</span><button type="button" data-action="plus">+</button></div>`
         : `<button class="primary add-single" type="button" data-action="plus">Adicionar</button>`;
 
@@ -2238,8 +2554,11 @@
 
     function setPaymentOpen(open) {
       state.paymentOpen = open;
+      if (open) state.checkoutStep = 'payment';
+      else state.checkoutStep = state.confirmationOrder ? 'confirmation' : 'catalog';
       els.paymentDrawer.classList.toggle('open', open);
       if (open) renderMiniAppPayment();
+      renderJourney();
     }
 
     async function abrirPagamentoMiniApp(orderId, pagamentoInicial = null) {
@@ -2270,7 +2589,11 @@
       const pagamento = state.paymentData || {};
       const pix = pagamento.pix || {};
       if (!pix.disponivel) {
-        els.miniappPaymentContent.innerHTML = '<div class="empty">Pagamento ainda indisponível. A loja vai conferir o pedido.</div>';
+        els.miniappPaymentContent.innerHTML = `
+          <div class="empty">Pagamento ainda indisponivel. Verifique a configuracao do Pix e tente novamente.</div>
+          <button class="ghost" id="retryMiniappPayment" type="button">Tentar novamente</button>
+        `;
+        els.miniappPaymentContent.querySelector('#retryMiniappPayment')?.addEventListener('click', () => abrirPagamentoMiniApp(state.paymentOrderId));
         return;
       }
       const comprovanteRecebido = String(pagamento.status || '').toLowerCase() === 'comprovante_recebido';
@@ -2299,6 +2622,30 @@
       `;
       els.miniappPaymentContent.querySelector('#copyMiniappPix')?.addEventListener('click', copiarPixMiniApp);
       els.miniappPaymentContent.querySelector('#uploadMiniappProof')?.addEventListener('click', enviarComprovanteMiniApp);
+    }
+
+    function renderConfirmation() {
+      if (!els.confirmationPanel || !els.confirmationContent) return;
+      const order = state.confirmationOrder;
+      els.confirmationPanel.hidden = !order;
+      if (!order) return;
+      const entrega = order.modalidadeEntrega === 'entrega' || order.modalidade_entrega === 'entrega' ? 'Entrega' : 'Retirada';
+      const pagamentoStatus = statusPagamentoLabel(order.pagamento?.status || state.paymentData?.status || 'pendente');
+      if (els.confirmationStatus) els.confirmationStatus.textContent = pagamentoStatus;
+      els.confirmationContent.innerHTML = `
+        <div class="payment-box">
+          <strong>Pedido #${escapeHtml(order.id)}</strong>
+          <small>${escapeHtml(entrega)} - ${money(order.total || 0)} - pagamento ${escapeHtml(pagamentoStatus)}</small>
+        </div>
+        <div class="payment-box">
+          <strong>Seu pedido esta sendo processado</strong>
+          <small>Pagamento, entrega e acompanhamento seguem pelo Mini App.</small>
+        </div>
+        ${state.trackingUrl ? `<button class="primary" id="openTracking" type="button">Acompanhar pedido</button>` : ''}
+      `;
+      els.confirmationContent.querySelector('#openTracking')?.addEventListener('click', () => {
+        window.open(state.trackingUrl, '_blank', 'noopener');
+      });
     }
 
     async function copiarPixMiniApp() {
@@ -2342,6 +2689,7 @@
         state.paymentData = data.pagamento || state.paymentData;
         showToast(data.mensagem || 'Comprovante enviado');
         await loadOrders();
+        renderConfirmation();
       } catch (err) {
         showToast(err.message || 'Falha ao enviar comprovante');
       } finally {
@@ -2359,29 +2707,28 @@
       els.bottomCount.textContent = count ? `${label} selecionados` : 'Carrinho vazio';
       els.total.textContent = money(total);
       els.drawerTotal.textContent = money(total);
-      if (els.checkoutPreview) els.checkoutPreview.hidden = count < 1;
-      if (els.checkoutPreviewStatus) els.checkoutPreviewStatus.textContent = count ? `${label} no carrinho` : 'No Mini App';
       renderPointsOptions();
-      [els.sendCart, els.sendCartDrawer].forEach(button => {
-        button.disabled = count < 1 || state.sending || !state.loja.aceitaPedidos;
-      });
+      if (els.sendCart) els.sendCart.disabled = count < 1 || state.sending || !state.loja.aceitaPedidos || clientePrecisaCadastro();
       [els.clearCart, els.clearCartDrawer].forEach(button => {
         button.disabled = count < 1 || state.sending;
       });
       const textoEnvio = !state.loja.aceitaPedidos
         ? (state.loja.status === 'pausada' ? 'Pedidos pausados' : 'Loja fechada')
-        : 'Finalizar pedido';
+        : 'Revisar carrinho';
       els.sendCart.textContent = state.sending ? 'Enviando...' : textoEnvio;
-      els.sendCartDrawer.textContent = state.sending ? 'Enviando...' : textoEnvio;
+      els.sendCartDrawer.textContent = state.sending ? 'Enviando...' : 'Ir para pagamento';
       if (tg?.MainButton) {
         if (count > 0 && state.loja.aceitaPedidos) {
-          tg.MainButton.setText(state.sending ? 'Enviando...' : `Enviar ${label} - ${money(total)}`);
+          tg.MainButton.setText(state.sending ? 'Enviando...' : `Revisar ${label} - ${money(total)}`);
           tg.MainButton.show();
         } else {
           tg.MainButton.hide();
         }
       }
       renderCart();
+      renderCheckoutStep();
+      renderJourney();
+      renderConfirmation();
       renderViniAIOutdoor();
     }
 
@@ -2402,6 +2749,14 @@
 
     async function sendCartToTelegram() {
       if (state.sending) return;
+      if (clientePrecisaCadastro()) {
+        showToast('Conclua seu cadastro antes de comprar');
+        return;
+      }
+      if (state.checkoutStep !== 'delivery') {
+        iniciarCheckout();
+        return;
+      }
       if (!state.loja.aceitaPedidos) {
         showToast(state.loja.mensagem || 'A loja não está recebendo pedidos agora.');
         return;
@@ -2459,6 +2814,9 @@
           const me = await apiFetch('/api/miniapp/me').catch(() => null);
           if (me?.cliente) state.cliente = me.cliente;
           await loadOrders();
+          state.confirmationOrder = data.pedido || null;
+          state.trackingUrl = data.acompanhamento || '';
+          state.checkoutStep = 'payment';
           render();
           if (data.pedido?.id && data.pagamento) {
             await abrirPagamentoMiniApp(data.pedido.id, data.pagamento);
@@ -2501,8 +2859,8 @@
       renderViniAIOutdoor();
     });
 
-    els.cartButton.addEventListener('click', () => setCartOpen(true));
-    els.reviewCart.addEventListener('click', () => setCartOpen(true));
+    els.cartButton.addEventListener('click', iniciarCheckout);
+    els.reviewCart.addEventListener('click', iniciarCheckout);
     els.closeCart.addEventListener('click', () => setCartOpen(false));
     els.closePayment.addEventListener('click', () => setPaymentOpen(false));
     els.clearCart.addEventListener('click', clearCart);
@@ -2514,6 +2872,7 @@
       state.deliveryMode = els.deliveryHome?.checked ? 'entrega' : 'retirada';
       state.deliveryQuote = null;
       renderDeliveryMode();
+      renderCheckoutStep();
       atualizarCotacaoEntrega();
     }));
     [els.deliveryCep, els.deliveryRua, els.deliveryNumero, els.deliveryComplemento, els.deliveryBairro]
@@ -2526,7 +2885,10 @@
       state.usePointsFreeDelivery = els.usePointsFreeDelivery.checked;
       renderPointsOptions();
     });
-    els.sendCart.addEventListener('click', sendCartToTelegram);
+    els.registrationForm?.addEventListener('submit', salvarCadastroMiniApp);
+    els.continueToDelivery?.addEventListener('click', irParaEntrega);
+    els.backToCart?.addEventListener('click', voltarAoCarrinho);
+    els.sendCart.addEventListener('click', iniciarCheckout);
     els.sendCartDrawer.addEventListener('click', sendCartToTelegram);
     els.ordersList.addEventListener('click', event => {
       const pagamentoBtn = event.target.closest('[data-payment-id]');
