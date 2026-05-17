@@ -1031,6 +1031,16 @@
       font-weight: 900;
     }
 
+    .cart-remove {
+      justify-self: start;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: var(--danger);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
     .cart-foot {
       display: grid;
       gap: 10px;
@@ -1671,6 +1681,21 @@
         if (els.profileBairro) els.profileBairro.value = data.bairro || els.profileBairro.value;
         if (els.profileCidade) els.profileCidade.value = data.localidade || els.profileCidade.value;
         if (els.profileEstado) els.profileEstado.value = data.uf || els.profileEstado.value;
+      } catch (_) {}
+    }
+
+    async function preencherEntregaPorCep() {
+      const cep = String(els.deliveryCep?.value || '').replace(/\D/g, '');
+      if (cep.length !== 8) return;
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await response.json();
+        if (!response.ok || data.erro) return;
+        if (els.deliveryRua) els.deliveryRua.value = data.logradouro || els.deliveryRua.value;
+        if (els.deliveryBairro) els.deliveryBairro.value = data.bairro || els.deliveryBairro.value;
+        if (els.deliveryCidade) els.deliveryCidade.value = data.localidade || els.deliveryCidade.value;
+        if (els.deliveryEstado) els.deliveryEstado.value = data.uf || els.deliveryEstado.value;
+        atualizarCotacaoEntrega();
       } catch (_) {}
     }
 
@@ -2769,10 +2794,12 @@
                 <button type="button" data-action="plus" aria-label="Aumentar quantidade">+</button>
               </div>
             </div>
+            <button class="cart-remove" type="button" data-action="remove">Remover</button>
           </div>
         `;
         row.querySelector('[data-action="minus"]').addEventListener('click', () => changeQty(item.id, -1));
         row.querySelector('[data-action="plus"]').addEventListener('click', () => changeQty(item.id, 1));
+        row.querySelector('[data-action="remove"]').addEventListener('click', () => changeQty(item.id, -item.quantity));
         row.querySelector('[data-action="plus"]').toggleAttribute('disabled', item.quantity >= item.stock);
         els.cartList.appendChild(row);
       });
@@ -3182,6 +3209,7 @@
     });
     els.registrationForm?.addEventListener('submit', salvarCadastroMiniApp);
     els.profileCep?.addEventListener('blur', preencherEnderecoPorCep);
+    els.deliveryCep?.addEventListener('blur', preencherEntregaPorCep);
     els.continueToDelivery?.addEventListener('click', irParaEntrega);
     els.backToCart?.addEventListener('click', voltarAoCarrinho);
     els.sendCartDrawer.addEventListener('click', sendCartToTelegram);
