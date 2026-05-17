@@ -3100,7 +3100,7 @@
         const endereco = enderecoEntregaPayload();
         if (!endereco.cep || !endereco.rua || !endereco.numero || !endereco.bairro || !endereco.cidade || !endereco.estado) {
           setCartOpen(true);
-          return showToast('Informe CEP, rua, número e bairro para entrega');
+          return showToast('Informe CEP, rua, número, bairro, cidade e estado para entrega');
         }
         await atualizarCotacaoEntrega();
         if (!state.deliveryQuote?.entregaDisponivel) {
