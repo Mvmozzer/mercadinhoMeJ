@@ -6,8 +6,41 @@
       "mensagem": "Loja aberta. Pode fazer seu pedido.",
       "aceitaPedidos": true
     },
-    "secoes": [],
-    "produtos": [],
+    "secoes": [
+      {
+        "id": "ovos",
+        "nome": "🥚 Ovos",
+        "emoji": "",
+        "ativo": true,
+        "ordem": 5
+      }
+    ],
+    "produtos": [
+      {
+        "id": "ovos_1",
+        "produto_id": "ovos_1",
+        "secao": "ovos",
+        "secao_nome": "🥚 Ovos",
+        "secao_ordem": 5,
+        "index": 1,
+        "nome": "Cartela c/30 Unidades",
+        "grupo": "Ovos Brancos",
+        "marca": "Nutriativo",
+        "tamanho": "un",
+        "descricao": "",
+        "preco": 20,
+        "preco_base": 20,
+        "preco_normal": 20,
+        "preco_promocional": 0,
+        "promocao": false,
+        "estoque": 24,
+        "imagem": "",
+        "codigoBarras": "7895097968189",
+        "sku": "OVOS-CART-002",
+        "points_label_text": "+20 pontos em compras acima de R$ 0,00",
+        "points_preview": 0
+      }
+    ],
     "mostrar_produtos_sem_estoque": true
   }
 }
