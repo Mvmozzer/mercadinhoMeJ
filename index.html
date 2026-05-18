@@ -2685,6 +2685,19 @@
       renderCheckoutStep();
     }
 
+    function irParaPaginaCarrinho() {
+      if (!cartItems().length) {
+        showToast('Adicione ao menos um produto');
+        return;
+      }
+      const base = apiBase();
+      if (base) {
+        window.location.assign(`${base}/carrinho`);
+        return;
+      }
+      window.location.assign('/carrinho');
+    }
+
     async function irParaEntrega() {
       if (!cartItems().length) return showToast('Adicione ao menos um produto');
       if (clientePrecisaCadastro()) return avisarCadastroTelegram();
@@ -3147,7 +3160,7 @@
     function acaoBotaoPrincipalTelegram() {
       if (state.checkoutStep === 'delivery') return sendCartToTelegram();
       if (state.checkoutStep === 'cart') return irParaEntrega();
-      return iniciarCheckout();
+      return irParaPaginaCarrinho();
     }
 
     function payloadCarrinhoMiniApp() {
@@ -3286,8 +3299,8 @@
       renderViniAIOutdoor();
     });
 
-    els.cartButton.addEventListener('click', iniciarCheckout);
-    els.reviewCart.addEventListener('click', iniciarCheckout);
+    els.cartButton.addEventListener('click', irParaPaginaCarrinho);
+    els.reviewCart.addEventListener('click', irParaPaginaCarrinho);
     els.closeCart.addEventListener('click', () => setCartOpen(false));
     els.closePayment.addEventListener('click', () => setPaymentOpen(false));
     els.clearCartDrawer.addEventListener('click', clearCart);
