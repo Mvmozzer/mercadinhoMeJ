@@ -349,6 +349,29 @@
       min-width: 0;
     }
 
+    .vini-ai-alert {
+      display: grid;
+      gap: 3px;
+      padding: 10px 11px;
+      border: 1px solid rgba(227, 189, 114, .28);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, .08);
+      color: #fff;
+    }
+
+    .vini-ai-alert strong {
+      color: var(--gold-2);
+      font-size: 12px;
+      letter-spacing: .01em;
+      text-transform: uppercase;
+    }
+
+    .vini-ai-alert span {
+      color: rgba(255, 255, 255, .92);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
     .vini-ai-reel {
       position: relative;
       z-index: 1;
@@ -1290,23 +1313,10 @@
       <section class="registration-panel" id="registrationPanel" hidden>
         <div class="section-head">
           <h2>Primeiro acesso</h2>
-          <span>Cadastro rápido</span>
+          <span>Cadastro pelo Telegram</span>
         </div>
-        <p>Antes de comprar, confirme seus dados. Eles serão usados no pedido e na entrega.</p>
-        <form class="registration-form" id="registrationForm">
-          <label>Nome completo<input id="profileName" autocomplete="name" required></label>
-          <label>CPF<input id="profileCpf" inputmode="numeric" autocomplete="off" required></label>
-          <label>Data de nascimento<input id="profileBirthDate" type="date" autocomplete="bday" required></label>
-          <label>Telefone com DDD<input id="profilePhone" inputmode="tel" autocomplete="tel" required></label>
-          <label>CEP<input id="profileCep" inputmode="numeric" autocomplete="postal-code" required></label>
-          <label>Rua<input id="profileRua" autocomplete="street-address" required></label>
-          <label>Número<input id="profileNumero" autocomplete="address-line2" required></label>
-          <label>Complemento<input id="profileComplemento"></label>
-          <label>Bairro<input id="profileBairro" required></label>
-          <label>Cidade<input id="profileCidade" required></label>
-          <label>Estado<input id="profileEstado" maxlength="2" required></label>
-          <button class="primary" id="saveProfile" type="submit">Salvar e ver catálogo</button>
-        </form>
+        <p>Você já pode ver os produtos. Para comprar, conclua seu cadastro no chat do Telegram e depois reabra a lojinha.</p>
+        <button class="primary" id="finishProfileInTelegram" type="button">Concluir no Telegram</button>
       </section>
 
       <section class="vini-ai-outdoor" id="viniAiOutdoor" aria-label="Vini AI no Mini App">
@@ -1315,6 +1325,10 @@
           <h2>Vini AI agora está no Mini App</h2>
           <p>Seu assistente inteligente para encontrar produtos, montar o carrinho e comprar melhor.</p>
           <p id="viniAiMessage">Carregando recomendações...</p>
+        </div>
+        <div class="vini-ai-alert" id="viniAiAlert" aria-live="polite">
+          <strong>Alerta do Vini</strong>
+          <span>Buscando dicas e promoções para você...</span>
         </div>
         <div class="vini-ai-reel" aria-live="polite">
           <span class="pill" id="viniAiContext">Início</span>
@@ -1454,6 +1468,7 @@
 
     const CART_KEY = 'mj_mercadinho_cart_v2';
     const MINIAPP_TOKEN_KEY = 'mj_mercadinho_miniapp_token_v1';
+    const PENDING_ORDER_KEY = 'mj_mercadinho_pending_order_v1';
 
     const state = {
       products: [],
@@ -1467,6 +1482,7 @@
       deliveryQuote: null,
       deliveryQuoteLoading: false,
       miniappToken: localStorage.getItem(MINIAPP_TOKEN_KEY) || '',
+      pendingClientOrderId: localStorage.getItem(PENDING_ORDER_KEY) || '',
       authOk: false,
       authMode: 'pending',
       catalogLoading: true,
@@ -1497,7 +1513,10 @@
         interactedProducts: new Set(),
         slideIndex: 0,
         slideSignature: '',
-        slideTimer: null
+        slideTimer: null,
+        alertIndex: 0,
+        alertSignature: '',
+        alertTimer: null
       }
     };
 
@@ -1507,6 +1526,7 @@
       journeySteps: document.getElementById('journeySteps'),
       registrationPanel: document.getElementById('registrationPanel'),
       registrationForm: document.getElementById('registrationForm'),
+      finishProfileInTelegram: document.getElementById('finishProfileInTelegram'),
       profileName: document.getElementById('profileName'),
       profileCpf: document.getElementById('profileCpf'),
       profileBirthDate: document.getElementById('profileBirthDate'),
@@ -1564,6 +1584,7 @@
       clearCartDrawer: document.getElementById('clearCartDrawer'),
       reviewCart: document.getElementById('reviewCart'),
       viniAiOutdoor: document.getElementById('viniAiOutdoor'),
+      viniAiAlert: document.getElementById('viniAiAlert'),
       viniAiContext: document.getElementById('viniAiContext'),
       viniAiMessage: document.getElementById('viniAiMessage'),
       viniAiSlide: document.getElementById('viniAiSlide'),
@@ -1738,13 +1759,16 @@
       }
       const bloqueadoPorCadastro = clientePrecisaCadastro();
       if (els.registrationPanel) els.registrationPanel.hidden = !bloqueadoPorCadastro;
-      [els.tabs, els.viniAiOutdoor, els.products].forEach(el => {
-        if (el) el.hidden = bloqueadoPorCadastro;
-      });
-      if (bloqueadoPorCadastro && state.cartOpen) {
-        state.cartOpen = false;
-        els.cartDrawer?.classList.remove('open');
-      }
+    }
+
+    function avisarCadastroTelegram() {
+      showToast('Conclua seu cadastro no Telegram para comprar');
+      els.registrationPanel?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+    }
+
+    function concluirCadastroNoTelegram() {
+      if (tg?.close) tg.close();
+      else showToast('Volte ao chat do Telegram e envie /start para concluir o cadastro');
     }
 
     async function salvarCadastroMiniApp(event) {
@@ -2022,6 +2046,7 @@
       } catch (_) {
         state.cart.clear();
       }
+      if (!state.cart.size) limparClientOrderIdPendente();
     }
 
     function persistCart() {
@@ -2030,15 +2055,31 @@
       localStorage.setItem(CART_KEY, JSON.stringify(payload));
     }
 
+    function clientOrderIdAtual() {
+      if (!state.pendingClientOrderId) {
+        state.pendingClientOrderId = `miniapp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        localStorage.setItem(PENDING_ORDER_KEY, state.pendingClientOrderId);
+      }
+      return state.pendingClientOrderId;
+    }
+
+    function limparClientOrderIdPendente() {
+      state.pendingClientOrderId = '';
+      localStorage.removeItem(PENDING_ORDER_KEY);
+    }
+
     function pruneCart() {
       const ids = new Set(state.products.map(item => item.id));
+      let alterado = false;
       state.cart.forEach((qty, id) => {
         const product = state.products.find(item => item.id === id);
         if (!ids.has(id) || !product || qty > product.stock) {
           if (product && product.stock > 0) state.cart.set(id, product.stock);
           else state.cart.delete(id);
+          alterado = true;
         }
       });
+      if (alterado) limparClientOrderIdPendente();
       persistCart();
     }
 
@@ -2391,6 +2432,57 @@
       }, 12000);
     }
 
+    function viniAIAlertMessages() {
+      const mensagens = [];
+      const promocao = promotionRecommendations()[0];
+      const itensCarrinho = cartItems();
+      const sugestaoCarrinho = itensCarrinho.length ?cartAwareRecommendations(itensCarrinho)[0] : null;
+      if (state.checkoutStep === 'delivery') {
+        mensagens.push('Confira o endereço e a forma de recebimento antes de seguir para o pagamento.');
+      }
+      if (promocao) {
+        mensagens.push(`Promoção agora: ${promocao.name} por ${money(promocao.price)}.`);
+      }
+      if (sugestaoCarrinho) {
+        mensagens.push(`Dica de compra: ${sugestaoCarrinho.name} combina com o que já está no seu carrinho.`);
+      }
+      if (!itensCarrinho.length) {
+        mensagens.push('Use a busca para achar produtos rápido e monte sua compra sem sair do Mini App.');
+      }
+      return Array.from(new Set(mensagens)).slice(0, 4);
+    }
+
+    function viniAIAlertSignature(mensagens = []) {
+      return mensagens.join('|');
+    }
+
+    function renderViniAIAlert(mensagens = viniAIAlertMessages()) {
+      if (!els.viniAiAlert) return;
+      if (!mensagens.length) {
+        els.viniAiAlert.innerHTML = '<strong>Alerta do Vini</strong><span>Sem alertas no momento.</span>';
+        return;
+      }
+      const index = Math.min(state.viniAi.alertIndex, mensagens.length - 1);
+      els.viniAiAlert.innerHTML = `<strong>Alerta do Vini</strong><span>${escapeHtml(mensagens[index])}</span>`;
+    }
+
+    function iniciarViniAIAlerts(mensagens = viniAIAlertMessages()) {
+      if (state.viniAi.alertTimer) clearInterval(state.viniAi.alertTimer);
+      if (mensagens.length < 2) {
+        state.viniAi.alertTimer = null;
+        return;
+      }
+      state.viniAi.alertTimer = setInterval(() => {
+        const atuais = viniAIAlertMessages();
+        if (viniAIAlertSignature(atuais) !== state.viniAi.alertSignature || atuais.length < 2) {
+          renderViniAIOutdoor();
+          return;
+        }
+        state.viniAi.alertIndex = (state.viniAi.alertIndex + 1) % atuais.length;
+        renderViniAIAlert(atuais);
+      }, 9000);
+    }
+
     function renderViniAIOutdoor() {
       const model = viniAIRecommendationModel();
       const signature = viniAISlideSignature(model);
@@ -2398,10 +2490,18 @@
         state.viniAi.slideSignature = signature;
         state.viniAi.slideIndex = 0;
       }
+      const alertas = viniAIAlertMessages();
+      const alertSignature = viniAIAlertSignature(alertas);
+      if (alertSignature !== state.viniAi.alertSignature) {
+        state.viniAi.alertSignature = alertSignature;
+        state.viniAi.alertIndex = 0;
+      }
       els.viniAiContext.textContent = model.contextLabel;
       els.viniAiMessage.textContent = model.message;
+      renderViniAIAlert(alertas);
       renderViniAISlide(model);
       iniciarViniAISlider(model);
+      iniciarViniAIAlerts(alertas);
     }
 
     function cartQty(id) {
@@ -2419,6 +2519,7 @@
       state.viniAi.interactedProducts.add(id);
       const current = cartQty(id);
       const next = Math.max(0, Math.min(product.stock, current + delta));
+      if (next !== current) limparClientOrderIdPendente();
       if (next > 0) state.cart.set(id, next);
       else state.cart.delete(id);
       persistCart();
@@ -2521,6 +2622,11 @@
       };
     }
 
+    function enderecoEntregaCompleto() {
+      const entrega = enderecoEntregaPayload();
+      return Boolean(entrega.cep && entrega.rua && entrega.numero && entrega.bairro && entrega.cidade && entrega.estado);
+    }
+
     function renderDeliveryMode() {
       const entrega = state.deliveryMode === 'entrega';
       if (els.deliveryFields) els.deliveryFields.hidden = !entrega;
@@ -2533,6 +2639,8 @@
         els.deliverySummary.textContent = 'Calculando entrega...';
       } else if (state.deliveryQuote?.entregaDisponivel) {
         els.deliverySummary.textContent = `Subtotal ${money(cartTotal())} - frete ${money(state.deliveryQuote.frete || 0)} - total ${money(state.deliveryQuote.total || cartTotal())}`;
+      } else if (!state.authOk && enderecoEntregaCompleto()) {
+        els.deliverySummary.textContent = 'Endereço informado. A entrega será confirmada ao finalizar o pedido.';
       } else if (state.deliveryQuote?.motivo) {
         els.deliverySummary.textContent = state.deliveryQuote.motivo;
       } else {
@@ -2542,6 +2650,7 @@
 
     function entregaProntaParaPagamento() {
       if (state.deliveryMode === 'retirada') return true;
+      if (!state.authOk) return enderecoEntregaCompleto();
       return state.deliveryQuote?.entregaDisponivel === true;
     }
 
@@ -2559,15 +2668,14 @@
       }
       if (els.sendCartDrawer) {
         els.sendCartDrawer.disabled = cartCount() < 1 || state.sending || !state.loja.aceitaPedidos || !entregaProntaParaPagamento();
+        els.sendCartDrawer.textContent = state.sending
+          ?'Enviando...'
+          : (!state.authOk && etapaEntrega ?'Finalizar pedido' : 'Continuar para pagamento');
       }
       renderJourney();
     }
 
     function iniciarCheckout() {
-      if (clientePrecisaCadastro()) {
-        showToast('Conclua seu cadastro para comprar');
-        return;
-      }
       if (!cartItems().length) {
         showToast('Adicione ao menos um produto');
         return;
@@ -2579,9 +2687,7 @@
 
     async function irParaEntrega() {
       if (!cartItems().length) return showToast('Adicione ao menos um produto');
-      if (!state.authOk && tg?.sendData) {
-        return enviarCarrinhoParaCheckoutTelegram();
-      }
+      if (clientePrecisaCadastro()) return avisarCadastroTelegram();
       state.checkoutStep = 'delivery';
       renderCheckoutStep();
       await atualizarCotacaoEntrega();
@@ -2997,13 +3103,15 @@
       [els.clearCartDrawer].forEach(button => {
         button.disabled = count < 1 || state.sending;
       });
-      els.sendCartDrawer.textContent = state.sending ?'Enviando...' : 'Continuar para pagamento';
+      els.sendCartDrawer.textContent = state.sending
+        ?'Enviando...'
+        : (!state.authOk && state.checkoutStep === 'delivery' ?'Finalizar pedido' : 'Continuar para pagamento');
       if (tg?.MainButton) {
         if (count > 0 && state.loja.aceitaPedidos) {
           const textoPrincipal = state.sending
             ?'Enviando...'
             : state.checkoutStep === 'delivery'
-              ?`Continuar para pagamento - ${money(total)}`
+              ?(!state.authOk ?`Finalizar pedido - ${money(total)}` : `Continuar para pagamento - ${money(total)}`)
               : state.checkoutStep === 'cart'
                 ?'Continuar para entrega'
                 : `Carrinho - ${money(total)}`;
@@ -3029,6 +3137,7 @@
     function clearCart() {
       if (!state.cart.size) return;
       state.cart.clear();
+      limparClientOrderIdPendente();
       persistCart();
       renderProducts();
       renderSummary();
@@ -3045,7 +3154,7 @@
       return {
         type: 'mercadinho_cart',
         source: 'telegram_mini_app_html',
-        client_order_id: `miniapp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        client_order_id: clientOrderIdAtual(),
         items: cartItems().map(item => ({
           produto_id: item.id,
           secao: item.section,
@@ -3059,20 +3168,20 @@
       };
     }
 
-    function enviarCarrinhoParaCheckoutTelegram() {
-      const payload = payloadCarrinhoMiniApp();
+    function enviarCarrinhoParaCheckoutTelegram(payload = payloadCarrinhoMiniApp()) {
       if (!payload.items.length) return showToast('Adicione ao menos um produto');
       tg.sendData(JSON.stringify(payload));
       state.cart.clear();
+      limparClientOrderIdPendente();
       persistCart();
       render();
-      showToast('Carrinho enviado. Vamos concluir cadastro, entrega e pagamento no Telegram.');
+      showToast('Pedido enviado ao Telegram. A loja vai processar os dados enviados pela lojinha.');
     }
 
     async function sendCartToTelegram() {
       if (state.sending) return;
       if (clientePrecisaCadastro()) {
-        showToast('Conclua seu cadastro antes de comprar');
+        avisarCadastroTelegram();
         return;
       }
       if (state.checkoutStep !== 'delivery') {
@@ -3102,16 +3211,18 @@
           setCartOpen(true);
           return showToast('Informe CEP, rua, número, bairro, cidade e estado para entrega');
         }
-        await atualizarCotacaoEntrega();
-        if (!state.deliveryQuote?.entregaDisponivel) {
+        if (state.authOk) {
+          await atualizarCotacaoEntrega();
+        }
+        if (state.authOk && !state.deliveryQuote?.entregaDisponivel) {
           setCartOpen(true);
-          return showToast(state.deliveryQuote?.motivo || 'Entrega indispon?vel para este endere?o');
+          return showToast(state.deliveryQuote?.motivo || 'Entrega indisponível para este endereço');
         }
       }
       const payload = {
         type: 'mercadinho_cart',
         source: 'telegram_mini_app_html',
-        client_order_id: `miniapp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        client_order_id: clientOrderIdAtual(),
         forma_pagamento: state.paymentMethod,
         metodo_pagamento: state.paymentMethod,
         pagamento: { metodo: state.paymentMethod },
@@ -3132,6 +3243,7 @@
             body: JSON.stringify(payload)
           });
           state.cart.clear();
+          limparClientOrderIdPendente();
           persistCart();
           const me = await apiFetch('/api/miniapp/me').catch(() => null);
           if (me?.cliente) state.cliente = me.cliente;
@@ -3154,7 +3266,7 @@
           renderSummary();
         }
       }
-      if (tg?.sendData) return enviarCarrinhoParaCheckoutTelegram();
+      if (tg?.sendData) return enviarCarrinhoParaCheckoutTelegram(payload);
       showToast('Abra a loja pelo Telegram ou conecte a API do Mini App para finalizar a compra.');
       setCartOpen(true);
     }
@@ -3208,6 +3320,7 @@
       renderPointsOptions();
     });
     els.registrationForm?.addEventListener('submit', salvarCadastroMiniApp);
+    els.finishProfileInTelegram?.addEventListener('click', concluirCadastroNoTelegram);
     els.profileCep?.addEventListener('blur', preencherEnderecoPorCep);
     els.deliveryCep?.addEventListener('blur', preencherEntregaPorCep);
     els.continueToDelivery?.addEventListener('click', irParaEntrega);
@@ -3228,6 +3341,7 @@
       if (state.pollTimer) clearInterval(state.pollTimer);
       if (state.storeStatusTimer) clearInterval(state.storeStatusTimer);
       if (state.viniAi.slideTimer) clearInterval(state.viniAi.slideTimer);
+      if (state.viniAi.alertTimer) clearInterval(state.viniAi.alertTimer);
     });
 
     loadProducts();
