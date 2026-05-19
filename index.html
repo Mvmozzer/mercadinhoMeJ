@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
@@ -1279,7 +1279,7 @@
   <div class="app">
     <header class="topbar">
       <div class="brand-row">
-        <img class="logo" src="assets/logo-mj-mercadinho.png" alt="M&J Mercadinho">
+        <img class="logo" src="assets/logo-mj-mercadinho.png?v=b7fa511fd7df4a4a" alt="M&J Mercadinho">
         <div class="brand-copy">
           <h1>M&J Mercadinho</h1>
           <div class="store-meta">
@@ -1292,8 +1292,8 @@
 
       <div class="search-row">
         <div class="search-wrap">
-          <span>âŒ•</span>
-          <input id="search" type="search" placeholder="Buscar arroz, cafÃ©, refrigerante..." autocomplete="off">
+          <span>⌕</span>
+          <input id="search" type="search" placeholder="Buscar arroz, café, refrigerante..." autocomplete="off">
         </div>
         <button class="ghost" id="clearSearch" type="button">Limpar</button>
       </div>
@@ -1315,25 +1315,25 @@
           <h2>Primeiro acesso</h2>
           <span>Cadastro pelo Telegram</span>
         </div>
-        <p>VocÃª jÃ¡ pode ver os produtos. Para comprar, conclua seu cadastro no chat do Telegram e depois reabra a lojinha.</p>
+        <p>Você já pode ver os produtos. Para comprar, conclua seu cadastro no chat do Telegram e depois reabra a lojinha.</p>
         <button class="primary" id="finishProfileInTelegram" type="button">Concluir no Telegram</button>
       </section>
 
       <section class="vini-ai-outdoor" id="viniAiOutdoor" aria-label="Vini AI no Mini App">
         <div class="vini-ai-copy">
           <span class="vini-ai-kicker">Assistente de compras</span>
-          <h2>Vini AI agora estÃ¡ no Mini App</h2>
+          <h2>Vini AI agora está no Mini App</h2>
           <p>Seu assistente inteligente para encontrar produtos, montar o carrinho e comprar melhor.</p>
-          <p id="viniAiMessage">Carregando recomendaÃ§Ãµes...</p>
+          <p id="viniAiMessage">Carregando recomendações...</p>
         </div>
         <div class="vini-ai-alert" id="viniAiAlert" aria-live="polite">
           <strong>Alerta do Vini</strong>
-          <span>Buscando dicas e promoÃ§Ãµes para vocÃª...</span>
+          <span>Buscando dicas e promoções para você...</span>
         </div>
         <div class="vini-ai-reel" aria-live="polite">
-          <span class="pill" id="viniAiContext">InÃ­cio</span>
+          <span class="pill" id="viniAiContext">Início</span>
           <div class="vini-ai-slide" id="viniAiSlide">
-            <div class="vini-ai-state">Buscando produtos disponÃ­veis...</div>
+            <div class="vini-ai-state">Buscando produtos disponíveis...</div>
           </div>
           <div class="vini-ai-dots" id="viniAiDots"></div>
         </div>
@@ -1402,7 +1402,7 @@
         <div class="delivery-fields" id="deliveryFields" hidden>
           <input id="deliveryCep" placeholder="CEP">
           <input id="deliveryRua" placeholder="Rua">
-          <input id="deliveryNumero" placeholder="NÃºmero">
+          <input id="deliveryNumero" placeholder="Número">
           <input id="deliveryComplemento" placeholder="Complemento (opcional)">
           <input id="deliveryBairro" placeholder="Bairro">
           <input id="deliveryCidade" placeholder="Cidade">
@@ -1455,6 +1455,8 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script>
+    window.__MJ_API_BASE__ = "";
+    window.__MJ_PUBLICATION_VERSION__ = "b7fa511fd7df4a4a";
     const tg = window.Telegram && window.Telegram.WebApp ?window.Telegram.WebApp : null;
     if (tg) {
       tg.expand();
@@ -1617,11 +1619,37 @@
       const url = new URL(window.location.href);
       const fromQuery = url.searchParams.get('apiBase');
       if (fromQuery) {
-        const clean = fromQuery.replace(/\/+$/, '');
-        localStorage.setItem('mj_mercadinho_api_base', clean);
+        const clean = safeApiBase(fromQuery);
+        if (clean) localStorage.setItem('mj_mercadinho_api_base', clean);
         return clean;
       }
-      return (localStorage.getItem('mj_mercadinho_api_base') || '').replace(/\/+$/, '');
+      return safeApiBase(window.__MJ_API_BASE__) || safeApiBase(localStorage.getItem('mj_mercadinho_api_base') || '');
+    }
+
+    function safeApiBase(value) {
+      const texto = String(value || '').trim().replace(/\/+$/, '');
+      if (!texto) return '';
+      try {
+        const parsed = new URL(texto);
+        const host = parsed.hostname.toLowerCase();
+        const local = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+        const paginaHttps = window.location.protocol === 'https:';
+        if (paginaHttps && parsed.protocol !== 'https:') return '';
+        if (paginaHttps && local) return '';
+        return parsed.toString().replace(/\/+$/, '');
+      } catch (_) {
+        return '';
+      }
+    }
+
+    function publicVersion() {
+      return String(window.__MJ_PUBLICATION_VERSION__ || '').trim();
+    }
+
+    function versionedStaticPath(path) {
+      const version = publicVersion();
+      if (!version) return path;
+      return `${path}${path.includes('?') ? '&' : '?'}v=${encodeURIComponent(version)}`;
     }
 
     async function apiFetch(path, options = {}) {
@@ -1666,7 +1694,7 @@
       } catch (_) {
         state.authOk = false;
         state.authMode = 'fallback';
-        els.authStatus.textContent = tg ?'Mini App em modo compatÃ­vel' : 'Abra pelo Mini App';
+        els.authStatus.textContent = tg ?'Mini App em modo compatível' : 'Abra pelo Mini App';
       }
       renderJourney();
       renderOrders();
@@ -1931,7 +1959,7 @@
       const custom = String(product.points_label_text || '').trim();
       if (custom) return custom.replace(/\{\{\s*pontos\s*\}\}/gi, String(points));
       const expiration = product.points_expiration_type === 'days' && Number(product.points_expiration_days || 0) > 0
-        ?` vÃ¡lidos por ${Number(product.points_expiration_days)} dias`
+        ?` válidos por ${Number(product.points_expiration_days)} dias`
         : ' sem validade';
       return `Compre e ganhe ${points} pontos${expiration}`;
     }
@@ -2101,7 +2129,7 @@
         state.catalogSource = 'api';
       } catch (err) {
         try {
-          const res = await fetch('./catalogo.json', { cache: 'no-store' });
+          const res = await fetch(versionedStaticPath('./catalogo.json'), { cache: 'no-store' });
           if (!res.ok) throw new Error('catalogo indisponivel');
           const payload = await res.json();
           atualizarStatusLoja(payload);
@@ -2109,7 +2137,7 @@
           state.catalogSource = 'static';
         } catch (_) {
           try {
-            const res = await fetch('./produtos.json', { cache: 'no-store' });
+            const res = await fetch(versionedStaticPath('./produtos.json'), { cache: 'no-store' });
             if (!res.ok) throw new Error('catalogo indisponivel');
             state.products = normalizeCatalogPayload(await res.json());
             state.catalogSource = 'legacy';
@@ -2229,17 +2257,17 @@
           const descontoB = Math.max(0, Number(b.normalPrice || 0) - Number(b.price || 0));
           return descontoB - descontoA || a.name.localeCompare(b.name, 'pt-BR');
         })
-        .map(product => recommendationWithReason(product, 'EstÃ¡ em promoÃ§Ã£o agora.', 'promotion'));
+        .map(product => recommendationWithReason(product, 'Está em promoção agora.', 'promotion'));
     }
 
     function cartAwareRecommendations(itemsInCart = cartItems()) {
       const cartIds = new Set(itemsInCart.map(item => item.id));
       const complements = complementProductsFor(itemsInCart)
-        .map(product => recommendationWithReason(product, 'Combina com o que jÃ¡ estÃ¡ no seu carrinho.', 'cart'));
+        .map(product => recommendationWithReason(product, 'Combina com o que já está no seu carrinho.', 'cart'));
       const promotions = promotionRecommendations(cartIds);
       const fallback = homeRecommendations()
         .filter(product => !cartIds.has(product.id))
-        .map(product => recommendationWithReason(product, 'Boa opÃ§Ã£o disponÃ­vel para completar sua compra.', 'catalog'));
+        .map(product => recommendationWithReason(product, 'Boa opção disponível para completar sua compra.', 'catalog'));
       return uniqueProducts([...complements, ...promotions, ...fallback]).slice(0, 3);
     }
 
@@ -2259,9 +2287,9 @@
       });
       return uniqueProducts([
         ...promotionRecommendations(),
-        ...behaviorBased.map(product => recommendationWithReason(product, 'VocÃª demonstrou interesse nesta seÃ§Ã£o.', 'behavior')),
-        ...diversified.map(product => recommendationWithReason(product, 'Produto disponÃ­vel para conhecer.', 'catalog')),
-        ...availableProducts().map(product => recommendationWithReason(product, 'Produto disponÃ­vel para compra.', 'catalog'))
+        ...behaviorBased.map(product => recommendationWithReason(product, 'Você demonstrou interesse nesta seção.', 'behavior')),
+        ...diversified.map(product => recommendationWithReason(product, 'Produto disponível para conhecer.', 'catalog')),
+        ...availableProducts().map(product => recommendationWithReason(product, 'Produto disponível para compra.', 'catalog'))
       ]).slice(0, 3);
     }
 
@@ -2279,15 +2307,15 @@
       if (state.catalogLoading) {
         return {
           contextLabel: 'Carregando',
-          message: 'Carregando recomendaÃ§Ãµes...',
+          message: 'Carregando recomendações...',
           items: [],
           status: 'loading'
         };
       }
       if (!availableProducts().length) {
         return {
-          contextLabel: 'Sem catÃ¡logo',
-          message: 'Ainda nÃ£o hÃ¡ produtos disponÃ­veis para recomendar.',
+          contextLabel: 'Sem catálogo',
+          message: 'Ainda não há produtos disponíveis para recomendar.',
           items: [],
           status: 'empty'
         };
@@ -2296,10 +2324,10 @@
         const itemsInCart = cartItems();
         const nomes = cartProductNames(itemsInCart);
         return {
-          contextLabel: 'FinalizaÃ§Ã£o',
+          contextLabel: 'Finalização',
           message: nomes.length
-            ? `Antes de finalizar ${nomes.join(' e ')}, veja se falta algum complemento Ãºtil.`
-            : 'Antes de finalizar, confira endereÃ§o, forma de pagamento e itens do carrinho.',
+            ? `Antes de finalizar ${nomes.join(' e ')}, veja se falta algum complemento útil.`
+            : 'Antes de finalizar, confira endereço, forma de pagamento e itens do carrinho.',
           items: cartAwareRecommendations(itemsInCart).slice(0, 2),
           status: 'ready'
         };
@@ -2311,7 +2339,7 @@
         if (!itemsInCart.length) {
           return {
             contextLabel: 'Carrinho',
-            message: 'Posso te ajudar a montar uma compra mais completa com base no catÃ¡logo e nas promoÃ§Ãµes de agora.',
+            message: 'Posso te ajudar a montar uma compra mais completa com base no catálogo e nas promoções de agora.',
             items: homeRecommendations(),
             status: 'ready'
           };
@@ -2329,8 +2357,8 @@
         return {
           contextLabel: 'Produto',
           message: complements.length
-            ?'Boa escolha. Talvez vocÃª tambÃ©m precise de itens que costumam acompanhar esse produto.'
-            : 'Esse item combina com alguns produtos do catÃ¡logo. Quer ver sugestÃµes?',
+            ?'Boa escolha. Talvez você também precise de itens que costumam acompanhar esse produto.'
+            : 'Esse item combina com alguns produtos do catálogo. Quer ver sugestões?',
           items: (complements.length
             ? complements.map(item => recommendationWithReason(item, `Combina com ${product.name}.`, 'product'))
             : homeRecommendations()).slice(0, 3),
@@ -2341,17 +2369,17 @@
         const categoryItems = availableProducts().filter(product => product.section === state.section);
         return {
           contextLabel: categoryItems[0]?.sectionLabel || 'Categoria',
-          message: 'Posso te ajudar a escolher produtos Ãºteis nesta categoria.',
+          message: 'Posso te ajudar a escolher produtos úteis nesta categoria.',
           items: categoryItems.slice(0, 3),
           status: categoryItems.length ?'ready' : 'empty'
         };
       }
       const items = homeRecommendations();
       return {
-        contextLabel: 'InÃ­cio',
+        contextLabel: 'Início',
         message: items.length
-          ?'Posso te ajudar a montar uma compra mais completa com base no catÃ¡logo disponÃ­vel.'
-          : 'Sem recomendaÃ§Ãµes no momento.',
+          ?'Posso te ajudar a montar uma compra mais completa com base no catálogo disponível.'
+          : 'Sem recomendações no momento.',
         items,
         status: items.length ?'ready' : 'empty'
       };
@@ -2365,18 +2393,18 @@
       if (!els.viniAiSlide) return;
       const items = model.items || [];
       if (model.status === 'loading') {
-        els.viniAiSlide.innerHTML = '<div class="vini-ai-state">Buscando produtos disponÃ­veis...</div>';
+        els.viniAiSlide.innerHTML = '<div class="vini-ai-state">Buscando produtos disponíveis...</div>';
         els.viniAiDots.innerHTML = '';
         return;
       }
       if (!items.length) {
-        els.viniAiSlide.innerHTML = '<div class="vini-ai-state">Sem recomendaÃ§Ãµes no momento.</div>';
+        els.viniAiSlide.innerHTML = '<div class="vini-ai-state">Sem recomendações no momento.</div>';
         els.viniAiDots.innerHTML = '';
         return;
       }
       const item = items[Math.min(state.viniAi.slideIndex, items.length - 1)];
       const promoBadge = item.promotion
-        ? `<span class="vini-ai-badge promo">PromoÃ§Ã£o</span>`
+        ? `<span class="vini-ai-badge promo">Promoção</span>`
         : '';
       const reason = item.viniReason
         ? `<small class="vini-ai-reason">${escapeHtml(item.viniReason)}</small>`
@@ -2384,7 +2412,7 @@
       els.viniAiSlide.innerHTML = `
         <div>
           <strong>${escapeHtml(item.name)}</strong>
-          <small>${escapeHtml(item.sectionLabel)} Â· ${item.stock} disp.</small>
+          <small>${escapeHtml(item.sectionLabel)} · ${item.stock} disp.</small>
           ${reason}
         </div>
         <div class="vini-ai-badges">
@@ -2402,7 +2430,7 @@
             class="vini-ai-dot ${index === state.viniAi.slideIndex ?'active' : ''}"
             type="button"
             data-vini-slide="${index}"
-            aria-label="Ver recomendaÃ§Ã£o ${index + 1}"
+            aria-label="Ver recomendação ${index + 1}"
           ></button>
         `).join('')
         : '';
@@ -2438,16 +2466,16 @@
       const itensCarrinho = cartItems();
       const sugestaoCarrinho = itensCarrinho.length ?cartAwareRecommendations(itensCarrinho)[0] : null;
       if (state.checkoutStep === 'delivery') {
-        mensagens.push('Confira o endereÃ§o e a forma de recebimento antes de seguir para o pagamento.');
+        mensagens.push('Confira o endereço e a forma de recebimento antes de seguir para o pagamento.');
       }
       if (promocao) {
-        mensagens.push(`PromoÃ§Ã£o agora: ${promocao.name} por ${money(promocao.price)}.`);
+        mensagens.push(`Promoção agora: ${promocao.name} por ${money(promocao.price)}.`);
       }
       if (sugestaoCarrinho) {
-        mensagens.push(`Dica de compra: ${sugestaoCarrinho.name} combina com o que jÃ¡ estÃ¡ no seu carrinho.`);
+        mensagens.push(`Dica de compra: ${sugestaoCarrinho.name} combina com o que já está no seu carrinho.`);
       }
       if (!itensCarrinho.length) {
-        mensagens.push('Use a busca para achar produtos rÃ¡pido e monte sua compra sem sair do Mini App.');
+        mensagens.push('Use a busca para achar produtos rápido e monte sua compra sem sair do Mini App.');
       }
       return Array.from(new Set(mensagens)).slice(0, 4);
     }
@@ -2568,7 +2596,7 @@
 
     function promotionalPointsText(preview = promotionalPointsPreview()) {
       if (preview.totalPromotionalPoints > 0) {
-        return `VocÃª ganhou +${preview.totalPromotionalPoints} pontos com produtos selecionados.`;
+        return `Você ganhou +${preview.totalPromotionalPoints} pontos com produtos selecionados.`;
       }
       if (preview.pending.length) {
         const item = preview.pending[0];
@@ -2640,11 +2668,11 @@
       } else if (state.deliveryQuote?.entregaDisponivel) {
         els.deliverySummary.textContent = `Subtotal ${money(cartTotal())} - frete ${money(state.deliveryQuote.frete || 0)} - total ${money(state.deliveryQuote.total || cartTotal())}`;
       } else if (!state.authOk && enderecoEntregaCompleto()) {
-        els.deliverySummary.textContent = 'EndereÃ§o informado. A entrega serÃ¡ confirmada ao finalizar o pedido.';
+        els.deliverySummary.textContent = 'Endereço informado. A entrega será confirmada ao finalizar o pedido.';
       } else if (state.deliveryQuote?.motivo) {
         els.deliverySummary.textContent = state.deliveryQuote.motivo;
       } else {
-        els.deliverySummary.textContent = 'Informe o endereÃ§o para calcular a entrega.';
+        els.deliverySummary.textContent = 'Informe o endereço para calcular a entrega.';
       }
     }
 
@@ -2683,19 +2711,6 @@
       state.checkoutStep = 'cart';
       setCartOpen(true);
       renderCheckoutStep();
-    }
-
-    function irParaPaginaCarrinho() {
-      if (!cartItems().length) {
-        showToast('Adicione ao menos um produto');
-        return;
-      }
-      const base = apiBase();
-      if (base) {
-        window.location.assign(`${base}/carrinho`);
-        return;
-      }
-      window.location.assign('/carrinho');
     }
 
     async function irParaEntrega() {
@@ -2744,7 +2759,7 @@
         });
         state.deliveryQuote = data;
       } catch (err) {
-        state.deliveryQuote = { entregaDisponivel: false, motivo: err.message || 'NÃ£o foi possÃ­vel calcular a entrega.' };
+        state.deliveryQuote = { entregaDisponivel: false, motivo: err.message || 'Não foi possível calcular a entrega.' };
       } finally {
         state.deliveryQuoteLoading = false;
       }
@@ -2854,15 +2869,15 @@
       els.products.innerHTML = '';
       const products = filteredProducts();
       if (state.catalogLoading) {
-        els.products.innerHTML = '<div class="empty">Carregando catÃ¡logo...</div>';
+        els.products.innerHTML = '<div class="empty">Carregando catálogo...</div>';
         return;
       }
       if (!state.products.length) {
-        els.products.innerHTML = '<div class="empty">CatÃ¡logo indisponÃ­vel agora. Tente atualizar a pÃ¡gina ou chamar o suporte da loja.</div>';
+        els.products.innerHTML = '<div class="empty">Catálogo indisponível agora. Tente atualizar a página ou chamar o suporte da loja.</div>';
         return;
       }
       if (!products.length) {
-        els.products.innerHTML = '<div class="empty">Nenhum produto encontrado. Tente buscar por outro nome ou escolha uma seÃ§Ã£o.</div>';
+        els.products.innerHTML = '<div class="empty">Nenhum produto encontrado. Tente buscar por outro nome ou escolha uma seção.</div>';
         return;
       }
 
@@ -2885,7 +2900,7 @@
     function renderCart() {
       const items = cartItems();
       if (!items.length) {
-        els.cartList.innerHTML = '<div class="empty">Seu carrinho estÃ¡ vazio. Adicione produtos para continuar.</div>';
+        els.cartList.innerHTML = '<div class="empty">Seu carrinho está vazio. Adicione produtos para continuar.</div>';
         return;
       }
       els.cartList.innerHTML = '';
@@ -2894,7 +2909,7 @@
         row.className = 'cart-item';
         const thumb = item.image
           ? `<img src="${escapeHtml(item.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
-          : '<span>ðŸ›’</span>';
+          : '<span>🛒</span>';
         row.innerHTML = `
           <div class="cart-thumb">${thumb}</div>
           <div class="cart-item-main">
@@ -2926,7 +2941,7 @@
       if (pointsText) {
         const box = document.createElement('div');
         box.className = 'payment-box';
-        box.innerHTML = `<strong>${escapeHtml(pointsText)}</strong><small>Os pontos entram apÃ³s confirmaÃ§Ã£o do pedido.</small>`;
+        box.innerHTML = `<strong>${escapeHtml(pointsText)}</strong><small>Os pontos entram após confirmação do pedido.</small>`;
         els.cartList.appendChild(box);
       }
     }
@@ -2996,12 +3011,12 @@
         ${pix.qrCodeDataUrl ?`<img class="pix-qr" src="${escapeHtml(pix.qrCodeDataUrl)}" alt="QR Code Pix">` : ''}
         <div>
           <strong>${money(pix.valor)}</strong>
-          <small>${escapeHtml(pix.recebedor || 'Recebedor Pix')}${pix.cidade ?` Â· ${escapeHtml(pix.cidade)}` : ''}</small>
+          <small>${escapeHtml(pix.recebedor || 'Recebedor Pix')}${pix.cidade ?` · ${escapeHtml(pix.cidade)}` : ''}</small>
         </div>
         <small>Pix copia e cola</small>
         <textarea class="pix-code" id="miniappPixCode" readonly>${escapeHtml(pix.copiaECola || '')}</textarea>
         <div class="payment-actions">
-          <button class="primary" id="copyMiniappPix" type="button">Copiar cÃ³digo Pix</button>
+          <button class="primary" id="copyMiniappPix" type="button">Copiar código Pix</button>
         </div>
         <div class="proof-upload">
           <strong>${comprovanteRecebido ?'Comprovante enviado' : 'Depois de pagar'}</strong>
@@ -3045,12 +3060,12 @@
       if (!codigo) return;
       try {
         await navigator.clipboard.writeText(codigo);
-        showToast('CÃ³digo Pix copiado');
+        showToast('Código Pix copiado');
       } catch (_) {
         const campo = els.miniappPaymentContent.querySelector('#miniappPixCode');
         campo?.select();
         document.execCommand?.('copy');
-        showToast('CÃ³digo Pix selecionado para copiar');
+        showToast('Código Pix selecionado para copiar');
       }
     }
 
@@ -3100,7 +3115,7 @@
         ? Number(state.deliveryQuote.total || total + entrega)
         : total;
       const label = count ?`${count} ${count === 1 ?'item' : 'itens'}` : 'Carrinho vazio';
-      els.cartButton.textContent = count ?`Carrinho Â· ${count}` : 'Carrinho';
+      els.cartButton.textContent = count ?`Carrinho · ${count}` : 'Carrinho';
       els.itemsCount.textContent = count ?`${label} no carrinho` : 'Carrinho vazio';
       els.bottomCount.textContent = count ?`${label} selecionados` : 'Carrinho vazio';
       els.total.textContent = money(total);
@@ -3109,7 +3124,7 @@
       if (els.drawerDelivery) {
         els.drawerDelivery.textContent = state.deliveryMode === 'entrega'
           ? (state.deliveryQuote?.entregaDisponivel ? money(entrega) : 'A calcular')
-          : 'Retirada grÃ¡tis';
+          : 'Retirada grátis';
       }
       if (els.drawerGrandTotal) els.drawerGrandTotal.textContent = money(totalPrevisto);
       renderPointsOptions();
@@ -3160,7 +3175,7 @@
     function acaoBotaoPrincipalTelegram() {
       if (state.checkoutStep === 'delivery') return sendCartToTelegram();
       if (state.checkoutStep === 'cart') return irParaEntrega();
-      return irParaPaginaCarrinho();
+      return iniciarCheckout();
     }
 
     function payloadCarrinhoMiniApp() {
@@ -3202,7 +3217,7 @@
         return;
       }
       if (!state.loja.aceitaPedidos) {
-        showToast(state.loja.mensagem || 'A loja nÃ£o estÃ¡ recebendo pedidos agora.');
+        showToast(state.loja.mensagem || 'A loja não está recebendo pedidos agora.');
         return;
       }
       const items = cartItems().map(item => ({
@@ -3222,14 +3237,14 @@
         const endereco = enderecoEntregaPayload();
         if (!endereco.cep || !endereco.rua || !endereco.numero || !endereco.bairro || !endereco.cidade || !endereco.estado) {
           setCartOpen(true);
-          return showToast('Informe CEP, rua, nÃºmero, bairro, cidade e estado para entrega');
+          return showToast('Informe CEP, rua, número, bairro, cidade e estado para entrega');
         }
         if (state.authOk) {
           await atualizarCotacaoEntrega();
         }
         if (state.authOk && !state.deliveryQuote?.entregaDisponivel) {
           setCartOpen(true);
-          return showToast(state.deliveryQuote?.motivo || 'Entrega indisponÃ­vel para este endereÃ§o');
+          return showToast(state.deliveryQuote?.motivo || 'Entrega indisponível para este endereço');
         }
       }
       const payload = {
@@ -3273,7 +3288,7 @@
             : 'Pedido enviado');
           return;
         } catch (err) {
-          showToast(err.message || 'Falha na API. Tentando modo compatÃ­vel.');
+          showToast(err.message || 'Falha na API. Tentando modo compatível.');
         } finally {
           state.sending = false;
           renderSummary();
@@ -3299,8 +3314,8 @@
       renderViniAIOutdoor();
     });
 
-    els.cartButton.addEventListener('click', irParaPaginaCarrinho);
-    els.reviewCart.addEventListener('click', irParaPaginaCarrinho);
+    els.cartButton.addEventListener('click', iniciarCheckout);
+    els.reviewCart.addEventListener('click', iniciarCheckout);
     els.closeCart.addEventListener('click', () => setCartOpen(false));
     els.closePayment.addEventListener('click', () => setPaymentOpen(false));
     els.clearCartDrawer.addEventListener('click', clearCart);
@@ -3364,5 +3379,4 @@
   </script>
 </body>
 </html>
-
 
