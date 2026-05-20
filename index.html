@@ -1279,7 +1279,7 @@
   <div class="app">
     <header class="topbar">
       <div class="brand-row">
-        <img class="logo" src="assets/logo-mj-mercadinho.png?v=b7fa511fd7df4a4a" alt="M&J Mercadinho">
+        <img class="logo" src="assets/logo-mj-mercadinho.png" alt="M&J Mercadinho">
         <div class="brand-copy">
           <h1>M&J Mercadinho</h1>
           <div class="store-meta">
@@ -1292,7 +1292,7 @@
 
       <div class="search-row">
         <div class="search-wrap">
-          <span>⌕</span>
+          <span>&#128269;</span>
           <input id="search" type="search" placeholder="Buscar arroz, café, refrigerante..." autocomplete="off">
         </div>
         <button class="ghost" id="clearSearch" type="button">Limpar</button>
@@ -1308,15 +1308,48 @@
           <span id="journeyStatus">Preparando</span>
         </div>
         <div class="journey-steps" id="journeySteps"></div>
-      </section>
-
-      <section class="registration-panel" id="registrationPanel" hidden>
+      </section>      <section class="registration-panel" id="registrationPanel" hidden>
         <div class="section-head">
           <h2>Primeiro acesso</h2>
-          <span>Cadastro pelo Telegram</span>
+          <span>Cadastro no Mini App</span>
         </div>
-        <p>Você já pode ver os produtos. Para comprar, conclua seu cadastro no chat do Telegram e depois reabra a lojinha.</p>
-        <button class="primary" id="finishProfileInTelegram" type="button">Concluir no Telegram</button>
+        <p>Voce ja pode ver os produtos. Para finalizar a compra, complete seu cadastro aqui no Mini App.</p>
+        <form class="registration-form" id="registrationForm">
+          <label>Nome completo
+            <input id="profileName" type="text" autocomplete="name" required>
+          </label>
+          <label>CPF
+            <input id="profileCpf" type="text" inputmode="numeric" autocomplete="off" required>
+          </label>
+          <label>Data de nascimento
+            <input id="profileBirthDate" type="date" required>
+          </label>
+          <label>Telefone com DDD
+            <input id="profilePhone" type="tel" inputmode="tel" autocomplete="tel" required>
+          </label>
+          <label>CEP
+            <input id="profileCep" type="text" inputmode="numeric" autocomplete="postal-code" required>
+          </label>
+          <label>Rua
+            <input id="profileRua" type="text" autocomplete="address-line1" required>
+          </label>
+          <label>Numero
+            <input id="profileNumero" type="text" autocomplete="address-line2" required>
+          </label>
+          <label>Complemento (opcional)
+            <input id="profileComplemento" type="text" autocomplete="address-line2">
+          </label>
+          <label>Bairro
+            <input id="profileBairro" type="text" autocomplete="address-level3" required>
+          </label>
+          <label>Cidade
+            <input id="profileCidade" type="text" autocomplete="address-level2" required>
+          </label>
+          <label>Estado (UF)
+            <input id="profileEstado" type="text" maxlength="2" autocomplete="address-level1" required>
+          </label>
+          <button class="primary" id="saveProfile" type="submit">Salvar cadastro no Mini App</button>
+        </form>
       </section>
 
       <section class="vini-ai-outdoor" id="viniAiOutdoor" aria-label="Vini AI no Mini App">
@@ -1455,8 +1488,6 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script>
-    window.__MJ_API_BASE__ = "";
-    window.__MJ_PUBLICATION_VERSION__ = "b7fa511fd7df4a4a";
     const tg = window.Telegram && window.Telegram.WebApp ?window.Telegram.WebApp : null;
     if (tg) {
       tg.expand();
@@ -1528,7 +1559,6 @@
       journeySteps: document.getElementById('journeySteps'),
       registrationPanel: document.getElementById('registrationPanel'),
       registrationForm: document.getElementById('registrationForm'),
-      finishProfileInTelegram: document.getElementById('finishProfileInTelegram'),
       profileName: document.getElementById('profileName'),
       profileCpf: document.getElementById('profileCpf'),
       profileBirthDate: document.getElementById('profileBirthDate'),
@@ -1619,37 +1649,11 @@
       const url = new URL(window.location.href);
       const fromQuery = url.searchParams.get('apiBase');
       if (fromQuery) {
-        const clean = safeApiBase(fromQuery);
-        if (clean) localStorage.setItem('mj_mercadinho_api_base', clean);
+        const clean = fromQuery.replace(/\/+$/, '');
+        localStorage.setItem('mj_mercadinho_api_base', clean);
         return clean;
       }
-      return safeApiBase(window.__MJ_API_BASE__) || safeApiBase(localStorage.getItem('mj_mercadinho_api_base') || '');
-    }
-
-    function safeApiBase(value) {
-      const texto = String(value || '').trim().replace(/\/+$/, '');
-      if (!texto) return '';
-      try {
-        const parsed = new URL(texto);
-        const host = parsed.hostname.toLowerCase();
-        const local = host === 'localhost' || host === '127.0.0.1' || host === '::1';
-        const paginaHttps = window.location.protocol === 'https:';
-        if (paginaHttps && parsed.protocol !== 'https:') return '';
-        if (paginaHttps && local) return '';
-        return parsed.toString().replace(/\/+$/, '');
-      } catch (_) {
-        return '';
-      }
-    }
-
-    function publicVersion() {
-      return String(window.__MJ_PUBLICATION_VERSION__ || '').trim();
-    }
-
-    function versionedStaticPath(path) {
-      const version = publicVersion();
-      if (!version) return path;
-      return `${path}${path.includes('?') ? '&' : '?'}v=${encodeURIComponent(version)}`;
+      return (localStorage.getItem('mj_mercadinho_api_base') || '').replace(/\/+$/, '');
     }
 
     async function apiFetch(path, options = {}) {
@@ -1693,8 +1697,9 @@
         state.pollTimer = setInterval(loadOrders, 5000);
       } catch (_) {
         state.authOk = false;
-        state.authMode = 'fallback';
-        els.authStatus.textContent = tg ?'Mini App em modo compatível' : 'Abra pelo Mini App';
+        state.authMode = 'offline';
+        els.authStatus.textContent = 'Sessao indisponivel';
+        showToast('Nao foi possivel autenticar a sessao. Reabra a loja pelo bot para continuar.');
       }
       renderJourney();
       renderOrders();
@@ -1789,14 +1794,9 @@
       if (els.registrationPanel) els.registrationPanel.hidden = !bloqueadoPorCadastro;
     }
 
-    function avisarCadastroTelegram() {
-      showToast('Conclua seu cadastro no Telegram para comprar');
+    function avisarCadastroMiniApp() {
+      showToast('Complete seu cadastro no Mini App para continuar');
       els.registrationPanel?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
-    }
-
-    function concluirCadastroNoTelegram() {
-      if (tg?.close) tg.close();
-      else showToast('Volte ao chat do Telegram e envie /start para concluir o cadastro');
     }
 
     async function salvarCadastroMiniApp(event) {
@@ -1827,14 +1827,14 @@
         state.cliente = data.cliente || state.cliente;
         preencherEnderecoEntrega();
         renderJourney();
-        showToast('Cadastro salvo. Bem-vindo ao catalogo.');
+        showToast('Cadastro salvo. Agora voce ja pode finalizar seu pedido no Mini App.');
       } catch (err) {
         showToast(err.message || 'Nao foi possivel salvar seu cadastro');
       } finally {
         state.savingProfile = false;
         if (els.saveProfile) {
           els.saveProfile.disabled = false;
-          els.saveProfile.textContent = 'Salvar e ver catalogo';
+          els.saveProfile.textContent = 'Salvar cadastro no Mini App';
         }
       }
     }
@@ -2129,7 +2129,7 @@
         state.catalogSource = 'api';
       } catch (err) {
         try {
-          const res = await fetch(versionedStaticPath('./catalogo.json'), { cache: 'no-store' });
+          const res = await fetch('./catalogo.json', { cache: 'no-store' });
           if (!res.ok) throw new Error('catalogo indisponivel');
           const payload = await res.json();
           atualizarStatusLoja(payload);
@@ -2137,7 +2137,7 @@
           state.catalogSource = 'static';
         } catch (_) {
           try {
-            const res = await fetch(versionedStaticPath('./produtos.json'), { cache: 'no-store' });
+            const res = await fetch('./produtos.json', { cache: 'no-store' });
             if (!res.ok) throw new Error('catalogo indisponivel');
             state.products = normalizeCatalogPayload(await res.json());
             state.catalogSource = 'legacy';
@@ -2668,7 +2668,7 @@
       } else if (state.deliveryQuote?.entregaDisponivel) {
         els.deliverySummary.textContent = `Subtotal ${money(cartTotal())} - frete ${money(state.deliveryQuote.frete || 0)} - total ${money(state.deliveryQuote.total || cartTotal())}`;
       } else if (!state.authOk && enderecoEntregaCompleto()) {
-        els.deliverySummary.textContent = 'Endereço informado. A entrega será confirmada ao finalizar o pedido.';
+        els.deliverySummary.textContent = 'Endereco informado. Conecte sua sessao para confirmar o pedido.';
       } else if (state.deliveryQuote?.motivo) {
         els.deliverySummary.textContent = state.deliveryQuote.motivo;
       } else {
@@ -2678,7 +2678,7 @@
 
     function entregaProntaParaPagamento() {
       if (state.deliveryMode === 'retirada') return true;
-      if (!state.authOk) return enderecoEntregaCompleto();
+      if (!state.authOk) return false;
       return state.deliveryQuote?.entregaDisponivel === true;
     }
 
@@ -2695,10 +2695,10 @@
         els.continueToDelivery.disabled = cartCount() < 1 || state.sending;
       }
       if (els.sendCartDrawer) {
-        els.sendCartDrawer.disabled = cartCount() < 1 || state.sending || !state.loja.aceitaPedidos || !entregaProntaParaPagamento();
+        els.sendCartDrawer.disabled = cartCount() < 1 || state.sending || !state.authOk || !state.loja.aceitaPedidos || !entregaProntaParaPagamento();
         els.sendCartDrawer.textContent = state.sending
           ?'Enviando...'
-          : (!state.authOk && etapaEntrega ?'Finalizar pedido' : 'Continuar para pagamento');
+          : 'Continuar para pagamento';
       }
       renderJourney();
     }
@@ -2715,7 +2715,7 @@
 
     async function irParaEntrega() {
       if (!cartItems().length) return showToast('Adicione ao menos um produto');
-      if (clientePrecisaCadastro()) return avisarCadastroTelegram();
+      if (clientePrecisaCadastro()) return avisarCadastroMiniApp();
       state.checkoutStep = 'delivery';
       renderCheckoutStep();
       await atualizarCotacaoEntrega();
@@ -2909,7 +2909,7 @@
         row.className = 'cart-item';
         const thumb = item.image
           ? `<img src="${escapeHtml(item.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
-          : '<span>🛒</span>';
+          : '<span>#</span>';
         row.innerHTML = `
           <div class="cart-thumb">${thumb}</div>
           <div class="cart-item-main">
@@ -3133,13 +3133,13 @@
       });
       els.sendCartDrawer.textContent = state.sending
         ?'Enviando...'
-        : (!state.authOk && state.checkoutStep === 'delivery' ?'Finalizar pedido' : 'Continuar para pagamento');
+        : 'Continuar para pagamento';
       if (tg?.MainButton) {
         if (count > 0 && state.loja.aceitaPedidos) {
           const textoPrincipal = state.sending
             ?'Enviando...'
             : state.checkoutStep === 'delivery'
-              ?(!state.authOk ?`Finalizar pedido - ${money(total)}` : `Continuar para pagamento - ${money(total)}`)
+              ?`Continuar para pagamento - ${money(total)}`
               : state.checkoutStep === 'cart'
                 ?'Continuar para entrega'
                 : `Carrinho - ${money(total)}`;
@@ -3196,20 +3196,14 @@
       };
     }
 
-    function enviarCarrinhoParaCheckoutTelegram(payload = payloadCarrinhoMiniApp()) {
-      if (!payload.items.length) return showToast('Adicione ao menos um produto');
-      tg.sendData(JSON.stringify(payload));
-      state.cart.clear();
-      limparClientOrderIdPendente();
-      persistCart();
-      render();
-      showToast('Pedido enviado ao Telegram. A loja vai processar os dados enviados pela lojinha.');
-    }
-
     async function sendCartToTelegram() {
       if (state.sending) return;
+      if (!state.authOk) {
+        showToast('Sessao do Mini App indisponivel. Reabra a loja pelo bot e tente novamente.');
+        return;
+      }
       if (clientePrecisaCadastro()) {
-        avisarCadastroTelegram();
+        avisarCadastroMiniApp();
         return;
       }
       if (state.checkoutStep !== 'delivery') {
@@ -3239,10 +3233,8 @@
           setCartOpen(true);
           return showToast('Informe CEP, rua, número, bairro, cidade e estado para entrega');
         }
-        if (state.authOk) {
-          await atualizarCotacaoEntrega();
-        }
-        if (state.authOk && !state.deliveryQuote?.entregaDisponivel) {
+        await atualizarCotacaoEntrega();
+        if (!state.deliveryQuote?.entregaDisponivel) {
           setCartOpen(true);
           return showToast(state.deliveryQuote?.motivo || 'Entrega indisponível para este endereço');
         }
@@ -3262,41 +3254,35 @@
         total: cartTotal()
       };
       payload.promotional_points_preview = promotionalPointsPreview();
-      if (state.authOk) {
-        state.sending = true;
-        renderSummary();
-        try {
-          const data = await apiFetch('/api/miniapp/orders', {
-            method: 'POST',
-            body: JSON.stringify(payload)
-          });
-          state.cart.clear();
-          limparClientOrderIdPendente();
-          persistCart();
-          const me = await apiFetch('/api/miniapp/me').catch(() => null);
-          if (me?.cliente) state.cliente = me.cliente;
-          await loadOrders();
-          state.confirmationOrder = data.pedido || null;
-          state.trackingUrl = data.acompanhamento || '';
-          state.checkoutStep = 'payment';
-          render();
-          if (data.pedido?.id && data.pagamento) {
-            await abrirPagamentoMiniApp(data.pedido.id, data.pagamento);
-          }
-          showToast(data.pedido?.id
-            ?`Pedido #${data.pedido.id} enviado${data.telegramNotificado === false ?' no painel' : ''}`
-            : 'Pedido enviado');
-          return;
-        } catch (err) {
-          showToast(err.message || 'Falha na API. Tentando modo compatível.');
-        } finally {
-          state.sending = false;
-          renderSummary();
+      state.sending = true;
+      renderSummary();
+      try {
+        const data = await apiFetch('/api/miniapp/orders', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        state.cart.clear();
+        limparClientOrderIdPendente();
+        persistCart();
+        const me = await apiFetch('/api/miniapp/me').catch(() => null);
+        if (me?.cliente) state.cliente = me.cliente;
+        await loadOrders();
+        state.confirmationOrder = data.pedido || null;
+        state.trackingUrl = data.acompanhamento || '';
+        state.checkoutStep = 'payment';
+        render();
+        if (data.pedido?.id && data.pagamento) {
+          await abrirPagamentoMiniApp(data.pedido.id, data.pagamento);
         }
+        showToast(data.pedido?.id
+          ?`Pedido #${data.pedido.id} enviado com sucesso`
+          : 'Pedido enviado');
+      } catch (err) {
+        showToast(err.message || 'Falha ao finalizar pedido no Mini App.');
+      } finally {
+        state.sending = false;
+        renderSummary();
       }
-      if (tg?.sendData) return enviarCarrinhoParaCheckoutTelegram(payload);
-      showToast('Abra a loja pelo Telegram ou conecte a API do Mini App para finalizar a compra.');
-      setCartOpen(true);
     }
 
     els.search.addEventListener('input', event => {
@@ -3348,7 +3334,6 @@
       renderPointsOptions();
     });
     els.registrationForm?.addEventListener('submit', salvarCadastroMiniApp);
-    els.finishProfileInTelegram?.addEventListener('click', concluirCadastroNoTelegram);
     els.profileCep?.addEventListener('blur', preencherEnderecoPorCep);
     els.deliveryCep?.addEventListener('blur', preencherEntregaPorCep);
     els.continueToDelivery?.addEventListener('click', irParaEntrega);
@@ -3379,4 +3364,7 @@
   </script>
 </body>
 </html>
+
+
+
 
