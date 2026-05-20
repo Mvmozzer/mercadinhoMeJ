@@ -2678,7 +2678,7 @@
 
     function entregaProntaParaPagamento() {
       if (state.deliveryMode === 'retirada') return true;
-      if (!state.authOk) return false;
+      if (!state.authOk) return enderecoEntregaCompleto();
       return state.deliveryQuote?.entregaDisponivel === true;
     }
 
@@ -2695,10 +2695,12 @@
         els.continueToDelivery.disabled = cartCount() < 1 || state.sending;
       }
       if (els.sendCartDrawer) {
-        els.sendCartDrawer.disabled = cartCount() < 1 || state.sending || !state.authOk || !state.loja.aceitaPedidos || !entregaProntaParaPagamento();
+        const fallbackTelegram = !state.authOk && Boolean(tg?.sendData);
+        const semCanalCheckout = !state.authOk && !fallbackTelegram;
+        els.sendCartDrawer.disabled = cartCount() < 1 || state.sending || semCanalCheckout || !state.loja.aceitaPedidos || !entregaProntaParaPagamento();
         els.sendCartDrawer.textContent = state.sending
           ?'Enviando...'
-          : 'Continuar para pagamento';
+          : (!state.authOk && fallbackTelegram ?'Finalizar pedido no Telegram' : 'Continuar para pagamento');
       }
       renderJourney();
     }
@@ -3196,12 +3198,19 @@
       };
     }
 
+    function enviarCarrinhoParaCheckoutTelegram(payload = payloadCarrinhoMiniApp()) {
+      if (!payload.items.length) return showToast('Adicione ao menos um produto');
+      if (!tg?.sendData) return showToast('Mini App sem canal do Telegram para finalizar pedido.');
+      tg.sendData(JSON.stringify(payload));
+      state.cart.clear();
+      limparClientOrderIdPendente();
+      persistCart();
+      render();
+      showToast('Pedido enviado ao Telegram. A loja vai processar seu checkout.');
+    }
+
     async function sendCartToTelegram() {
       if (state.sending) return;
-      if (!state.authOk) {
-        showToast('Sessao do Mini App indisponivel. Reabra a loja pelo bot e tente novamente.');
-        return;
-      }
       if (clientePrecisaCadastro()) {
         avisarCadastroMiniApp();
         return;
@@ -3231,12 +3240,14 @@
         const endereco = enderecoEntregaPayload();
         if (!endereco.cep || !endereco.rua || !endereco.numero || !endereco.bairro || !endereco.cidade || !endereco.estado) {
           setCartOpen(true);
-          return showToast('Informe CEP, rua, número, bairro, cidade e estado para entrega');
+          return showToast('Informe CEP, rua, numero, bairro, cidade e estado para entrega');
         }
-        await atualizarCotacaoEntrega();
-        if (!state.deliveryQuote?.entregaDisponivel) {
-          setCartOpen(true);
-          return showToast(state.deliveryQuote?.motivo || 'Entrega indisponível para este endereço');
+        if (state.authOk) {
+          await atualizarCotacaoEntrega();
+          if (!state.deliveryQuote?.entregaDisponivel) {
+            setCartOpen(true);
+            return showToast(state.deliveryQuote?.motivo || 'Entrega indisponivel para este endereco');
+          }
         }
       }
       const payload = {
@@ -3254,6 +3265,9 @@
         total: cartTotal()
       };
       payload.promotional_points_preview = promotionalPointsPreview();
+      if (!state.authOk) {
+        return enviarCarrinhoParaCheckoutTelegram(payload);
+      }
       state.sending = true;
       renderSummary();
       try {
