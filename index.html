@@ -257,8 +257,7 @@
       padding: 14px 12px 22px;
     }
 
-    .hero,
-    .vini-ai-outdoor {
+    .hero {
       display: grid;
       gap: 12px;
       padding: 14px;
@@ -270,15 +269,13 @@
       box-shadow: var(--shadow);
     }
 
-    .hero h2,
-    .vini-ai-outdoor h2 {
+    .hero h2 {
       margin: 0;
       font-size: 22px;
       line-height: 1.12;
     }
 
-    .hero p,
-    .vini-ai-outdoor p {
+    .hero p {
       margin: 0;
       color: rgba(255, 255, 255, .78);
       font-size: 13px;
@@ -298,55 +295,8 @@
     }
 
     .vini-ai-outdoor {
-      position: relative;
-      overflow: hidden;
-      min-height: 272px;
-      isolation: isolate;
-      background:
-        linear-gradient(135deg, #17130e 0%, #262018 55%, #43331e 100%);
-    }
-
-    .vini-ai-outdoor::after {
-      content: '';
-      position: absolute;
-      right: -28px;
-      top: -42px;
-      width: 150px;
-      height: 150px;
-      border-radius: 50%;
-      background: rgba(227, 189, 114, .16);
-      pointer-events: none;
-    }
-
-    .vini-ai-outdoor::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      z-index: -1;
-      background: linear-gradient(180deg, rgba(0, 0, 0, .08), rgba(0, 0, 0, .34));
-      pointer-events: none;
-    }
-
-    .vini-ai-kicker {
-      display: inline-flex;
-      width: fit-content;
-      border: 1px solid rgba(227, 189, 114, .35);
-      border-radius: 999px;
-      padding: 4px 9px;
-      color: var(--gold-2);
-      font-size: 12px;
-      font-weight: 800;
-    }
-
-    .vini-ai-outdoor button {
-      position: relative;
-      z-index: 1;
-    }
-
-    .vini-ai-copy {
       display: grid;
-      gap: 7px;
-      min-width: 0;
+      gap: 0;
     }
 
     .vini-ai-alert {
@@ -354,9 +304,15 @@
       gap: 3px;
       padding: 10px 11px;
       border: 1px solid rgba(227, 189, 114, .28);
-      border-radius: 10px;
-      background: rgba(255, 255, 255, .08);
+      border-radius: 8px;
+      background: #251d13;
       color: #fff;
+      box-shadow: var(--shadow);
+      max-height: 96px;
+      opacity: 1;
+      overflow: hidden;
+      transform: translateY(0);
+      transition: opacity .22s ease, transform .22s ease, max-height .22s ease, padding .22s ease, border-width .22s ease;
     }
 
     .vini-ai-alert strong {
@@ -372,111 +328,15 @@
       line-height: 1.4;
     }
 
-    .vini-ai-reel {
-      position: relative;
-      z-index: 1;
-      display: grid;
-      gap: 8px;
-      min-width: 0;
-      padding: 11px;
-      border: 1px solid rgba(227, 189, 114, .28);
-      border-radius: var(--radius);
-      background: rgba(255, 255, 255, .09);
-      backdrop-filter: blur(10px);
-    }
-
-    .vini-ai-outdoor .pill {
-      width: fit-content;
-      border-color: rgba(227, 189, 114, .38);
-      background: rgba(255, 255, 255, .08);
-      color: #fff;
-    }
-
-    .vini-ai-slide {
-      display: grid;
-      gap: 9px;
-      min-width: 0;
-    }
-
-    .vini-ai-slide strong {
-      display: block;
-      color: #fff;
-      font-size: 16px;
-      line-height: 1.2;
-    }
-
-    .vini-ai-slide small {
-      color: rgba(255, 255, 255, .72);
-      font-size: 12px;
-      line-height: 1.4;
-    }
-
-    .vini-ai-reason {
-      color: rgba(255, 255, 255, .9);
-    }
-
-    .vini-ai-badges {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-
-    .vini-ai-badge {
-      display: inline-flex;
-      align-items: center;
-      min-height: 22px;
-      border-radius: 999px;
-      padding: 3px 7px;
-      background: rgba(255, 255, 255, .12);
-      color: #fff;
-      font-size: 11px;
-      font-weight: 800;
-    }
-
-    .vini-ai-badge.promo {
-      background: rgba(227, 189, 114, .18);
-      color: var(--gold-2);
-    }
-
-    .vini-ai-slide-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    .vini-ai-price {
-      color: var(--gold-2);
-      font-size: 17px;
-      font-weight: 800;
-    }
-
-    .vini-ai-slide .gold {
-      min-width: 110px;
-    }
-
-    .vini-ai-dots {
-      display: flex;
-      gap: 6px;
-      align-items: center;
-    }
-
-    .vini-ai-dot {
-      width: 8px;
-      min-height: 8px;
-      height: 8px;
+    .vini-ai-alert.is-hidden {
+      max-height: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      border-width: 0;
       padding: 0;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, .34);
-    }
-
-    .vini-ai-dot.active {
-      background: var(--gold-2);
-    }
-
-    .vini-ai-state {
-      color: rgba(255, 255, 255, .78);
-      font-size: 13px;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-6px);
     }
 
     .section-block {
@@ -663,12 +523,6 @@
       box-shadow: 0 8px 22px rgba(35, 28, 15, .08);
     }
 
-    .checkout-preview .payment-box {
-      padding: 0;
-      border: 0;
-      background: transparent;
-    }
-
     .orders-panel[hidden] {
       display: none;
     }
@@ -805,121 +659,6 @@
       background: var(--paper);
       box-shadow: 0 -18px 42px rgba(23, 18, 11, .22);
       overflow: hidden;
-    }
-
-    .payment-drawer {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      z-index: 31;
-      display: none;
-      max-height: min(88vh, 760px);
-      border-radius: 12px 12px 0 0;
-      background: var(--paper);
-      box-shadow: 0 -18px 42px rgba(23, 18, 11, .22);
-      overflow: hidden;
-    }
-
-    .payment-drawer.open {
-      display: grid;
-      grid-template-rows: auto minmax(0, 1fr);
-    }
-
-    .payment-body {
-      display: grid;
-      gap: 10px;
-      padding: 12px 14px calc(14px + env(safe-area-inset-bottom));
-      overflow: auto;
-    }
-
-    .pix-box {
-      display: grid;
-      gap: 10px;
-      padding: 12px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: var(--surface);
-    }
-
-    .pix-qr {
-      width: min(220px, 100%);
-      justify-self: center;
-      border-radius: 8px;
-      background: #fff;
-    }
-
-    .pix-code {
-      width: 100%;
-      min-height: 74px;
-      resize: vertical;
-      border: 1px solid var(--line);
-      border-radius: 7px;
-      padding: 9px;
-      background: var(--surface-2);
-      color: var(--text);
-      font: 12px Consolas, monospace;
-    }
-
-    .payment-actions {
-      display: grid;
-      gap: 8px;
-    }
-
-    .proof-upload {
-      display: grid;
-      gap: 8px;
-      padding: 12px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: var(--surface);
-    }
-
-    .proof-upload input {
-      width: 100%;
-      min-height: 40px;
-    }
-
-    .delivery-options,
-    .delivery-fields {
-      display: grid;
-      gap: 8px;
-    }
-
-    .delivery-options {
-      grid-template-columns: 1fr 1fr;
-    }
-
-    .delivery-choice {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      min-height: 42px;
-      border: 1px solid var(--line);
-      border-radius: 7px;
-      padding: 8px 10px;
-      background: var(--surface);
-      color: var(--ink);
-      font-weight: 700;
-    }
-
-    .delivery-choice input {
-      width: auto;
-      min-height: auto;
-      accent-color: var(--green);
-    }
-
-    .delivery-fields input {
-      width: 100%;
-      min-height: 40px;
-      border: 1px solid var(--line);
-      border-radius: 7px;
-      padding: 8px 10px;
-      background: var(--surface);
-    }
-
-    .delivery-fields[hidden] {
-      display: none;
     }
 
     .cart-drawer.open {
@@ -1108,7 +847,7 @@
       font-weight: 900;
     }
 
-    .payment-box {
+    .points-box {
       display: grid;
       gap: 8px;
       border: 1px solid var(--line);
@@ -1117,26 +856,37 @@
       padding: 10px;
     }
 
-    .payment-option {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      min-height: 40px;
-      color: var(--ink);
-      font-size: 14px;
-      font-weight: 800;
-    }
-
-    .payment-option input {
-      width: auto;
-      min-height: auto;
-      accent-color: var(--green);
-    }
-
-    .payment-box small {
+    .points-box small {
       color: var(--muted);
       font-size: 12px;
       line-height: 1.35;
+    }
+
+    .cart-notes {
+      display: grid;
+      gap: 6px;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .cart-notes textarea {
+      width: 100%;
+      min-height: 68px;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 9px 10px;
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+      font-weight: 500;
+    }
+
+    .cart-notes small {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
     }
 
     .bottom-bar {
@@ -1222,8 +972,7 @@
         padding: 18px;
       }
 
-      .hero,
-      .vini-ai-outdoor {
+      .hero {
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
         padding: 18px;
@@ -1248,16 +997,6 @@
         right: max(16px, calc((100vw - 1120px) / 2 + 16px));
         bottom: 18px;
         width: min(420px, calc(100vw - 32px));
-        border: 1px solid var(--line);
-        border-radius: 12px;
-      }
-
-      .payment-drawer {
-        left: 50%;
-        right: auto;
-        transform: translateX(-50%);
-        bottom: 18px;
-        width: min(480px, calc(100vw - 32px));
         border: 1px solid var(--line);
         border-radius: 12px;
       }
@@ -1352,23 +1091,10 @@
         </form>
       </section>
 
-      <section class="vini-ai-outdoor" id="viniAiOutdoor" aria-label="Vini AI no Mini App">
-        <div class="vini-ai-copy">
-          <span class="vini-ai-kicker">Assistente de compras</span>
-          <h2>Vini AI agora está no Mini App</h2>
-          <p>Seu assistente inteligente para encontrar produtos, montar o carrinho e comprar melhor.</p>
-          <p id="viniAiMessage">Carregando recomendações...</p>
-        </div>
-        <div class="vini-ai-alert" id="viniAiAlert" aria-live="polite">
+      <section class="vini-ai-outdoor" id="viniAiOutdoor" aria-label="Alertas do Vini">
+        <div class="vini-ai-alert" id="viniAiAlert" aria-live="polite" role="status">
           <strong>Alerta do Vini</strong>
-          <span>Buscando dicas e promoções para você...</span>
-        </div>
-        <div class="vini-ai-reel" aria-live="polite">
-          <span class="pill" id="viniAiContext">Início</span>
-          <div class="vini-ai-slide" id="viniAiSlide">
-            <div class="vini-ai-state">Buscando produtos disponíveis...</div>
-          </div>
-          <div class="vini-ai-dots" id="viniAiDots"></div>
+          <span>Use a busca para achar produtos rápido e monte sua compra sem sair do Mini App.</span>
         </div>
       </section>
 
@@ -1380,14 +1106,6 @@
         <div id="ordersList"></div>
       </section>
 
-      <section class="confirmation-panel" id="confirmationPanel" hidden>
-        <div class="section-head">
-          <h2>Pedido confirmado</h2>
-          <span id="confirmationStatus">Processando</span>
-        </div>
-        <div class="confirmation-grid" id="confirmationContent"></div>
-      </section>
-
       <div id="products"></div>
     </main>
   </div>
@@ -1396,13 +1114,13 @@
     <div class="cart-head">
       <div class="cart-head-copy">
         <h2>Seu carrinho</h2>
-        <small>Revise os itens antes de concluir</small>
+        <small>Revise os itens antes de enviar ao Telegram</small>
       </div>
       <button class="ghost" id="closeCart" type="button">Fechar</button>
     </div>
     <div class="cart-list" id="cartList"></div>
     <div class="cart-foot">
-      <span class="checkout-step-label" id="checkoutStepLabel">Etapa 1 de 3 - Carrinho</span>
+      <span class="checkout-step-label" id="checkoutStepLabel">Carrinho pronto para o Telegram</span>
       <div class="summary-line">
         <span id="itemsCount">Carrinho vazio</span>
         <strong id="drawerTotal">R$ 0,00</strong>
@@ -1413,65 +1131,23 @@
           <strong id="drawerSubtotal">R$ 0,00</strong>
         </div>
         <div class="cart-breakdown-row">
-          <span>Entrega</span>
-          <strong id="drawerDelivery">A definir</strong>
+          <span>Entrega e Pix</span>
+          <strong id="drawerDelivery">No Telegram</strong>
         </div>
         <div class="cart-breakdown-row total">
-          <span>Total previsto</span>
+          <span>Total no carrinho</span>
           <strong id="drawerGrandTotal">R$ 0,00</strong>
         </div>
       </div>
+      <label class="cart-notes">Observacoes do pedido
+        <textarea id="cartNotes" maxlength="500" placeholder="Ex: separar troco, evitar substituicoes ou detalhe importante"></textarea>
+        <small>Entrega e pagamento continuam no Telegram.</small>
+      </label>
       <div class="checkout-stage" id="cartStepPanel">
-        <small>Confira os itens antes de escolher como deseja receber.</small>
-        <button class="primary" id="continueToDelivery" type="button" disabled>Continuar para entrega</button>
-      </div>
-      <div class="checkout-stage" id="deliveryStepPanel" hidden>
-      <div class="payment-box" aria-label="Entrega ou retirada">
-        <strong>Recebimento</strong>
-        <div class="delivery-options">
-          <label class="delivery-choice"><input id="deliveryPickup" type="radio" name="deliveryMode" value="retirada" checked> Retirada</label>
-          <label class="delivery-choice"><input id="deliveryHome" type="radio" name="deliveryMode" value="entrega"> Entrega</label>
-        </div>
-        <div class="delivery-fields" id="deliveryFields" hidden>
-          <input id="deliveryCep" placeholder="CEP">
-          <input id="deliveryRua" placeholder="Rua">
-          <input id="deliveryNumero" placeholder="Número">
-          <input id="deliveryComplemento" placeholder="Complemento (opcional)">
-          <input id="deliveryBairro" placeholder="Bairro">
-          <input id="deliveryCidade" placeholder="Cidade">
-          <input id="deliveryEstado" placeholder="Estado">
-        </div>
-        <small id="deliverySummary">Retirada no local selecionada.</small>
-      </div>
-      <div class="payment-box" id="pointsBox" hidden>
-        <label class="payment-option">
-          <input id="usePointsDiscount" type="checkbox">
-          Usar pontos como desconto
-        </label>
-        <label class="payment-option">
-          <input id="usePointsFreeDelivery" type="checkbox">
-          Usar pontos para entrega gratis
-        </label>
-        <small id="pointsSummary">Saldo de pontos indisponivel.</small>
-      </div>
-      <div class="checkout-actions">
-        <button class="ghost" id="backToCart" type="button">Voltar ao carrinho</button>
-        <button class="primary" id="sendCartDrawer" type="button" disabled>Continuar para pagamento</button>
-      </div>
+        <small>Entrega, retirada e pagamento continuam no chat do Telegram.</small>
+        <button class="primary" id="continueToDelivery" type="button" disabled>Enviar carrinho ao Telegram</button>
       </div>
       <button class="danger" id="clearCartDrawer" type="button" disabled>Limpar carrinho</button>
-    </div>
-  </aside>
-
-  <aside class="payment-drawer" id="paymentDrawer" aria-label="Pagamento">
-    <div class="cart-head">
-      <h2>Pagamento do pedido</h2>
-      <button class="ghost" id="closePayment" type="button">Fechar</button>
-    </div>
-    <div class="payment-body">
-      <div class="pix-box" id="miniappPaymentContent">
-        <div class="empty">Nenhum pagamento aberto.</div>
-      </div>
     </div>
   </aside>
 
@@ -1510,10 +1186,6 @@
       cart: new Map(),
       cartOpen: false,
       checkoutStep: 'catalog',
-      paymentMethod: 'pix',
-      deliveryMode: 'retirada',
-      deliveryQuote: null,
-      deliveryQuoteLoading: false,
       miniappToken: localStorage.getItem(MINIAPP_TOKEN_KEY) || '',
       pendingClientOrderId: localStorage.getItem(PENDING_ORDER_KEY) || '',
       authOk: false,
@@ -1523,16 +1195,7 @@
       orders: [],
       cliente: null,
       savingProfile: false,
-      usePointsDiscount: false,
-      usePointsFreeDelivery: false,
       sending: false,
-      paymentOpen: false,
-      paymentOrderId: '',
-      paymentData: null,
-      paymentLoading: false,
-      proofUploading: false,
-      confirmationOrder: null,
-      trackingUrl: '',
       pollTimer: null,
       storeStatusTimer: null,
       loja: {
@@ -1544,12 +1207,8 @@
         focusedProductId: '',
         viewedSections: new Map(),
         interactedProducts: new Set(),
-        slideIndex: 0,
-        slideSignature: '',
-        slideTimer: null,
-        alertIndex: 0,
         alertSignature: '',
-        alertTimer: null
+        alertHideTimer: null
       }
     };
 
@@ -1577,12 +1236,6 @@
       cartButton: document.getElementById('cartButton'),
       cartDrawer: document.getElementById('cartDrawer'),
       closeCart: document.getElementById('closeCart'),
-      paymentDrawer: document.getElementById('paymentDrawer'),
-      closePayment: document.getElementById('closePayment'),
-      miniappPaymentContent: document.getElementById('miniappPaymentContent'),
-      confirmationPanel: document.getElementById('confirmationPanel'),
-      confirmationStatus: document.getElementById('confirmationStatus'),
-      confirmationContent: document.getElementById('confirmationContent'),
       cartList: document.getElementById('cartList'),
       itemsCount: document.getElementById('itemsCount'),
       bottomCount: document.getElementById('bottomCount'),
@@ -1591,36 +1244,14 @@
       drawerSubtotal: document.getElementById('drawerSubtotal'),
       drawerDelivery: document.getElementById('drawerDelivery'),
       drawerGrandTotal: document.getElementById('drawerGrandTotal'),
+      cartNotes: document.getElementById('cartNotes'),
       checkoutStepLabel: document.getElementById('checkoutStepLabel'),
       cartStepPanel: document.getElementById('cartStepPanel'),
-      deliveryStepPanel: document.getElementById('deliveryStepPanel'),
       continueToDelivery: document.getElementById('continueToDelivery'),
-      backToCart: document.getElementById('backToCart'),
-      sendCartDrawer: document.getElementById('sendCartDrawer'),
-      paymentPix: document.getElementById('paymentPix'),
-      pointsBox: document.getElementById('pointsBox'),
-      pointsSummary: document.getElementById('pointsSummary'),
-      usePointsDiscount: document.getElementById('usePointsDiscount'),
-      usePointsFreeDelivery: document.getElementById('usePointsFreeDelivery'),
-      deliveryPickup: document.getElementById('deliveryPickup'),
-      deliveryHome: document.getElementById('deliveryHome'),
-      deliveryFields: document.getElementById('deliveryFields'),
-      deliveryCep: document.getElementById('deliveryCep'),
-      deliveryRua: document.getElementById('deliveryRua'),
-      deliveryNumero: document.getElementById('deliveryNumero'),
-      deliveryComplemento: document.getElementById('deliveryComplemento'),
-      deliveryBairro: document.getElementById('deliveryBairro'),
-      deliveryCidade: document.getElementById('deliveryCidade'),
-      deliveryEstado: document.getElementById('deliveryEstado'),
-      deliverySummary: document.getElementById('deliverySummary'),
       clearCartDrawer: document.getElementById('clearCartDrawer'),
       reviewCart: document.getElementById('reviewCart'),
       viniAiOutdoor: document.getElementById('viniAiOutdoor'),
       viniAiAlert: document.getElementById('viniAiAlert'),
-      viniAiContext: document.getElementById('viniAiContext'),
-      viniAiMessage: document.getElementById('viniAiMessage'),
-      viniAiSlide: document.getElementById('viniAiSlide'),
-      viniAiDots: document.getElementById('viniAiDots'),
       storeStatus: document.getElementById('storeStatus'),
       ordersPanel: document.getElementById('ordersPanel'),
       ordersList: document.getElementById('ordersList'),
@@ -1691,7 +1322,6 @@
         const me = await apiFetch('/api/miniapp/me').catch(() => null);
         state.cliente = me?.cliente || data.cliente || null;
         preencherFormularioCadastro();
-        preencherEnderecoEntrega();
         renderSummary();
         await loadOrders();
         state.pollTimer = setInterval(loadOrders, 5000);
@@ -1738,26 +1368,8 @@
       } catch (_) {}
     }
 
-    async function preencherEntregaPorCep() {
-      const cep = String(els.deliveryCep?.value || '').replace(/\D/g, '');
-      if (cep.length !== 8) return;
-      try {
-        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-        const data = await response.json();
-        if (!response.ok || data.erro) return;
-        if (els.deliveryRua) els.deliveryRua.value = data.logradouro || els.deliveryRua.value;
-        if (els.deliveryBairro) els.deliveryBairro.value = data.bairro || els.deliveryBairro.value;
-        if (els.deliveryCidade) els.deliveryCidade.value = data.localidade || els.deliveryCidade.value;
-        if (els.deliveryEstado) els.deliveryEstado.value = data.uf || els.deliveryEstado.value;
-        atualizarCotacaoEntrega();
-      } catch (_) {}
-    }
-
     function etapaJornadaAtual() {
       if (clientePrecisaCadastro()) return 'cadastro';
-      if (state.checkoutStep === 'payment') return 'pagamento';
-      if (state.checkoutStep === 'confirmation') return 'confirmacao';
-      if (state.checkoutStep === 'delivery') return 'entrega';
       if (state.checkoutStep === 'cart') return 'carrinho';
       return 'catalogo';
     }
@@ -1768,9 +1380,7 @@
         ['cadastro', 'Cadastro'],
         ['catalogo', 'Catalogo'],
         ['carrinho', 'Carrinho'],
-        ['entrega', 'Entrega'],
-        ['pagamento', 'Pagamento'],
-        ['confirmacao', 'Confirmacao']
+        ['telegram', 'Telegram']
       ];
       const indiceAtual = etapas.findIndex(([id]) => id === atual);
       if (els.journeySteps) {
@@ -1783,10 +1393,8 @@
         const labels = {
           cadastro: 'Primeiro acesso',
           catalogo: 'Escolha produtos',
-          carrinho: 'Carrinho',
-          entrega: 'Defina recebimento',
-          pagamento: 'Pague no Mini App',
-          confirmacao: 'Acompanhe o pedido'
+          carrinho: 'Envie ao Telegram',
+          telegram: 'Entrega e Pix no chat'
         };
         els.journeyStatus.textContent = labels[atual] || 'Compra no Mini App';
       }
@@ -1825,9 +1433,8 @@
           })
         });
         state.cliente = data.cliente || state.cliente;
-        preencherEnderecoEntrega();
         renderJourney();
-        showToast('Cadastro salvo. Agora voce ja pode finalizar seu pedido no Mini App.');
+        showToast('Cadastro salvo. Agora voce ja pode enviar o carrinho ao Telegram.');
       } catch (err) {
         showToast(err.message || 'Nao foi possivel salvar seu cadastro');
       } finally {
@@ -1859,16 +1466,13 @@
       }
       els.ordersList.innerHTML = state.orders.slice(0, 5).map(order => {
         const status = order.statusDetalhe?.label || order.status || 'aguardando';
-        const statusPagamento = String(order.pagamento?.status || '').toLowerCase();
-        const podePagar = order.pagamento?.metodo === 'pix' && ['pendente', 'aguardando_comprovante', 'comprovante_recusado'].includes(statusPagamento);
         return `
           <div class="order-mini">
             <span>
               <strong>Pedido #${escapeHtml(order.id)}</strong>
-              <small>${escapeHtml(status)} | ${escapeHtml(money(order.total))}</small>
+              <small>${escapeHtml(status)} | ${escapeHtml(money(order.total))} | entrega e Pix pelo Telegram</small>
             </span>
             <div class="actions">
-              ${podePagar ?`<button class="primary" type="button" data-payment-id="${escapeHtml(order.id)}">Pagar</button>` : ''}
               <button class="ghost" type="button" data-order-id="${escapeHtml(order.id)}">Atualizar</button>
             </div>
           </div>
@@ -2207,329 +1811,26 @@
         .sort((a, b) => Number(a.order || 0) - Number(b.order || 0) || a.label.localeCompare(b.label, 'pt-BR'));
     }
 
-    const VINI_AI_COMPLEMENTS = [
-      { terms: ['cafe'], complements: ['leite', 'acucar', 'pao', 'biscoito'] },
-      { terms: ['pao'], complements: ['manteiga', 'cafe', 'leite'] },
-      { terms: ['arroz'], complements: ['feijao', 'oleo'] },
-      { terms: ['feijao'], complements: ['arroz', 'farinha'] },
-      { terms: ['macarrao'], complements: ['molho', 'queijo'] },
-      { terms: ['refrigerante'], complements: ['salgadinho', 'snack'] },
-      { terms: ['detergente'], complements: ['esponja'] }
-    ];
-
-    function uniqueProducts(items = []) {
-      const seen = new Set();
-      return items.filter(item => item && !seen.has(item.id) && seen.add(item.id));
-    }
-
-    function productHasTerm(product, term) {
-      return product?.keywords?.includes(normalizeText(term));
-    }
-
-    function complementProductsFor(products = []) {
-      const selectedIds = new Set(products.map(item => item.id));
-      const terms = new Set();
-      products.forEach(product => {
-        VINI_AI_COMPLEMENTS.forEach(rule => {
-          if (rule.terms.some(term => productHasTerm(product, term))) {
-            rule.complements.forEach(term => terms.add(term));
-          }
-        });
-      });
-      return uniqueProducts(Array.from(terms).flatMap(term =>
-        availableProducts().filter(product => !selectedIds.has(product.id) && productHasTerm(product, term))
-      ));
-    }
-
-    function cartProductNames(items = cartItems(), limit = 2) {
-      return items.slice(0, limit).map(item => item.name).filter(Boolean);
-    }
-
-    function recommendationWithReason(product, reason, source = 'catalog') {
-      return product ? { ...product, viniReason: reason, viniSource: source } : null;
-    }
-
-    function promotionRecommendations(excludedIds = new Set()) {
-      return availableProducts()
-        .filter(product => product.promotion && !excludedIds.has(product.id))
-        .sort((a, b) => {
-          const descontoA = Math.max(0, Number(a.normalPrice || 0) - Number(a.price || 0));
-          const descontoB = Math.max(0, Number(b.normalPrice || 0) - Number(b.price || 0));
-          return descontoB - descontoA || a.name.localeCompare(b.name, 'pt-BR');
-        })
-        .map(product => recommendationWithReason(product, 'Está em promoção agora.', 'promotion'));
-    }
-
-    function cartAwareRecommendations(itemsInCart = cartItems()) {
-      const cartIds = new Set(itemsInCart.map(item => item.id));
-      const complements = complementProductsFor(itemsInCart)
-        .map(product => recommendationWithReason(product, 'Combina com o que já está no seu carrinho.', 'cart'));
-      const promotions = promotionRecommendations(cartIds);
-      const fallback = homeRecommendations()
-        .filter(product => !cartIds.has(product.id))
-        .map(product => recommendationWithReason(product, 'Boa opção disponível para completar sua compra.', 'catalog'));
-      return uniqueProducts([...complements, ...promotions, ...fallback]).slice(0, 3);
-    }
-
-    function homeRecommendations() {
-      const preferredSections = Array.from(state.viniAi.viewedSections.entries())
-        .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))
-        .map(([section]) => section);
-      const behaviorBased = preferredSections.flatMap(section =>
-        availableProducts().filter(product => product.section === section)
-      );
-      const sectionsSeen = new Set();
-      const diversified = [];
-      availableProducts().forEach(product => {
-        if (sectionsSeen.has(product.section)) return;
-        sectionsSeen.add(product.section);
-        diversified.push(product);
-      });
-      return uniqueProducts([
-        ...promotionRecommendations(),
-        ...behaviorBased.map(product => recommendationWithReason(product, 'Você demonstrou interesse nesta seção.', 'behavior')),
-        ...diversified.map(product => recommendationWithReason(product, 'Produto disponível para conhecer.', 'catalog')),
-        ...availableProducts().map(product => recommendationWithReason(product, 'Produto disponível para compra.', 'catalog'))
-      ]).slice(0, 3);
-    }
-
-    function currentViniAIContext() {
-      const items = cartItems();
-      if (state.cartOpen && items.length) return 'checkout';
-      if (items.length) return 'cart';
-      const focused = state.products.find(product => product.id === state.viniAi.focusedProductId);
-      if (focused) return 'product';
-      if (state.section) return 'category';
-      return 'home';
-    }
-
-    function viniAIRecommendationModel(context = currentViniAIContext()) {
-      if (state.catalogLoading) {
-        return {
-          contextLabel: 'Carregando',
-          message: 'Carregando recomendações...',
-          items: [],
-          status: 'loading'
-        };
-      }
-      if (!availableProducts().length) {
-        return {
-          contextLabel: 'Sem catálogo',
-          message: 'Ainda não há produtos disponíveis para recomendar.',
-          items: [],
-          status: 'empty'
-        };
-      }
-      if (context === 'checkout') {
-        const itemsInCart = cartItems();
-        const nomes = cartProductNames(itemsInCart);
-        return {
-          contextLabel: 'Finalização',
-          message: nomes.length
-            ? `Antes de finalizar ${nomes.join(' e ')}, veja se falta algum complemento útil.`
-            : 'Antes de finalizar, confira endereço, forma de pagamento e itens do carrinho.',
-          items: cartAwareRecommendations(itemsInCart).slice(0, 2),
-          status: 'ready'
-        };
-      }
-      if (context === 'cart') {
-        const itemsInCart = cartItems();
-        const suggestions = cartAwareRecommendations(itemsInCart);
-        const nomes = cartProductNames(itemsInCart);
-        if (!itemsInCart.length) {
-          return {
-            contextLabel: 'Carrinho',
-            message: 'Posso te ajudar a montar uma compra mais completa com base no catálogo e nas promoções de agora.',
-            items: homeRecommendations(),
-            status: 'ready'
-          };
-        }
-        return {
-          contextLabel: 'Carrinho',
-          message: `Vi ${nomes.join(' e ')} no seu carrinho. Separei complementos e ofertas que podem fazer sentido agora.`,
-          items: suggestions,
-          status: 'ready'
-        };
-      }
-      if (context === 'product') {
-        const product = state.products.find(item => item.id === state.viniAi.focusedProductId);
-        const complements = product ?complementProductsFor([product]) : [];
-        return {
-          contextLabel: 'Produto',
-          message: complements.length
-            ?'Boa escolha. Talvez você também precise de itens que costumam acompanhar esse produto.'
-            : 'Esse item combina com alguns produtos do catálogo. Quer ver sugestões?',
-          items: (complements.length
-            ? complements.map(item => recommendationWithReason(item, `Combina com ${product.name}.`, 'product'))
-            : homeRecommendations()).slice(0, 3),
-          status: 'ready'
-        };
-      }
-      if (context === 'category') {
-        const categoryItems = availableProducts().filter(product => product.section === state.section);
-        return {
-          contextLabel: categoryItems[0]?.sectionLabel || 'Categoria',
-          message: 'Posso te ajudar a escolher produtos úteis nesta categoria.',
-          items: categoryItems.slice(0, 3),
-          status: categoryItems.length ?'ready' : 'empty'
-        };
-      }
-      const items = homeRecommendations();
-      return {
-        contextLabel: 'Início',
-        message: items.length
-          ?'Posso te ajudar a montar uma compra mais completa com base no catálogo disponível.'
-          : 'Sem recomendações no momento.',
-        items,
-        status: items.length ?'ready' : 'empty'
-      };
-    }
-
-    function viniAISlideSignature(model = {}) {
-      return `${model.contextLabel || ''}:${(model.items || []).map(item => item.id).join('|')}`;
-    }
-
-    function renderViniAISlide(model = viniAIRecommendationModel()) {
-      if (!els.viniAiSlide) return;
-      const items = model.items || [];
-      if (model.status === 'loading') {
-        els.viniAiSlide.innerHTML = '<div class="vini-ai-state">Buscando produtos disponíveis...</div>';
-        els.viniAiDots.innerHTML = '';
-        return;
-      }
-      if (!items.length) {
-        els.viniAiSlide.innerHTML = '<div class="vini-ai-state">Sem recomendações no momento.</div>';
-        els.viniAiDots.innerHTML = '';
-        return;
-      }
-      const item = items[Math.min(state.viniAi.slideIndex, items.length - 1)];
-      const promoBadge = item.promotion
-        ? `<span class="vini-ai-badge promo">Promoção</span>`
-        : '';
-      const reason = item.viniReason
-        ? `<small class="vini-ai-reason">${escapeHtml(item.viniReason)}</small>`
-        : '';
-      els.viniAiSlide.innerHTML = `
-        <div>
-          <strong>${escapeHtml(item.name)}</strong>
-          <small>${escapeHtml(item.sectionLabel)} · ${item.stock} disp.</small>
-          ${reason}
-        </div>
-        <div class="vini-ai-badges">
-          ${promoBadge}
-        </div>
-        <div class="vini-ai-slide-row">
-          <span class="vini-ai-price">${money(item.price)}</span>
-          <button class="gold" type="button" data-vini-add="${escapeHtml(item.id)}">Adicionar</button>
-        </div>
-      `;
-      els.viniAiSlide.querySelector('[data-vini-add]')?.addEventListener('click', () => changeQty(item.id, 1));
-      els.viniAiDots.innerHTML = items.length > 1
-        ?items.map((_, index) => `
-          <button
-            class="vini-ai-dot ${index === state.viniAi.slideIndex ?'active' : ''}"
-            type="button"
-            data-vini-slide="${index}"
-            aria-label="Ver recomendação ${index + 1}"
-          ></button>
-        `).join('')
-        : '';
-      els.viniAiDots.querySelectorAll('[data-vini-slide]').forEach(button => {
-        button.addEventListener('click', () => {
-          state.viniAi.slideIndex = Number(button.dataset.viniSlide || 0);
-          renderViniAISlide(model);
-          iniciarViniAISlider(model);
-        });
-      });
-    }
-
-    function iniciarViniAISlider(model = viniAIRecommendationModel()) {
-      if (state.viniAi.slideTimer) clearInterval(state.viniAi.slideTimer);
-      if ((model.items || []).length < 2) {
-        state.viniAi.slideTimer = null;
-        return;
-      }
-      state.viniAi.slideTimer = setInterval(() => {
-        const atual = viniAIRecommendationModel();
-        if (viniAISlideSignature(atual) !== state.viniAi.slideSignature || atual.items.length < 2) {
-          renderViniAIOutdoor();
-          return;
-        }
-        state.viniAi.slideIndex = (state.viniAi.slideIndex + 1) % atual.items.length;
-        renderViniAISlide(atual);
-      }, 12000);
-    }
-
     function viniAIAlertMessages() {
-      const mensagens = [];
-      const promocao = promotionRecommendations()[0];
-      const itensCarrinho = cartItems();
-      const sugestaoCarrinho = itensCarrinho.length ?cartAwareRecommendations(itensCarrinho)[0] : null;
-      if (state.checkoutStep === 'delivery') {
-        mensagens.push('Confira o endereço e a forma de recebimento antes de seguir para o pagamento.');
-      }
-      if (promocao) {
-        mensagens.push(`Promoção agora: ${promocao.name} por ${money(promocao.price)}.`);
-      }
-      if (sugestaoCarrinho) {
-        mensagens.push(`Dica de compra: ${sugestaoCarrinho.name} combina com o que já está no seu carrinho.`);
-      }
-      if (!itensCarrinho.length) {
-        mensagens.push('Use a busca para achar produtos rápido e monte sua compra sem sair do Mini App.');
-      }
-      return Array.from(new Set(mensagens)).slice(0, 4);
-    }
-
-    function viniAIAlertSignature(mensagens = []) {
-      return mensagens.join('|');
+      return ['Use a busca para achar produtos rápido e monte sua compra sem sair do Mini App.'];
     }
 
     function renderViniAIAlert(mensagens = viniAIAlertMessages()) {
       if (!els.viniAiAlert) return;
-      if (!mensagens.length) {
-        els.viniAiAlert.innerHTML = '<strong>Alerta do Vini</strong><span>Sem alertas no momento.</span>';
-        return;
-      }
-      const index = Math.min(state.viniAi.alertIndex, mensagens.length - 1);
-      els.viniAiAlert.innerHTML = `<strong>Alerta do Vini</strong><span>${escapeHtml(mensagens[index])}</span>`;
-    }
-
-    function iniciarViniAIAlerts(mensagens = viniAIAlertMessages()) {
-      if (state.viniAi.alertTimer) clearInterval(state.viniAi.alertTimer);
-      if (mensagens.length < 2) {
-        state.viniAi.alertTimer = null;
-        return;
-      }
-      state.viniAi.alertTimer = setInterval(() => {
-        const atuais = viniAIAlertMessages();
-        if (viniAIAlertSignature(atuais) !== state.viniAi.alertSignature || atuais.length < 2) {
-          renderViniAIOutdoor();
-          return;
-        }
-        state.viniAi.alertIndex = (state.viniAi.alertIndex + 1) % atuais.length;
-        renderViniAIAlert(atuais);
-      }, 9000);
+      const mensagem = mensagens[0] || '';
+      if (state.viniAi.alertHideTimer) clearTimeout(state.viniAi.alertHideTimer);
+      els.viniAiAlert.classList.remove('is-hidden');
+      els.viniAiAlert.removeAttribute('aria-hidden');
+      els.viniAiAlert.innerHTML = `<strong>Alerta do Vini</strong><span>${escapeHtml(mensagem)}</span>`;
+      state.viniAi.alertHideTimer = setTimeout(() => {
+        els.viniAiAlert.classList.add('is-hidden');
+        els.viniAiAlert.setAttribute('aria-hidden', 'true');
+      }, 4800);
     }
 
     function renderViniAIOutdoor() {
-      const model = viniAIRecommendationModel();
-      const signature = viniAISlideSignature(model);
-      if (signature !== state.viniAi.slideSignature) {
-        state.viniAi.slideSignature = signature;
-        state.viniAi.slideIndex = 0;
-      }
       const alertas = viniAIAlertMessages();
-      const alertSignature = viniAIAlertSignature(alertas);
-      if (alertSignature !== state.viniAi.alertSignature) {
-        state.viniAi.alertSignature = alertSignature;
-        state.viniAi.alertIndex = 0;
-      }
-      els.viniAiContext.textContent = model.contextLabel;
-      els.viniAiMessage.textContent = model.message;
       renderViniAIAlert(alertas);
-      renderViniAISlide(model);
-      iniciarViniAISlider(model);
-      iniciarViniAIAlerts(alertas);
     }
 
     function cartQty(id) {
@@ -2605,102 +1906,18 @@
       return '';
     }
 
-    function renderPointsOptions() {
-      const cfg = state.cliente?.pontos || {};
-      const saldo = Number(state.cliente?.pontosDisponiveis || 0);
-      const canDiscount = cfg.allow_points_for_discount === true && saldo >= Number(cfg.min_points_to_redeem || 0);
-      const canFreeDelivery = cfg.allow_points_for_free_delivery === true && saldo >= Number(cfg.free_delivery_points_cost || 0) && Number(cfg.free_delivery_points_cost || 0) > 0;
-      els.pointsBox.hidden = !(canDiscount || canFreeDelivery);
-      if (els.pointsBox.hidden) return;
-      els.usePointsDiscount.disabled = !canDiscount;
-      els.usePointsFreeDelivery.disabled = !canFreeDelivery;
-      if (!canDiscount) {
-        els.usePointsDiscount.checked = false;
-        state.usePointsDiscount = false;
-      }
-      if (!canFreeDelivery) {
-        els.usePointsFreeDelivery.checked = false;
-        state.usePointsFreeDelivery = false;
-      }
-      const value = Number(cfg.point_money_value || 0);
-      const discount = value > 0 ?money(saldo * value) : '';
-      els.pointsSummary.textContent = `Saldo: ${saldo} pontos${discount ?` (${discount})` : ''}. Entrega gratis: ${cfg.free_delivery_points_cost || 0} pontos.`;
-    }
-
-    function preencherEnderecoEntrega() {
-      const cliente = state.cliente || {};
-      if (els.deliveryCep && !els.deliveryCep.value) els.deliveryCep.value = cliente.cep || '';
-      if (els.deliveryRua && !els.deliveryRua.value) els.deliveryRua.value = cliente.rua || '';
-      if (els.deliveryNumero && !els.deliveryNumero.value) els.deliveryNumero.value = cliente.numero || '';
-      if (els.deliveryComplemento && !els.deliveryComplemento.value) els.deliveryComplemento.value = cliente.complemento || '';
-      if (els.deliveryBairro && !els.deliveryBairro.value) els.deliveryBairro.value = cliente.bairro || '';
-      if (els.deliveryCidade && !els.deliveryCidade.value) els.deliveryCidade.value = cliente.cidade || '';
-      if (els.deliveryEstado && !els.deliveryEstado.value) els.deliveryEstado.value = cliente.estado || '';
-    }
-
-    function enderecoEntregaPayload() {
-      return {
-        cep: String(els.deliveryCep?.value || '').trim(),
-        rua: String(els.deliveryRua?.value || '').trim(),
-        numero: String(els.deliveryNumero?.value || '').trim(),
-        complemento: String(els.deliveryComplemento?.value || '').trim(),
-        bairro: String(els.deliveryBairro?.value || '').trim(),
-        cidade: String(els.deliveryCidade?.value || '').trim(),
-        estado: String(els.deliveryEstado?.value || '').trim()
-      };
-    }
-
-    function enderecoEntregaCompleto() {
-      const entrega = enderecoEntregaPayload();
-      return Boolean(entrega.cep && entrega.rua && entrega.numero && entrega.bairro && entrega.cidade && entrega.estado);
-    }
-
-    function renderDeliveryMode() {
-      const entrega = state.deliveryMode === 'entrega';
-      if (els.deliveryFields) els.deliveryFields.hidden = !entrega;
-      if (!els.deliverySummary) return;
-      if (!entrega) {
-        els.deliverySummary.textContent = `Retirada no local selecionada - subtotal ${money(cartTotal())} - total ${money(cartTotal())}`;
-        return;
-      }
-      if (state.deliveryQuoteLoading) {
-        els.deliverySummary.textContent = 'Calculando entrega...';
-      } else if (state.deliveryQuote?.entregaDisponivel) {
-        els.deliverySummary.textContent = `Subtotal ${money(cartTotal())} - frete ${money(state.deliveryQuote.frete || 0)} - total ${money(state.deliveryQuote.total || cartTotal())}`;
-      } else if (!state.authOk && enderecoEntregaCompleto()) {
-        els.deliverySummary.textContent = 'Endereco informado. Conecte sua sessao para confirmar o pedido.';
-      } else if (state.deliveryQuote?.motivo) {
-        els.deliverySummary.textContent = state.deliveryQuote.motivo;
-      } else {
-        els.deliverySummary.textContent = 'Informe o endereço para calcular a entrega.';
-      }
-    }
-
-    function entregaProntaParaPagamento() {
-      if (state.deliveryMode === 'retirada') return true;
-      if (!state.authOk) return enderecoEntregaCompleto();
-      return state.deliveryQuote?.entregaDisponivel === true;
-    }
-
     function renderCheckoutStep() {
-      const etapaEntrega = state.checkoutStep === 'delivery';
-      if (els.cartStepPanel) els.cartStepPanel.hidden = etapaEntrega;
-      if (els.deliveryStepPanel) els.deliveryStepPanel.hidden = !etapaEntrega;
+      const etapaCarrinho = state.checkoutStep === 'cart';
+      if (els.cartStepPanel) els.cartStepPanel.hidden = !etapaCarrinho;
       if (els.checkoutStepLabel) {
-        els.checkoutStepLabel.textContent = etapaEntrega
-          ?'Etapa 2 de 3 - Entrega'
-          : 'Etapa 1 de 3 - Carrinho';
+        els.checkoutStepLabel.textContent = 'Carrinho pronto para o Telegram';
       }
       if (els.continueToDelivery) {
-        els.continueToDelivery.disabled = cartCount() < 1 || state.sending;
-      }
-      if (els.sendCartDrawer) {
-        const fallbackTelegram = !state.authOk && Boolean(tg?.sendData);
-        const semCanalCheckout = !state.authOk && !fallbackTelegram;
-        els.sendCartDrawer.disabled = cartCount() < 1 || state.sending || semCanalCheckout || !state.loja.aceitaPedidos || !entregaProntaParaPagamento();
-        els.sendCartDrawer.textContent = state.sending
+        const canalTelegram = Boolean(tg?.sendData);
+        els.continueToDelivery.disabled = cartCount() < 1 || state.sending || !canalTelegram || !state.loja.aceitaPedidos;
+        els.continueToDelivery.textContent = state.sending
           ?'Enviando...'
-          : (!state.authOk && fallbackTelegram ?'Finalizar pedido no Telegram' : 'Continuar para pagamento');
+          : 'Enviar carrinho ao Telegram';
       }
       renderJourney();
     }
@@ -2716,11 +1933,7 @@
     }
 
     async function irParaEntrega() {
-      if (!cartItems().length) return showToast('Adicione ao menos um produto');
-      if (clientePrecisaCadastro()) return avisarCadastroMiniApp();
-      state.checkoutStep = 'delivery';
-      renderCheckoutStep();
-      await atualizarCotacaoEntrega();
+      return sendCartToTelegram();
     }
 
     function voltarAoCarrinho() {
@@ -2729,53 +1942,15 @@
     }
 
     async function atualizarCotacaoEntrega() {
-      if (state.deliveryMode !== 'entrega' || !state.authOk || !cartItems().length) {
-        state.deliveryQuote = null;
-        renderDeliveryMode();
-        renderCheckoutStep();
-        return;
-      }
-      const entrega = enderecoEntregaPayload();
-      if (!entrega.cep || !entrega.rua || !entrega.numero || !entrega.bairro || !entrega.cidade || !entrega.estado) {
-        state.deliveryQuote = null;
-        renderDeliveryMode();
-        renderCheckoutStep();
-        return;
-      }
-      try {
-        state.deliveryQuoteLoading = true;
-        renderDeliveryMode();
-        renderCheckoutStep();
-        const data = await apiFetch('/api/miniapp/delivery/quote', {
-          method: 'POST',
-          body: JSON.stringify({
-            modalidade_entrega: 'entrega',
-            entrega,
-            items: cartItems().map(item => ({
-              produto_id: item.id,
-              secao: item.section,
-              index: item.index,
-              quantidade: item.quantity
-            }))
-          })
-        });
-        state.deliveryQuote = data;
-      } catch (err) {
-        state.deliveryQuote = { entregaDisponivel: false, motivo: err.message || 'Não foi possível calcular a entrega.' };
-      } finally {
-        state.deliveryQuoteLoading = false;
-      }
-      renderDeliveryMode();
-      renderCheckoutStep();
+      return null;
     }
 
     function setCartOpen(open) {
       state.cartOpen = open;
-      if (open && !['cart', 'delivery'].includes(state.checkoutStep)) state.checkoutStep = 'cart';
-      if (!open && ['cart', 'delivery'].includes(state.checkoutStep)) state.checkoutStep = 'catalog';
+      if (open && state.checkoutStep !== 'cart') state.checkoutStep = 'cart';
+      if (!open && state.checkoutStep === 'cart') state.checkoutStep = 'catalog';
       els.cartDrawer.classList.toggle('open', open);
       renderCart();
-      renderDeliveryMode();
       renderCheckoutStep();
       renderViniAIOutdoor();
     }
@@ -2942,180 +2117,15 @@
       const pointsText = promotionalPointsText();
       if (pointsText) {
         const box = document.createElement('div');
-        box.className = 'payment-box';
+        box.className = 'points-box';
         box.innerHTML = `<strong>${escapeHtml(pointsText)}</strong><small>Os pontos entram após confirmação do pedido.</small>`;
         els.cartList.appendChild(box);
-      }
-    }
-
-    function statusPagamentoLabel(status = '') {
-      const chave = String(status || '').toLowerCase();
-      const labels = {
-        pendente: 'Pendente',
-        aguardando_comprovante: 'Aguardando comprovante',
-        comprovante_recebido: 'Comprovante recebido',
-        comprovante_recusado: 'Comprovante recusado',
-        pago: 'Pago'
-      };
-      return labels[chave] || (status || 'Pendente');
-    }
-
-    function setPaymentOpen(open) {
-      state.paymentOpen = open;
-      if (open) state.checkoutStep = 'payment';
-      else state.checkoutStep = state.confirmationOrder ?'confirmation' : 'catalog';
-      els.paymentDrawer.classList.toggle('open', open);
-      if (open) renderMiniAppPayment();
-      renderJourney();
-    }
-
-    async function abrirPagamentoMiniApp(orderId, pagamentoInicial = null) {
-      state.paymentOrderId = String(orderId || '');
-      state.paymentData = pagamentoInicial;
-      state.paymentLoading = !pagamentoInicial;
-      setCartOpen(false);
-      setPaymentOpen(true);
-      if (pagamentoInicial) renderMiniAppPayment();
-      if (!state.paymentOrderId || pagamentoInicial?.pix?.disponivel) return;
-      try {
-        const data = await apiFetch(`/api/miniapp/orders/${encodeURIComponent(state.paymentOrderId)}/payment`);
-        state.paymentData = data.pagamento || null;
-      } catch (err) {
-        showToast(err.message || 'Falha ao carregar pagamento');
-      } finally {
-        state.paymentLoading = false;
-        renderMiniAppPayment();
-      }
-    }
-
-    function renderMiniAppPayment() {
-      if (!els.miniappPaymentContent) return;
-      if (state.paymentLoading) {
-        els.miniappPaymentContent.innerHTML = '<div class="empty">Carregando pagamento...</div>';
-        return;
-      }
-      const pagamento = state.paymentData || {};
-      const pix = pagamento.pix || {};
-      if (!pix.disponivel) {
-        els.miniappPaymentContent.innerHTML = `
-          <div class="empty">Pagamento ainda indisponivel. Verifique a configuracao do Pix e tente novamente.</div>
-          <button class="ghost" id="retryMiniappPayment" type="button">Tentar novamente</button>
-        `;
-        els.miniappPaymentContent.querySelector('#retryMiniappPayment')?.addEventListener('click', () => abrirPagamentoMiniApp(state.paymentOrderId));
-        return;
-      }
-      const comprovanteRecebido = String(pagamento.status || '').toLowerCase() === 'comprovante_recebido';
-      els.miniappPaymentContent.innerHTML = `
-        <div>
-          <strong>Pedido #${escapeHtml(state.paymentOrderId)}</strong>
-          <small>Status: ${escapeHtml(statusPagamentoLabel(pagamento.status))}</small>
-        </div>
-        ${pix.qrCodeDataUrl ?`<img class="pix-qr" src="${escapeHtml(pix.qrCodeDataUrl)}" alt="QR Code Pix">` : ''}
-        <div>
-          <strong>${money(pix.valor)}</strong>
-          <small>${escapeHtml(pix.recebedor || 'Recebedor Pix')}${pix.cidade ?` · ${escapeHtml(pix.cidade)}` : ''}</small>
-        </div>
-        <small>Pix copia e cola</small>
-        <textarea class="pix-code" id="miniappPixCode" readonly>${escapeHtml(pix.copiaECola || '')}</textarea>
-        <div class="payment-actions">
-          <button class="primary" id="copyMiniappPix" type="button">Copiar código Pix</button>
-        </div>
-        <div class="proof-upload">
-          <strong>${comprovanteRecebido ?'Comprovante enviado' : 'Depois de pagar'}</strong>
-          <small>${comprovanteRecebido ?'A loja recebeu seu comprovante e vai conferir o pagamento.' : 'Envie o comprovante aqui mesmo para a loja conferir.'}</small>
-          ${comprovanteRecebido ?'' : `
-            <input id="miniappProofFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif,application/pdf">
-            <button class="ghost" id="uploadMiniappProof" type="button">Enviar comprovante</button>
-          `}
-        </div>
-      `;
-      els.miniappPaymentContent.querySelector('#copyMiniappPix')?.addEventListener('click', copiarPixMiniApp);
-      els.miniappPaymentContent.querySelector('#uploadMiniappProof')?.addEventListener('click', enviarComprovanteMiniApp);
-    }
-
-    function renderConfirmation() {
-      if (!els.confirmationPanel || !els.confirmationContent) return;
-      const order = state.confirmationOrder;
-      els.confirmationPanel.hidden = !order;
-      if (!order) return;
-      const entrega = order.modalidadeEntrega === 'entrega' || order.modalidade_entrega === 'entrega' ?'Entrega' : 'Retirada';
-      const pagamentoStatus = statusPagamentoLabel(order.pagamento?.status || state.paymentData?.status || 'pendente');
-      if (els.confirmationStatus) els.confirmationStatus.textContent = pagamentoStatus;
-      els.confirmationContent.innerHTML = `
-        <div class="payment-box">
-          <strong>Pedido #${escapeHtml(order.id)}</strong>
-          <small>${escapeHtml(entrega)} - ${money(order.total || 0)} - pagamento ${escapeHtml(pagamentoStatus)}</small>
-        </div>
-        <div class="payment-box">
-          <strong>Seu pedido esta sendo processado</strong>
-          <small>Pagamento, entrega e acompanhamento seguem pelo Mini App.</small>
-        </div>
-        ${state.trackingUrl ?`<button class="primary" id="openTracking" type="button">Acompanhar pedido</button>` : ''}
-      `;
-      els.confirmationContent.querySelector('#openTracking')?.addEventListener('click', () => {
-        window.open(state.trackingUrl, '_blank', 'noopener');
-      });
-    }
-
-    async function copiarPixMiniApp() {
-      const codigo = String(state.paymentData?.pix?.copiaECola || '').trim();
-      if (!codigo) return;
-      try {
-        await navigator.clipboard.writeText(codigo);
-        showToast('Código Pix copiado');
-      } catch (_) {
-        const campo = els.miniappPaymentContent.querySelector('#miniappPixCode');
-        campo?.select();
-        document.execCommand?.('copy');
-        showToast('Código Pix selecionado para copiar');
-      }
-    }
-
-    async function enviarComprovanteMiniApp() {
-      if (state.proofUploading || !state.paymentOrderId) return;
-      const input = els.miniappPaymentContent.querySelector('#miniappProofFile');
-      const arquivo = input?.files?.[0];
-      if (!arquivo) return showToast('Escolha o comprovante');
-      state.proofUploading = true;
-      const botao = els.miniappPaymentContent.querySelector('#uploadMiniappProof');
-      if (botao) {
-        botao.disabled = true;
-        botao.textContent = 'Enviando...';
-      }
-      try {
-        const formData = new FormData();
-        formData.append('comprovante', arquivo);
-        const response = await fetch(`${apiBase()}/api/miniapp/orders/${encodeURIComponent(state.paymentOrderId)}/payment/proof`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            ...(state.miniappToken ?{ Authorization: `Bearer ${state.miniappToken}` } : {})
-          },
-          body: formData
-        });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok || data.ok === false) throw new Error(data.erro || 'Falha ao enviar comprovante');
-        state.paymentData = data.pagamento || state.paymentData;
-        showToast(data.mensagem || 'Comprovante enviado');
-        await loadOrders();
-        renderConfirmation();
-      } catch (err) {
-        showToast(err.message || 'Falha ao enviar comprovante');
-      } finally {
-        state.proofUploading = false;
-        renderMiniAppPayment();
       }
     }
 
     function renderSummary() {
       const count = cartCount();
       const total = cartTotal();
-      const entrega = state.deliveryMode === 'entrega' && state.deliveryQuote?.entregaDisponivel
-        ? Number(state.deliveryQuote.frete || 0)
-        : 0;
-      const totalPrevisto = state.deliveryMode === 'entrega' && state.deliveryQuote?.entregaDisponivel
-        ? Number(state.deliveryQuote.total || total + entrega)
-        : total;
       const label = count ?`${count} ${count === 1 ?'item' : 'itens'}` : 'Carrinho vazio';
       els.cartButton.textContent = count ?`Carrinho · ${count}` : 'Carrinho';
       els.itemsCount.textContent = count ?`${label} no carrinho` : 'Carrinho vazio';
@@ -3124,27 +2134,19 @@
       els.drawerTotal.textContent = money(total);
       if (els.drawerSubtotal) els.drawerSubtotal.textContent = money(total);
       if (els.drawerDelivery) {
-        els.drawerDelivery.textContent = state.deliveryMode === 'entrega'
-          ? (state.deliveryQuote?.entregaDisponivel ? money(entrega) : 'A calcular')
-          : 'Retirada grátis';
+        els.drawerDelivery.textContent = 'No Telegram';
       }
-      if (els.drawerGrandTotal) els.drawerGrandTotal.textContent = money(totalPrevisto);
-      renderPointsOptions();
+      if (els.drawerGrandTotal) els.drawerGrandTotal.textContent = money(total);
       [els.clearCartDrawer].forEach(button => {
         button.disabled = count < 1 || state.sending;
       });
-      els.sendCartDrawer.textContent = state.sending
-        ?'Enviando...'
-        : 'Continuar para pagamento';
       if (tg?.MainButton) {
         if (count > 0 && state.loja.aceitaPedidos) {
           const textoPrincipal = state.sending
             ?'Enviando...'
-            : state.checkoutStep === 'delivery'
-              ?`Continuar para pagamento - ${money(total)}`
-              : state.checkoutStep === 'cart'
-                ?'Continuar para entrega'
-                : `Carrinho - ${money(total)}`;
+            : state.checkoutStep === 'cart'
+              ?'Enviar carrinho ao Telegram'
+              : `Carrinho - ${money(total)}`;
           tg.MainButton.setText(textoPrincipal);
           tg.MainButton.show();
         } else {
@@ -3154,7 +2156,6 @@
       renderCart();
       renderCheckoutStep();
       renderJourney();
-      renderConfirmation();
       renderViniAIOutdoor();
     }
 
@@ -3167,6 +2168,7 @@
     function clearCart() {
       if (!state.cart.size) return;
       state.cart.clear();
+      if (els.cartNotes) els.cartNotes.value = '';
       limparClientOrderIdPendente();
       persistCart();
       renderProducts();
@@ -3175,9 +2177,15 @@
     }
 
     function acaoBotaoPrincipalTelegram() {
-      if (state.checkoutStep === 'delivery') return sendCartToTelegram();
-      if (state.checkoutStep === 'cart') return irParaEntrega();
+      if (state.checkoutStep === 'cart') return sendCartToTelegram();
       return iniciarCheckout();
+    }
+
+    function observacoesCarrinhoMiniApp() {
+      return String(els.cartNotes?.value || '')
+        .trim()
+        .replace(/\s+/g, ' ')
+        .slice(0, 500);
     }
 
     function payloadCarrinhoMiniApp() {
@@ -3192,9 +2200,13 @@
           nome: item.name,
           sku: item.sku || '',
           codigoBarras: item.barcode || '',
-          quantidade: item.quantity
+          quantidade: item.quantity,
+          preco_unitario_exibido: item.price,
+          subtotal_exibido: Number((item.price * item.quantity).toFixed(2))
         })),
-        total: cartTotal()
+        observacoes: observacoesCarrinhoMiniApp(),
+        total: cartTotal(),
+        total_exibido: cartTotal()
       };
     }
 
@@ -3203,96 +2215,28 @@
       if (!tg?.sendData) return showToast('Mini App sem canal do Telegram para finalizar pedido.');
       tg.sendData(JSON.stringify(payload));
       state.cart.clear();
+      if (els.cartNotes) els.cartNotes.value = '';
       limparClientOrderIdPendente();
       persistCart();
       render();
-      showToast('Pedido enviado ao Telegram. A loja vai processar seu checkout.');
+      showToast('Pedido enviado ao Telegram. Escolha entrega e pagamento pelo chat.');
     }
 
     async function sendCartToTelegram() {
       if (state.sending) return;
-      if (clientePrecisaCadastro()) {
-        avisarCadastroMiniApp();
-        return;
-      }
-      if (state.checkoutStep !== 'delivery') {
-        iniciarCheckout();
-        return;
-      }
       if (!state.loja.aceitaPedidos) {
         showToast(state.loja.mensagem || 'A loja não está recebendo pedidos agora.');
         return;
       }
-      const items = cartItems().map(item => ({
-        produto_id: item.id,
-        secao: item.section,
-        index: item.index,
-        nome: item.name,
-        sku: item.sku || '',
-        codigoBarras: item.barcode || '',
-        quantidade: item.quantity
-      }));
-      if (!items.length) {
-        showToast('Adicione ao menos um produto');
-        return;
-      }
-      if (state.deliveryMode === 'entrega') {
-        const endereco = enderecoEntregaPayload();
-        if (!endereco.cep || !endereco.rua || !endereco.numero || !endereco.bairro || !endereco.cidade || !endereco.estado) {
-          setCartOpen(true);
-          return showToast('Informe CEP, rua, numero, bairro, cidade e estado para entrega');
-        }
-        if (state.authOk) {
-          await atualizarCotacaoEntrega();
-          if (!state.deliveryQuote?.entregaDisponivel) {
-            setCartOpen(true);
-            return showToast(state.deliveryQuote?.motivo || 'Entrega indisponivel para este endereco');
-          }
-        }
-      }
-      const payload = {
-        type: 'mercadinho_cart',
-        source: 'telegram_mini_app_html',
-        client_order_id: clientOrderIdAtual(),
-        forma_pagamento: state.paymentMethod,
-        metodo_pagamento: state.paymentMethod,
-        pagamento: { metodo: state.paymentMethod },
-        modalidade_entrega: state.deliveryMode,
-        entrega: state.deliveryMode === 'entrega' ?enderecoEntregaPayload() : {},
-        use_points_discount: state.usePointsDiscount === true,
-        use_points_free_delivery: state.usePointsFreeDelivery === true,
-        items,
-        total: cartTotal()
-      };
+      const payload = payloadCarrinhoMiniApp();
+      if (!payload.items.length) return showToast('Adicione ao menos um produto');
       payload.promotional_points_preview = promotionalPointsPreview();
-      if (!state.authOk) {
-        return enviarCarrinhoParaCheckoutTelegram(payload);
-      }
       state.sending = true;
       renderSummary();
       try {
-        const data = await apiFetch('/api/miniapp/orders', {
-          method: 'POST',
-          body: JSON.stringify(payload)
-        });
-        state.cart.clear();
-        limparClientOrderIdPendente();
-        persistCart();
-        const me = await apiFetch('/api/miniapp/me').catch(() => null);
-        if (me?.cliente) state.cliente = me.cliente;
-        await loadOrders();
-        state.confirmationOrder = data.pedido || null;
-        state.trackingUrl = data.acompanhamento || '';
-        state.checkoutStep = 'payment';
-        render();
-        if (data.pedido?.id && data.pagamento) {
-          await abrirPagamentoMiniApp(data.pedido.id, data.pagamento);
-        }
-        showToast(data.pedido?.id
-          ?`Pedido #${data.pedido.id} enviado com sucesso`
-          : 'Pedido enviado');
+        enviarCarrinhoParaCheckoutTelegram(payload);
       } catch (err) {
-        showToast(err.message || 'Falha ao finalizar pedido no Mini App.');
+        showToast(err.message || 'Falha ao enviar carrinho ao Telegram.');
       } finally {
         state.sending = false;
         renderSummary();
@@ -3317,48 +2261,11 @@
     els.cartButton.addEventListener('click', iniciarCheckout);
     els.reviewCart.addEventListener('click', iniciarCheckout);
     els.closeCart.addEventListener('click', () => setCartOpen(false));
-    els.closePayment.addEventListener('click', () => setPaymentOpen(false));
     els.clearCartDrawer.addEventListener('click', clearCart);
-    els.paymentPix?.addEventListener('change', () => {
-      state.paymentMethod = 'pix';
-    });
-    [els.deliveryPickup, els.deliveryHome].forEach(input => input?.addEventListener('change', () => {
-      state.deliveryMode = els.deliveryHome?.checked ?'entrega' : 'retirada';
-      state.deliveryQuote = null;
-      renderDeliveryMode();
-      renderCheckoutStep();
-      atualizarCotacaoEntrega();
-    }));
-    let deliveryQuoteTimer = null;
-    function agendarCotacaoEntrega() {
-      clearTimeout(deliveryQuoteTimer);
-      deliveryQuoteTimer = setTimeout(atualizarCotacaoEntrega, 350);
-    }
-    [els.deliveryCep, els.deliveryRua, els.deliveryNumero, els.deliveryComplemento, els.deliveryBairro, els.deliveryCidade, els.deliveryEstado]
-      .forEach(input => {
-        input?.addEventListener('input', agendarCotacaoEntrega);
-        input?.addEventListener('change', atualizarCotacaoEntrega);
-      });
-    els.usePointsDiscount?.addEventListener('change', () => {
-      state.usePointsDiscount = els.usePointsDiscount.checked;
-      renderPointsOptions();
-    });
-    els.usePointsFreeDelivery?.addEventListener('change', () => {
-      state.usePointsFreeDelivery = els.usePointsFreeDelivery.checked;
-      renderPointsOptions();
-    });
     els.registrationForm?.addEventListener('submit', salvarCadastroMiniApp);
     els.profileCep?.addEventListener('blur', preencherEnderecoPorCep);
-    els.deliveryCep?.addEventListener('blur', preencherEntregaPorCep);
-    els.continueToDelivery?.addEventListener('click', irParaEntrega);
-    els.backToCart?.addEventListener('click', voltarAoCarrinho);
-    els.sendCartDrawer.addEventListener('click', sendCartToTelegram);
+    els.continueToDelivery?.addEventListener('click', sendCartToTelegram);
     els.ordersList.addEventListener('click', event => {
-      const pagamentoBtn = event.target.closest('[data-payment-id]');
-      if (pagamentoBtn) {
-        abrirPagamentoMiniApp(pagamentoBtn.dataset.paymentId);
-        return;
-      }
       const btn = event.target.closest('[data-order-id]');
       if (!btn) return;
       loadOrders();
@@ -3367,8 +2274,7 @@
     window.addEventListener('beforeunload', () => {
       if (state.pollTimer) clearInterval(state.pollTimer);
       if (state.storeStatusTimer) clearInterval(state.storeStatusTimer);
-      if (state.viniAi.slideTimer) clearInterval(state.viniAi.slideTimer);
-      if (state.viniAi.alertTimer) clearInterval(state.viniAi.alertTimer);
+      if (state.viniAi.alertHideTimer) clearTimeout(state.viniAi.alertHideTimer);
     });
 
     loadProducts();
