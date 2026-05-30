@@ -427,6 +427,23 @@
       font-weight: 800;
     }
 
+    .product-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .product-badge {
+      display: inline-flex;
+      width: fit-content;
+      max-width: 100%;
+      padding: 3px 7px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
     .product h3 {
       margin: 0;
       font-size: 15px;
@@ -491,6 +508,18 @@
       min-width: 100px;
       min-height: 36px;
       padding: 8px 10px;
+    }
+
+    .weight-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .weight-options button {
+      min-height: 30px;
+      padding: 5px 8px;
+      font-size: 12px;
     }
 
     .empty {
@@ -1052,7 +1081,7 @@
           <h2>Primeiro acesso</h2>
           <span>Cadastro no Mini App</span>
         </div>
-        <p>Voce ja pode ver os produtos. Para finalizar a compra, complete seu cadastro aqui no Mini App.</p>
+        <p>Voce ja pode ver os produtos. Para finalizar a compra, informe os dados essenciais para a loja confirmar entrega, retirada e pagamento pelo Telegram.</p>
         <form class="registration-form" id="registrationForm">
           <label>Nome completo
             <input id="profileName" type="text" autocomplete="name" required>
@@ -1114,7 +1143,7 @@
     <div class="cart-head">
       <div class="cart-head-copy">
         <h2>Seu carrinho</h2>
-        <small>Revise os itens antes de enviar ao Telegram</small>
+        <small>Seu carrinho esta pronto. Agora vamos confirmar entrega e pagamento no Telegram.</small>
       </div>
       <button class="ghost" id="closeCart" type="button">Fechar</button>
     </div>
@@ -1141,10 +1170,10 @@
       </div>
       <label class="cart-notes">Observacoes do pedido
         <textarea id="cartNotes" maxlength="500" placeholder="Ex: separar troco, evitar substituicoes ou detalhe importante"></textarea>
-        <small>Entrega e pagamento continuam no Telegram.</small>
+        <small>O Pix sera gerado com o valor recalculado pela loja. Depois do pagamento, envie o comprovante pelo botao indicado.</small>
       </label>
       <div class="checkout-stage" id="cartStepPanel">
-        <small>Entrega, retirada e pagamento continuam no chat do Telegram.</small>
+        <small>Falta pouco: escolha entrega ou retirada para gerar o Pix. Voce so paga depois que a loja confirmar entrega ou retirada.</small>
         <button class="primary" id="continueToDelivery" type="button" disabled>Enviar carrinho ao Telegram</button>
       </div>
       <button class="danger" id="clearCartDrawer" type="button" disabled>Limpar carrinho</button>
@@ -1377,10 +1406,12 @@
     function renderJourney() {
       const atual = etapaJornadaAtual();
       const etapas = [
-        ['cadastro', 'Cadastro'],
-        ['catalogo', 'Catalogo'],
+        ['catalogo', 'Produtos'],
         ['carrinho', 'Carrinho'],
-        ['telegram', 'Telegram']
+        ['telegram', 'Confirmacao no Telegram'],
+        ['entrega_pix', 'Entrega/Pix'],
+        ['comprovante', 'Comprovante'],
+        ['confirmado', 'Pedido confirmado']
       ];
       const indiceAtual = etapas.findIndex(([id]) => id === atual);
       if (els.journeySteps) {
@@ -1393,8 +1424,11 @@
         const labels = {
           cadastro: 'Primeiro acesso',
           catalogo: 'Escolha produtos',
-          carrinho: 'Envie ao Telegram',
-          telegram: 'Entrega e Pix no chat'
+          carrinho: 'Seu carrinho esta pronto',
+          telegram: 'Confirmacao no Telegram',
+          entrega_pix: 'Entrega e Pix no chat',
+          comprovante: 'Envie comprovante no Telegram',
+          confirmado: 'Pedido confirmado'
         };
         els.journeyStatus.textContent = labels[atual] || 'Compra no Mini App';
       }
@@ -1572,6 +1606,86 @@
       return Number(product.estoque_pronta_entrega ?? product.estoque ?? product.estoque_atual ?? 0);
     }
 
+    function normalizeSaleMode(product) {
+      const raw = String(product?.modoVenda || product?.modo_venda || product?.saleMode || '').toLowerCase();
+      return ['granel', 'weighted', 'peso', 'por_peso'].includes(raw) ? 'weighted' : 'unit';
+    }
+
+    function isWeightedProduct(product) {
+      return normalizeSaleMode(product) === 'weighted';
+    }
+
+    function normalizeUnit(value, fallback = 'un') {
+      const unit = String(value || fallback || 'un').trim().toLowerCase();
+      if (['unidade', 'unid', 'unit'].includes(unit)) return 'un';
+      if (['l', 'lt'].includes(unit)) return 'litro';
+      if (['grama', 'gramas'].includes(unit)) return 'g';
+      return unit || 'un';
+    }
+
+    function formatMeasure(value, unit = 'un') {
+      const amount = Number(value || 0);
+      const normalized = normalizeUnit(unit);
+      const formatted = amount.toLocaleString('pt-BR', { maximumFractionDigits: normalized === 'un' ? 0 : 3 });
+      return `${formatted} ${normalized}`;
+    }
+
+    function sanitizeBadges(product) {
+      const list = Array.isArray(product?.tarjas) ? product.tarjas : Array.isArray(product?.labels) ? product.labels : [];
+      return list.map(item => ({
+        texto: String(item?.texto || item?.label || item || '').trim().slice(0, 32),
+        cor: /^#[0-9a-f]{6}$/i.test(String(item?.cor || item?.color || '').trim()) ? String(item.cor || item.color).trim() : '#ffffff',
+        fundo: /^#[0-9a-f]{6}$/i.test(String(item?.fundo || item?.backgroundColor || '').trim()) ? String(item.fundo || item.backgroundColor).trim() : '#198754'
+      })).filter(item => item.texto).slice(0, 6);
+    }
+
+    function productBadges(product) {
+      return sanitizeBadges(product).map(badge =>
+        `<span class="product-badge" style="color:${escapeHtml(badge.cor)};background:${escapeHtml(badge.fundo)}">${escapeHtml(badge.texto)}</span>`
+      ).join('');
+    }
+
+    function measureStep(product) {
+      if (!isWeightedProduct(product)) return 1;
+      return Number(product.incrementoPeso || product.weightStep || product.incremento_peso || 0.05) || 0.05;
+    }
+
+    function minMeasure(product) {
+      return Number(product.pesoMinimo || product.minWeight || product.peso_minimo || measureStep(product)) || measureStep(product);
+    }
+
+    function maxMeasure(product) {
+      return Number(product.pesoMaximo || product.maxWeight || product.peso_maximo || product.stock || 999) || 999;
+    }
+
+    function clampProductQuantity(product, value) {
+      const raw = Number(value || 0);
+      if (!isWeightedProduct(product)) return Math.max(0, Math.min(product.stock, Math.trunc(raw)));
+      const step = measureStep(product);
+      const min = minMeasure(product);
+      const max = Math.min(maxMeasure(product), Number(product.stock || maxMeasure(product)));
+      if (raw <= 0) return 0;
+      const stepped = Math.round(raw / step) * step;
+      return Number(Math.max(min, Math.min(max, stepped)).toFixed(3));
+    }
+
+    function measureOptions(product) {
+      if (!isWeightedProduct(product)) return [];
+      const step = measureStep(product);
+      const min = minMeasure(product);
+      const max = Math.min(maxMeasure(product), Number(product.stock || maxMeasure(product)));
+      return [min, step * 5, step * 10, 1]
+        .map(value => clampProductQuantity(product, value))
+        .filter(value => value > 0 && value <= max)
+        .filter((value, index, list) => list.indexOf(value) === index)
+        .slice(0, 4);
+    }
+
+    function priceLabel(product) {
+      const baseUnit = product.unidadeBasePreco || product.priceBaseUnit || product.unit || 'un';
+      return isWeightedProduct(product) ? `${money(product.price)}/${baseUnit}` : money(product.price);
+    }
+
     function isGroup(product) {
       return product.produto_principal === true || product.tipo === 'principal' || product.tipo === 'grupo';
     }
@@ -1613,6 +1727,17 @@
             normalPrice: Number(product.preco_normal || product.preco || 0),
             promoPrice: Number(product.preco_promocional || 0),
             promotion: product.promocao === true,
+            saleMode: normalizeSaleMode(product),
+            modoVenda: normalizeSaleMode(product) === 'weighted' ? 'granel' : 'unidade',
+            unidadeVenda: normalizeUnit(product.unidadeVenda || product.saleUnit || product.unidade_venda || product.unidadeMedida || product.unidade_medida || product.tamanho || 'un'),
+            unidadeBasePreco: normalizeUnit(product.unidadeBasePreco || product.priceBaseUnit || product.unidade_base_preco || product.unidadeVenda || product.unidadeMedida || 'un'),
+            precoBaseCentavos: Number(product.precoBaseCentavos || product.priceBaseCents || product.preco_base_centavos || Math.round(Number(product.preco || 0) * 100)),
+            pesoMinimo: Number(product.pesoMinimo || product.minWeight || product.peso_minimo || 0),
+            pesoMaximo: Number(product.pesoMaximo || product.maxWeight || product.peso_maximo || 0),
+            incrementoPeso: Number(product.incrementoPeso || product.weightStep || product.incremento_peso || 0),
+            exigePesoFinal: product.exigePesoFinal === true || product.requiresFinalWeight === true || product.exige_peso_final === true,
+            textoPesoAproximado: product.textoPesoAproximado || 'Produto vendido por peso. O valor final pode mudar apos a pesagem na loja.',
+            tarjas: sanitizeBadges(product),
             pointsLabel: product.points_label_text || '',
             points: Number(product.points_preview || 0),
             pointOffer: productPointOffer(product, product.produto_id || product.id),
@@ -1654,6 +1779,17 @@
           normalPrice: prices.normal,
           promoPrice: prices.promo,
           promotion: prices.active,
+          saleMode: normalizeSaleMode(product),
+          modoVenda: normalizeSaleMode(product) === 'weighted' ? 'granel' : 'unidade',
+          unidadeVenda: normalizeUnit(product.unidadeVenda || product.saleUnit || product.unidade_venda || product.unidadeMedida || product.unidade || 'un'),
+          unidadeBasePreco: normalizeUnit(product.unidadeBasePreco || product.priceBaseUnit || product.unidade_base_preco || product.unidadeVenda || product.unidadeMedida || 'un'),
+          precoBaseCentavos: Number(product.precoBaseCentavos || product.priceBaseCents || product.preco_base_centavos || Math.round(prices.price * 100)),
+          pesoMinimo: Number(product.pesoMinimo || product.minWeight || product.peso_minimo || 0),
+          pesoMaximo: Number(product.pesoMaximo || product.maxWeight || product.peso_maximo || 0),
+          incrementoPeso: Number(product.incrementoPeso || product.weightStep || product.incremento_peso || 0),
+          exigePesoFinal: product.exigePesoFinal === true || product.requiresFinalWeight === true || product.exige_peso_final === true,
+          textoPesoAproximado: product.textoPesoAproximado || 'Produto vendido por peso. O valor final pode mudar apos a pesagem na loja.',
+          tarjas: sanitizeBadges(product),
           pointsLabel: pointsLabel(product, prices.price),
           points: pointsAmount(product, prices.price, 1),
           pointOffer: productPointOffer(product, `${section}_${index}`),
@@ -1672,7 +1808,7 @@
       try {
         const saved = JSON.parse(localStorage.getItem(CART_KEY) || '{}');
         Object.entries(saved || {}).forEach(([id, qty]) => {
-          const quantity = Math.max(0, Math.floor(Number(qty) || 0));
+          const quantity = Math.max(0, Number(qty) || 0);
           if (quantity > 0) state.cart.set(id, quantity);
         });
       } catch (_) {
@@ -1847,12 +1983,26 @@
       state.viniAi.focusedProductId = id;
       state.viniAi.interactedProducts.add(id);
       const current = cartQty(id);
-      const next = Math.max(0, Math.min(product.stock, current + delta));
+      const next = clampProductQuantity(product, current + (isWeightedProduct(product) ? delta * measureStep(product) : delta));
       if (next !== current) limparClientOrderIdPendente();
       if (next > 0) state.cart.set(id, next);
       else state.cart.delete(id);
       persistCart();
       if (delta > 0 && current === 0) showToast('Produto adicionado ao carrinho');
+      renderProducts();
+      renderSummary();
+    }
+
+    function setWeightedQty(id, value) {
+      const product = state.products.find(item => item.id === id);
+      if (!product || !isWeightedProduct(product)) return;
+      const next = clampProductQuantity(product, value);
+      const current = cartQty(id);
+      if (next !== current) limparClientOrderIdPendente();
+      if (next > 0) state.cart.set(id, next);
+      else state.cart.delete(id);
+      persistCart();
+      if (current === 0 && next > 0) showToast('Produto adicionado ao carrinho');
       renderProducts();
       renderSummary();
     }
@@ -1869,7 +2019,7 @@
     }
 
     function cartCount() {
-      return cartItems().reduce((sum, item) => sum + item.quantity, 0);
+      return cartItems().reduce((sum, item) => sum + (isWeightedProduct(item) ? 1 : item.quantity), 0);
     }
 
     function promotionalPointsPreview() {
@@ -1910,7 +2060,7 @@
       const etapaCarrinho = state.checkoutStep === 'cart';
       if (els.cartStepPanel) els.cartStepPanel.hidden = !etapaCarrinho;
       if (els.checkoutStepLabel) {
-        els.checkoutStepLabel.textContent = 'Carrinho pronto para o Telegram';
+        els.checkoutStepLabel.textContent = 'Carrinho pronto para confirmar no Telegram';
       }
       if (els.continueToDelivery) {
         const canalTelegram = Boolean(tg?.sendData);
@@ -1991,19 +2141,29 @@
       const card = document.createElement('article');
       card.className = 'product';
       card.dataset.productId = item.id;
+      const itemTarjas = item.tarjas || [];
 
       const media = item.image
         ?`<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}" loading="lazy" referrerpolicy="no-referrer">`
         : `<span>${item.name.slice(0, 1).toUpperCase()}</span>`;
       const semEstoque = Number(item.stock || 0) <= 0;
-      const details = [item.brand, item.unit, semEstoque ?'Sem estoque' : `${item.stock} disp.`].filter(Boolean).join(' | ');
+      const detalhesPeso = isWeightedProduct(item) ? `${priceLabel(item)} · vendido por peso` : item.unit;
+      const estoqueTexto = semEstoque
+        ? 'Sem estoque'
+        : isWeightedProduct(item)
+          ? `${formatMeasure(item.stock, item.unidadeVenda || item.unit)} disp.`
+          : `${item.stock} disp.`;
+      const details = [item.brand, detalhesPeso, estoqueTexto].filter(Boolean).join(' | ');
       const price = item.promotion
-        ?`<div class="price"><del>${money(item.normalPrice)}</del><strong>${money(item.price)}</strong></div>`
-        : `<div class="price"><strong>${money(item.price)}</strong></div>`;
+        ?`<div class="price"><del>${money(item.normalPrice)}</del><strong>${priceLabel(item)}</strong></div>`
+        : `<div class="price"><strong>${priceLabel(item)}</strong></div>`;
+      const opcoesPeso = isWeightedProduct(item)
+        ? `<div class="weight-options">${measureOptions(item).map(value => `<button type="button" data-action="set-weight" data-weight="${value}">${formatMeasure(value, item.unidadeVenda)}</button>`).join('')}</div>`
+        : '';
       const control = semEstoque
         ?'<span class="stock-empty">Indisponivel</span>'
         : qty > 0
-        ?`<div class="qty"><button type="button" data-action="minus">-</button><span>${qty}</span><button type="button" data-action="plus">+</button></div>`
+        ?`<div class="qty"><button type="button" data-action="minus">-</button><span>${isWeightedProduct(item) ? formatMeasure(qty, item.unidadeVenda) : qty}</span><button type="button" data-action="plus">+</button></div>`
         : `<button class="primary add-single" type="button" data-action="plus">Adicionar</button>`;
 
       card.innerHTML = `
@@ -2012,12 +2172,15 @@
           <div class="product-title">
             <h3>${escapeHtml(item.name)}</h3>
             <small>${escapeHtml(details || item.sectionLabel)}</small>
+            ${itemTarjas.length ? `<div class="product-badges">${productBadges(item)}</div>` : ''}
             ${item.pointsLabel ?`<span class="points-badge">${escapeHtml(item.pointsLabel)}</span>` : ''}
+            ${isWeightedProduct(item) ? `<small>${escapeHtml(item.textoPesoAproximado || 'Produto vendido por peso. O valor final pode mudar apos a pesagem na loja.')}</small>` : ''}
           </div>
           <div class="price-row">
             ${price}
             ${control}
           </div>
+          ${opcoesPeso}
         </div>
       `;
       card.addEventListener('click', event => {
@@ -2028,6 +2191,9 @@
       });
       card.querySelector('[data-action="minus"]')?.addEventListener('click', () => changeQty(item.id, -1));
       card.querySelector('[data-action="plus"]')?.addEventListener('click', () => changeQty(item.id, 1));
+      card.querySelectorAll('[data-action="set-weight"]').forEach(button => {
+        button.addEventListener('click', () => setWeightedQty(item.id, Number(button.dataset.weight || 0)));
+      });
       card.querySelector('[data-action="plus"]')?.toggleAttribute('disabled', qty >= item.stock);
       return card;
     }
@@ -2093,15 +2259,15 @@
             <div class="cart-item-top">
               <div>
                 <strong>${escapeHtml(item.name)}</strong>
-                <small>${money(item.price)} cada</small>
+                <small>${isWeightedProduct(item) ? `${priceLabel(item)} · valor estimado` : `${money(item.price)} cada`}</small>
               </div>
               <span class="cart-line-total">${money(item.quantity * item.price)}</span>
             </div>
             <div class="cart-item-bottom">
-              <small>${item.stock > 0 ? `${item.stock} em estoque` : 'Estoque limitado'}</small>
+              <small>${item.stock > 0 ? `${isWeightedProduct(item) ? formatMeasure(item.stock, item.unidadeVenda || item.unit) : item.stock} em estoque` : 'Estoque limitado'}</small>
               <div class="qty">
                 <button type="button" data-action="minus" aria-label="Diminuir quantidade">-</button>
-                <span>${item.quantity}</span>
+                <span>${isWeightedProduct(item) ? formatMeasure(item.quantity, item.unidadeVenda) : item.quantity}</span>
                 <button type="button" data-action="plus" aria-label="Aumentar quantidade">+</button>
               </div>
             </div>
@@ -2110,7 +2276,7 @@
         `;
         row.querySelector('[data-action="minus"]').addEventListener('click', () => changeQty(item.id, -1));
         row.querySelector('[data-action="plus"]').addEventListener('click', () => changeQty(item.id, 1));
-        row.querySelector('[data-action="remove"]').addEventListener('click', () => changeQty(item.id, -item.quantity));
+        row.querySelector('[data-action="remove"]').addEventListener('click', () => isWeightedProduct(item) ? setWeightedQty(item.id, 0) : changeQty(item.id, -item.quantity));
         row.querySelector('[data-action="plus"]').toggleAttribute('disabled', item.quantity >= item.stock);
         els.cartList.appendChild(row);
       });
@@ -2200,9 +2366,16 @@
           nome: item.name,
           sku: item.sku || '',
           codigoBarras: item.barcode || '',
+          modo_venda: item.saleMode === 'weighted' ? 'granel' : 'unidade',
+          unidade_venda: item.unidadeVenda || item.unit || 'un',
+          unidade_base_preco: item.unidadeBasePreco || item.unidadeVenda || item.unit || 'un',
           quantidade: item.quantity,
+          quantidade_solicitada: item.quantity,
+          peso_estimado: item.saleMode === 'weighted' ? item.quantity : null,
           preco_unitario_exibido: item.price,
-          subtotal_exibido: Number((item.price * item.quantity).toFixed(2))
+          preco_base_centavos: item.precoBaseCentavos || Math.round(item.price * 100),
+          subtotal_exibido: Number((item.price * item.quantity).toFixed(2)),
+          subtotal_estimado_exibido: Number((item.price * item.quantity).toFixed(2))
         })),
         observacoes: observacoesCarrinhoMiniApp(),
         total: cartTotal(),
@@ -2219,7 +2392,7 @@
       limparClientOrderIdPendente();
       persistCart();
       render();
-      showToast('Pedido enviado ao Telegram. Escolha entrega e pagamento pelo chat.');
+      showToast('Sua solicitacao foi enviada com sucesso. Agora confirme entrega e pagamento no Telegram.');
     }
 
     async function sendCartToTelegram() {
