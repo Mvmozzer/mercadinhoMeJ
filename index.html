@@ -532,6 +532,16 @@
       line-height: 1.45;
     }
 
+    .load-more-row {
+      display: flex;
+      justify-content: center;
+      padding: 6px 0 12px;
+    }
+
+    .load-more-row button {
+      width: min(100%, 280px);
+    }
+
     .orders-panel {
       display: grid;
       gap: 8px;
@@ -1174,6 +1184,7 @@
       </label>
       <div class="checkout-stage" id="cartStepPanel">
         <small>Falta pouco: escolha entrega ou retirada para gerar o Pix. Voce so paga depois que a loja confirmar entrega ou retirada.</small>
+        <div class="checkout-preview" id="webPaymentPanel" hidden></div>
         <button class="primary" id="continueToDelivery" type="button" disabled>Enviar carrinho ao Telegram</button>
       </div>
       <button class="danger" id="clearCartDrawer" type="button" disabled>Limpar carrinho</button>
@@ -1206,10 +1217,13 @@
 
     const CART_KEY = 'mj_mercadinho_cart_v2';
     const MINIAPP_TOKEN_KEY = 'mj_mercadinho_miniapp_token_v1';
+    const WEB_CLIENT_KEY = 'mj_mercadinho_web_cliente_v1';
     const PENDING_ORDER_KEY = 'mj_mercadinho_pending_order_v1';
 
     const state = {
       products: [],
+      productCache: new Map(),
+      catalogSections: [],
       section: '',
       query: '',
       cart: new Map(),
@@ -1219,8 +1233,16 @@
       pendingClientOrderId: localStorage.getItem(PENDING_ORDER_KEY) || '',
       authOk: false,
       authMode: 'pending',
+      webCheckout: null,
       catalogLoading: true,
       catalogSource: 'loading',
+      catalogPage: {
+        page: 0,
+        pageSize: 48,
+        hasMore: false,
+        loadingMore: false,
+        usePaged: false
+      },
       orders: [],
       cliente: null,
       savingProfile: false,
@@ -1276,6 +1298,7 @@
       cartNotes: document.getElementById('cartNotes'),
       checkoutStepLabel: document.getElementById('checkoutStepLabel'),
       cartStepPanel: document.getElementById('cartStepPanel'),
+      webPaymentPanel: document.getElementById('webPaymentPanel'),
       continueToDelivery: document.getElementById('continueToDelivery'),
       clearCartDrawer: document.getElementById('clearCartDrawer'),
       reviewCart: document.getElementById('reviewCart'),
@@ -1289,6 +1312,7 @@
     };
 
     let toastTimer = null;
+    let catalogSearchTimer = null;
 
     function showToast(message) {
       els.toast.textContent = message;
@@ -1333,9 +1357,44 @@
       return data;
     }
 
+    function checkoutWebDisponivel() {
+      return state.authMode === 'web' || (!tg?.sendData && !tg?.initData);
+    }
+
+    function perfilCadastroPayload() {
+      return {
+        nome: String(els.profileName?.value || '').trim(),
+        cpf: String(els.profileCpf?.value || '').trim(),
+        dataNascimento: String(els.profileBirthDate?.value || '').trim(),
+        telefone: String(els.profilePhone?.value || '').trim(),
+        cep: String(els.profileCep?.value || '').trim(),
+        rua: String(els.profileRua?.value || '').trim(),
+        numero: String(els.profileNumero?.value || '').trim(),
+        complemento: String(els.profileComplemento?.value || '').trim(),
+        bairro: String(els.profileBairro?.value || '').trim(),
+        cidade: String(els.profileCidade?.value || '').trim(),
+        estado: String(els.profileEstado?.value || '').trim()
+      };
+    }
+
     async function authenticateMiniApp() {
       try {
         const initData = tg?.initData || '';
+        const url = new URL(window.location.href);
+        const modoWeb = url.searchParams.get('apk') === 'android' || url.searchParams.get('modo') === 'web' || (!initData && !tg?.sendData);
+        if (modoWeb) {
+          state.authOk = true;
+          state.authMode = 'web';
+          const clienteSalvo = JSON.parse(localStorage.getItem(WEB_CLIENT_KEY) || 'null');
+          state.cliente = clienteSalvo || { cadastroCompleto: false };
+          els.authStatus.textContent = state.miniappToken ? 'App Android conectado' : 'Cadastro do app';
+          preencherFormularioCadastro();
+          renderSummary();
+          if (state.miniappToken) await loadOrders();
+          renderJourney();
+          renderOrders();
+          return;
+        }
         const data = await apiFetch('/api/telegram/auth', {
           method: 'POST',
           body: JSON.stringify({
@@ -1450,25 +1509,30 @@
         els.saveProfile.textContent = 'Salvando...';
       }
       try {
-        const data = await apiFetch('/api/miniapp/profile', {
-          method: 'POST',
-          body: JSON.stringify({
-            nome: String(els.profileName?.value || '').trim(),
-            cpf: String(els.profileCpf?.value || '').trim(),
-            dataNascimento: String(els.profileBirthDate?.value || '').trim(),
-            telefone: String(els.profilePhone?.value || '').trim(),
-            cep: String(els.profileCep?.value || '').trim(),
-            rua: String(els.profileRua?.value || '').trim(),
-            numero: String(els.profileNumero?.value || '').trim(),
-            complemento: String(els.profileComplemento?.value || '').trim(),
-            bairro: String(els.profileBairro?.value || '').trim(),
-            cidade: String(els.profileCidade?.value || '').trim(),
-            estado: String(els.profileEstado?.value || '').trim()
+        const perfil = perfilCadastroPayload();
+        const data = state.authMode === 'web'
+          ? await apiFetch('/api/client/customer', {
+            method: 'POST',
+            body: JSON.stringify({
+              nome: perfil.nome,
+              telefone: perfil.telefone,
+              endereco: perfil
+            })
           })
-        });
-        state.cliente = data.cliente || state.cliente;
+          : await apiFetch('/api/miniapp/profile', {
+            method: 'POST',
+            body: JSON.stringify(perfil)
+          });
+        if (state.authMode === 'web') {
+          state.miniappToken = data.token || '';
+          if (state.miniappToken) localStorage.setItem(MINIAPP_TOKEN_KEY, state.miniappToken);
+          state.cliente = data.customer || data.cliente || { ...perfil, cadastroCompleto: Boolean(perfil.nome && perfil.telefone) };
+          localStorage.setItem(WEB_CLIENT_KEY, JSON.stringify(state.cliente));
+        } else {
+          state.cliente = data.cliente || state.cliente;
+        }
         renderJourney();
-        showToast('Cadastro salvo. Agora voce ja pode enviar o carrinho ao Telegram.');
+        showToast(state.authMode === 'web' ? 'Cadastro salvo. Agora voce ja pode gerar o pedido e Pix.' : 'Cadastro salvo. Agora voce ja pode enviar o carrinho ao Telegram.');
       } catch (err) {
         showToast(err.message || 'Nao foi possivel salvar seu cadastro');
       } finally {
@@ -1482,8 +1546,13 @@
 
     async function loadOrders() {
       if (!state.authOk) return;
+      if (state.authMode === 'web' && !state.miniappToken) {
+        state.orders = [];
+        renderOrders();
+        return;
+      }
       try {
-        const data = await apiFetch('/api/miniapp/orders');
+        const data = await apiFetch(state.authMode === 'web' ? '/api/client/orders' : '/api/miniapp/orders');
         state.orders = Array.isArray(data.pedidos) ?data.pedidos : [];
       } catch (_) {
         state.orders = [];
@@ -1504,7 +1573,7 @@
           <div class="order-mini">
             <span>
               <strong>Pedido #${escapeHtml(order.id)}</strong>
-              <small>${escapeHtml(status)} | ${escapeHtml(money(order.total))} | entrega e Pix pelo Telegram</small>
+              <small>${escapeHtml(status)} | ${escapeHtml(money(order.total))} | ${state.authMode === 'web' ? 'pedido no app' : 'entrega e Pix pelo Telegram'}</small>
             </span>
             <div class="actions">
               <button class="ghost" type="button" data-order-id="${escapeHtml(order.id)}">Atualizar</button>
@@ -1804,6 +1873,61 @@
       );
     }
 
+    function catalogSectionsFromPayload(payload, products = []) {
+      const counts = new Map();
+      products.forEach(item => {
+        if (!item.section) return;
+        counts.set(item.section, Number(counts.get(item.section) || 0) + 1);
+      });
+      if (Array.isArray(payload?.catalogo?.secoes)) {
+        return payload.catalogo.secoes.map((section, index) => ({
+          id: section.id || '',
+          name: section.nome || section.name || titleFromId(section.id),
+          order: Number(section.ordem ?? section.order ?? index),
+          products: Number(section.produtos ?? section.productCount ?? counts.get(section.id) ?? 0)
+        })).filter(section => section.id && section.products > 0)
+          .sort((a, b) => Number(a.order || 0) - Number(b.order || 0) || a.name.localeCompare(b.name, 'pt-BR'));
+      }
+      return sectionItemsFromProducts(products);
+    }
+
+    function sectionItemsFromProducts(products = state.products) {
+      const map = new Map();
+      products.forEach(item => {
+        if (!map.has(item.section)) {
+          map.set(item.section, {
+            id: item.section,
+            name: item.sectionLabel || titleFromId(item.section),
+            order: Number(item.sectionOrder || 0),
+            products: 0
+          });
+        }
+        const section = map.get(item.section);
+        section.products += 1;
+      });
+      return Array.from(map.values())
+        .sort((a, b) => Number(a.order || 0) - Number(b.order || 0) || a.name.localeCompare(b.name, 'pt-BR'));
+    }
+
+    function cacheProducts(products = []) {
+      products.forEach(product => {
+        if (product?.id) state.productCache.set(product.id, product);
+      });
+    }
+
+    function mergeProducts(current = [], incoming = []) {
+      const byId = new Map(current.map(product => [product.id, product]));
+      incoming.forEach(product => {
+        if (product?.id) byId.set(product.id, product);
+      });
+      return Array.from(byId.values());
+    }
+
+    function shouldUsePagedCatalog() {
+      const url = new URL(window.location.href);
+      return url.searchParams.get('apk') === 'android' || url.searchParams.get('modo') === 'web' || (!tg?.sendData && !tg?.initData);
+    }
+
     function restoreCart() {
       try {
         const saved = JSON.parse(localStorage.getItem(CART_KEY) || '{}');
@@ -1840,8 +1964,9 @@
       const ids = new Set(state.products.map(item => item.id));
       let alterado = false;
       state.cart.forEach((qty, id) => {
-        const product = state.products.find(item => item.id === id);
-        if (!ids.has(id) || !product || qty > product.stock) {
+        const product = state.productCache.get(id) || state.products.find(item => item.id === id);
+        if (state.catalogPage.usePaged && !product) return;
+        if ((!state.catalogPage.usePaged && !ids.has(id)) || !product || qty > product.stock) {
           if (product && product.stock > 0) state.cart.set(id, product.stock);
           else state.cart.delete(id);
           alterado = true;
@@ -1855,17 +1980,70 @@
       return state.products.filter(product => Number(product.stock || 0) > 0);
     }
 
+    async function loadProductsPage({ reset = false } = {}) {
+      if (!shouldUsePagedCatalog()) return false;
+      if (state.catalogPage.loadingMore) return true;
+      if (!reset && !state.catalogPage.hasMore) return true;
+
+      const nextPage = reset ? 1 : Number(state.catalogPage.page || 0) + 1;
+      const params = new URLSearchParams({
+        page: String(nextPage),
+        pageSize: String(state.catalogPage.pageSize)
+      });
+      if (state.query.trim()) params.set('q', state.query.trim());
+      if (state.section) params.set('section', state.section);
+
+      state.catalogPage.usePaged = true;
+      state.catalogPage.loadingMore = true;
+      if (reset) {
+        state.catalogLoading = true;
+        state.products = [];
+        state.catalogPage.page = 0;
+        state.catalogPage.hasMore = false;
+      }
+      render();
+
+      try {
+        const res = await fetch(`${apiBase()}/api/client/catalog-page?${params.toString()}`, { cache: 'no-store' });
+        if (!res.ok) throw new Error('catalogo paginado indisponivel');
+        const payload = await res.json();
+        atualizarStatusLoja(payload);
+        const products = normalizeCatalogPayload(payload);
+        state.products = reset ? products : mergeProducts(state.products, products);
+        cacheProducts(products);
+        state.catalogSections = catalogSectionsFromPayload(payload, state.products);
+        state.catalogSource = 'api-page';
+        state.catalogLoading = false;
+        state.catalogPage.page = Number(payload.pagination?.page || nextPage);
+        state.catalogPage.pageSize = Number(payload.pagination?.pageSize || state.catalogPage.pageSize);
+        state.catalogPage.hasMore = payload.pagination?.hasMore === true;
+        state.catalogPage.loadingMore = false;
+        if (state.section && !sectionItems().some(section => section.id === state.section)) state.section = '';
+        pruneCart();
+        render();
+        return true;
+      } catch (_) {
+        if (reset) state.catalogPage.usePaged = false;
+        return false;
+      } finally {
+        state.catalogPage.loadingMore = false;
+      }
+    }
+
     async function loadProducts() {
       restoreCart();
       state.catalogLoading = true;
       state.catalogSource = 'loading';
       render();
+      if (await loadProductsPage({ reset: true })) return;
       try {
         const res = await fetch(`${apiBase()}/api/miniapp/catalog`, { cache: 'no-store' });
         if (!res.ok) throw new Error('catalogo indisponivel');
         const payload = await res.json();
         atualizarStatusLoja(payload);
         state.products = normalizeCatalogPayload(payload);
+        cacheProducts(state.products);
+        state.catalogSections = catalogSectionsFromPayload(payload, state.products);
         state.catalogSource = 'api';
       } catch (err) {
         try {
@@ -1874,15 +2052,20 @@
           const payload = await res.json();
           atualizarStatusLoja(payload);
           state.products = normalizeCatalogPayload(payload);
+          cacheProducts(state.products);
+          state.catalogSections = catalogSectionsFromPayload(payload, state.products);
           state.catalogSource = 'static';
         } catch (_) {
           try {
             const res = await fetch('./produtos.json', { cache: 'no-store' });
             if (!res.ok) throw new Error('catalogo indisponivel');
             state.products = normalizeCatalogPayload(await res.json());
+            cacheProducts(state.products);
+            state.catalogSections = catalogSectionsFromPayload(null, state.products);
             state.catalogSource = 'legacy';
           } catch (_) {
             state.products = [];
+            state.catalogSections = [];
             state.catalogSource = 'empty';
           }
         }
@@ -1891,6 +2074,23 @@
       if (state.section && !sectionItems().some(section => section.id === state.section)) state.section = '';
       pruneCart();
       render();
+    }
+
+    async function loadMoreProducts() {
+      if (!state.catalogPage.usePaged || !state.catalogPage.hasMore || state.catalogPage.loadingMore) return;
+      await loadProductsPage({ reset: false });
+    }
+
+    function scheduleCatalogReload() {
+      clearTimeout(catalogSearchTimer);
+      catalogSearchTimer = setTimeout(() => {
+        if (state.catalogPage.usePaged || shouldUsePagedCatalog()) {
+          loadProducts();
+        } else {
+          renderProducts();
+        }
+        renderViniAIOutdoor();
+      }, 220);
     }
 
     async function sincronizarStatusLoja() {
@@ -1903,24 +2103,12 @@
     }
 
     function sectionItems() {
-      const map = new Map();
-      state.products.forEach(item => {
-        if (!map.has(item.section)) {
-          map.set(item.section, {
-            id: item.section,
-            name: item.sectionLabel || titleFromId(item.section),
-            order: Number(item.sectionOrder || 0),
-            products: 0
-          });
-        }
-        const section = map.get(item.section);
-        section.products += 1;
-      });
-      return Array.from(map.values())
-        .sort((a, b) => Number(a.order || 0) - Number(b.order || 0) || a.name.localeCompare(b.name, 'pt-BR'));
+      if (state.catalogPage.usePaged && state.catalogSections.length) return state.catalogSections;
+      return sectionItemsFromProducts(state.products);
     }
 
     function filteredProducts() {
+      if (state.catalogPage.usePaged) return state.products;
       const query = normalizeText(state.query.trim());
       return state.products.filter(item => {
         const sectionOk = !state.section || item.section === state.section;
@@ -1974,7 +2162,7 @@
     }
 
     function changeQty(id, delta) {
-      const product = state.products.find(item => item.id === id);
+      const product = state.productCache.get(id) || state.products.find(item => item.id === id);
       if (!product) return;
       if (Number(product.stock || 0) <= 0) {
         showToast('Produto sem estoque no momento');
@@ -1994,7 +2182,7 @@
     }
 
     function setWeightedQty(id, value) {
-      const product = state.products.find(item => item.id === id);
+      const product = state.productCache.get(id) || state.products.find(item => item.id === id);
       if (!product || !isWeightedProduct(product)) return;
       const next = clampProductQuantity(product, value);
       const current = cartQty(id);
@@ -2009,7 +2197,7 @@
 
     function cartItems() {
       return Array.from(state.cart.entries()).map(([id, quantity]) => {
-        const product = state.products.find(item => item.id === id);
+        const product = state.productCache.get(id) || state.products.find(item => item.id === id);
         return product ?{ ...product, quantity } : null;
       }).filter(Boolean);
     }
@@ -2059,15 +2247,34 @@
     function renderCheckoutStep() {
       const etapaCarrinho = state.checkoutStep === 'cart';
       if (els.cartStepPanel) els.cartStepPanel.hidden = !etapaCarrinho;
+      if (els.webPaymentPanel) {
+        const pix = state.webCheckout?.pagamento?.pix || {};
+        els.webPaymentPanel.hidden = !state.webCheckout;
+        els.webPaymentPanel.innerHTML = state.webCheckout ? `
+          <div class="checkout-preview">
+            <strong>Pedido #${escapeHtml(state.webCheckout.pedido?.id || '')}</strong>
+            <small>Pix gerado pelo servidor. O valor final foi recalculado antes de criar o pedido.</small>
+            <div class="summary-line">
+              <span>Total</span>
+              <strong>${escapeHtml(money(pix.valor || state.webCheckout.pedido?.total || 0))}</strong>
+            </div>
+            <button class="primary" type="button" data-copy-pix-web>Copiar Pix</button>
+            <button class="ghost" type="button" data-open-orders-web>Ver pedidos</button>
+          </div>
+        ` : '';
+      }
       if (els.checkoutStepLabel) {
-        els.checkoutStepLabel.textContent = 'Carrinho pronto para confirmar no Telegram';
+        els.checkoutStepLabel.textContent = state.webCheckout
+          ? 'Pix gerado no app'
+          : (checkoutWebDisponivel() ? 'Carrinho pronto para gerar pedido e Pix' : 'Carrinho pronto para confirmar no Telegram');
       }
       if (els.continueToDelivery) {
         const canalTelegram = Boolean(tg?.sendData);
-        els.continueToDelivery.disabled = cartCount() < 1 || state.sending || !canalTelegram || !state.loja.aceitaPedidos;
+        const canalWeb = checkoutWebDisponivel();
+        els.continueToDelivery.disabled = cartCount() < 1 || state.sending || (!canalTelegram && !canalWeb) || !state.loja.aceitaPedidos;
         els.continueToDelivery.textContent = state.sending
           ?'Enviando...'
-          : 'Enviar carrinho ao Telegram';
+          : (canalTelegram ? 'Enviar carrinho ao Telegram' : 'Gerar pedido e Pix');
       }
       renderJourney();
     }
@@ -2128,9 +2335,12 @@
           if (item.section) {
             state.viniAi.viewedSections.set(item.section, Number(state.viniAi.viewedSections.get(item.section) || 0) + 1);
           }
-          renderTabs();
-          renderProducts();
-          renderViniAIOutdoor();
+          if (state.catalogPage.usePaged || shouldUsePagedCatalog()) loadProducts();
+          else {
+            renderTabs();
+            renderProducts();
+            renderViniAIOutdoor();
+          }
         });
         els.tabs.appendChild(button);
       });
@@ -2238,6 +2448,17 @@
         group.items.forEach(item => grid.appendChild(productCard(item)));
         els.products.appendChild(section);
       });
+      if (state.catalogPage.usePaged && (state.catalogPage.hasMore || state.catalogPage.loadingMore)) {
+        const footer = document.createElement('div');
+        footer.className = 'load-more-row';
+        footer.innerHTML = `
+          <button class="ghost" type="button" data-load-more-products ${state.catalogPage.loadingMore ? 'disabled' : ''}>
+            ${state.catalogPage.loadingMore ? 'Carregando...' : 'Carregar mais produtos'}
+          </button>
+        `;
+        footer.querySelector('[data-load-more-products]')?.addEventListener('click', loadMoreProducts);
+        els.products.appendChild(footer);
+      }
     }
 
     function renderCart() {
@@ -2383,9 +2604,9 @@
       };
     }
 
-    function enviarCarrinhoParaCheckoutTelegram(payload = payloadCarrinhoMiniApp()) {
+    async function enviarCarrinhoParaCheckoutTelegram(payload = payloadCarrinhoMiniApp()) {
       if (!payload.items.length) return showToast('Adicione ao menos um produto');
-      if (!tg?.sendData) return showToast('Mini App sem canal do Telegram para finalizar pedido.');
+      if (!tg?.sendData) return finalizarPedidoWeb(payload);
       tg.sendData(JSON.stringify(payload));
       state.cart.clear();
       if (els.cartNotes) els.cartNotes.value = '';
@@ -2393,6 +2614,49 @@
       persistCart();
       render();
       showToast('Sua solicitacao foi enviada com sucesso. Agora confirme entrega e pagamento no Telegram.');
+    }
+
+    async function copiarPixWeb() {
+      const codigo = state.webCheckout?.pagamento?.pix?.copiaECola || '';
+      if (!codigo) return showToast('Pix ainda nao disponivel');
+      try {
+        await navigator.clipboard.writeText(codigo);
+        showToast('Pix copiado');
+      } catch (_) {
+        window.prompt('Copie o codigo Pix', codigo);
+      }
+    }
+
+    async function finalizarPedidoWeb(payload = payloadCarrinhoMiniApp()) {
+      if (!state.miniappToken) {
+        avisarCadastroMiniApp();
+        return;
+      }
+      const perfil = perfilCadastroPayload();
+      const data = await apiFetch('/api/client/checkout', {
+        method: 'POST',
+        body: JSON.stringify({
+          clientOrderId: payload.client_order_id,
+          modalidadeEntrega: 'entrega',
+          endereco: perfil,
+          observacoes: payload.observacoes || '',
+          itens: payload.items.map(item => ({
+            produto_id: item.produto_id,
+            quantidade: item.quantidade
+          }))
+        })
+      });
+      state.webCheckout = {
+        pedido: data.pedido,
+        pagamento: data.pagamento
+      };
+      state.cart.clear();
+      if (els.cartNotes) els.cartNotes.value = '';
+      limparClientOrderIdPendente();
+      persistCart();
+      await loadOrders();
+      render();
+      showToast('Pedido criado. Copie o Pix para pagar.');
     }
 
     async function sendCartToTelegram() {
@@ -2407,7 +2671,7 @@
       state.sending = true;
       renderSummary();
       try {
-        enviarCarrinhoParaCheckoutTelegram(payload);
+        await enviarCarrinhoParaCheckoutTelegram(payload);
       } catch (err) {
         showToast(err.message || 'Falha ao enviar carrinho ao Telegram.');
       } finally {
@@ -2418,17 +2682,19 @@
 
     els.search.addEventListener('input', event => {
       state.query = event.target.value;
-      renderProducts();
-      renderViniAIOutdoor();
+      scheduleCatalogReload();
     });
 
     els.clearSearch.addEventListener('click', () => {
       state.query = '';
       els.search.value = '';
       state.section = '';
-      renderTabs();
-      renderProducts();
-      renderViniAIOutdoor();
+      if (state.catalogPage.usePaged || shouldUsePagedCatalog()) loadProducts();
+      else {
+        renderTabs();
+        renderProducts();
+        renderViniAIOutdoor();
+      }
     });
 
     els.cartButton.addEventListener('click', iniciarCheckout);
@@ -2438,6 +2704,14 @@
     els.registrationForm?.addEventListener('submit', salvarCadastroMiniApp);
     els.profileCep?.addEventListener('blur', preencherEnderecoPorCep);
     els.continueToDelivery?.addEventListener('click', sendCartToTelegram);
+    els.cartStepPanel?.addEventListener('click', event => {
+      if (event.target.closest('[data-copy-pix-web]')) copiarPixWeb();
+      if (event.target.closest('[data-open-orders-web]')) {
+        setCartOpen(false);
+        loadOrders();
+        els.ordersPanel?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+      }
+    });
     els.ordersList.addEventListener('click', event => {
       const btn = event.target.closest('[data-order-id]');
       if (!btn) return;
@@ -2447,6 +2721,7 @@
     window.addEventListener('beforeunload', () => {
       if (state.pollTimer) clearInterval(state.pollTimer);
       if (state.storeStatusTimer) clearInterval(state.storeStatusTimer);
+      if (catalogSearchTimer) clearTimeout(catalogSearchTimer);
       if (state.viniAi.alertHideTimer) clearTimeout(state.viniAi.alertHideTimer);
     });
 
