@@ -1340,7 +1340,21 @@
       return (localStorage.getItem('mj_mercadinho_api_base') || '').replace(/\/+$/, '');
     }
 
+    function runningOnStaticHost() {
+      return /\.github\.io$/i.test(window.location.hostname) || window.location.protocol === 'file:';
+    }
+
+    function apiBaseConfigurada() {
+      return Boolean(apiBase()) || !runningOnStaticHost();
+    }
+
+    function exigirApiBaseConfigurada() {
+      if (apiBaseConfigurada()) return;
+      throw new Error('Servidor do app nao configurado. Abra pelo servidor local ou informe apiBase para cadastrar, comprar e gerar Pix.');
+    }
+
     async function apiFetch(path, options = {}) {
+      exigirApiBaseConfigurada();
       const response = await fetch(`${apiBase()}${path}`, {
         ...options,
         credentials: 'include',
@@ -1358,7 +1372,7 @@
     }
 
     function checkoutWebDisponivel() {
-      return state.authMode === 'web' || (!tg?.sendData && !tg?.initData);
+      return apiBaseConfigurada() && (state.authMode === 'web' || (!tg?.sendData && !tg?.initData));
     }
 
     function perfilCadastroPayload() {
@@ -1387,10 +1401,12 @@
           state.authMode = 'web';
           const clienteSalvo = JSON.parse(localStorage.getItem(WEB_CLIENT_KEY) || 'null');
           state.cliente = clienteSalvo || { cadastroCompleto: false };
-          els.authStatus.textContent = state.miniappToken ? 'App Android conectado' : 'Cadastro do app';
+          els.authStatus.textContent = apiBaseConfigurada()
+            ? (state.miniappToken ? 'App Android conectado' : 'Cadastro do app')
+            : 'Servidor do app nao configurado';
           preencherFormularioCadastro();
           renderSummary();
-          if (state.miniappToken) await loadOrders();
+          if (state.miniappToken && apiBaseConfigurada()) await loadOrders();
           renderJourney();
           renderOrders();
           return;
@@ -1982,6 +1998,7 @@
 
     async function loadProductsPage({ reset = false } = {}) {
       if (!shouldUsePagedCatalog()) return false;
+      if (!apiBaseConfigurada()) return false;
       if (state.catalogPage.loadingMore) return true;
       if (!reset && !state.catalogPage.hasMore) return true;
 
