@@ -1062,7 +1062,7 @@
           <h1>M&J Mercadinho</h1>
           <div class="store-meta">
             <span class="pill ok" id="storeStatus">Aberto para pedidos</span>
-            <span>Compra no Mini App</span>
+            <span id="channelLabel">Compra no Mini App</span>
           </div>
         </div>
         <button class="cart-button" id="cartButton" type="button">0 itens</button>
@@ -1082,16 +1082,16 @@
     <main>
       <section class="journey-progress" id="journeyProgress" aria-label="Etapas da compra">
         <div class="section-head">
-          <h2>Compra no Mini App</h2>
+          <h2 id="journeyTitle">Compra no Mini App</h2>
           <span id="journeyStatus">Preparando</span>
         </div>
         <div class="journey-steps" id="journeySteps"></div>
       </section>      <section class="registration-panel" id="registrationPanel" hidden>
         <div class="section-head">
           <h2>Primeiro acesso</h2>
-          <span>Cadastro no Mini App</span>
+          <span id="registrationChannelLabel">Cadastro no Mini App</span>
         </div>
-        <p>Voce ja pode ver os produtos. Para finalizar a compra, informe os dados essenciais para a loja confirmar entrega, retirada e pagamento pelo Telegram.</p>
+        <p id="registrationIntro">Voce ja pode ver os produtos. Para finalizar a compra, informe os dados essenciais para a loja confirmar entrega, retirada e pagamento pelo Telegram.</p>
         <form class="registration-form" id="registrationForm">
           <label>Nome completo
             <input id="profileName" type="text" autocomplete="name" required>
@@ -1153,7 +1153,7 @@
     <div class="cart-head">
       <div class="cart-head-copy">
         <h2>Seu carrinho</h2>
-        <small>Seu carrinho esta pronto. Agora vamos confirmar entrega e pagamento no Telegram.</small>
+        <small id="cartHeadHint">Seu carrinho esta pronto. Agora vamos confirmar entrega e pagamento no Telegram.</small>
       </div>
       <button class="ghost" id="closeCart" type="button">Fechar</button>
     </div>
@@ -1180,10 +1180,10 @@
       </div>
       <label class="cart-notes">Observacoes do pedido
         <textarea id="cartNotes" maxlength="500" placeholder="Ex: separar troco, evitar substituicoes ou detalhe importante"></textarea>
-        <small>O Pix sera gerado com o valor recalculado pela loja. Depois do pagamento, envie o comprovante pelo botao indicado.</small>
+        <small id="cartNotesHint">O Pix sera gerado com o valor recalculado pela loja. Depois do pagamento, envie o comprovante pelo botao indicado.</small>
       </label>
       <div class="checkout-stage" id="cartStepPanel">
-        <small>Falta pouco: escolha entrega ou retirada para gerar o Pix. Voce so paga depois que a loja confirmar entrega ou retirada.</small>
+        <small id="checkoutHint">Falta pouco: escolha entrega ou retirada para gerar o Pix. Voce so paga depois que a loja confirmar entrega ou retirada.</small>
         <div class="checkout-preview" id="webPaymentPanel" hidden></div>
         <button class="primary" id="continueToDelivery" type="button" disabled>Enviar carrinho ao Telegram</button>
       </div>
@@ -1219,6 +1219,7 @@
     const MINIAPP_TOKEN_KEY = 'mj_mercadinho_miniapp_token_v1';
     const WEB_CLIENT_KEY = 'mj_mercadinho_web_cliente_v1';
     const PENDING_ORDER_KEY = 'mj_mercadinho_pending_order_v1';
+    const API_BASE_KEY = 'mj_mercadinho_api_base';
 
     const state = {
       products: [],
@@ -1265,9 +1266,13 @@
 
     const els = {
       tabs: document.getElementById('tabs'),
+      channelLabel: document.getElementById('channelLabel'),
+      journeyTitle: document.getElementById('journeyTitle'),
       journeyStatus: document.getElementById('journeyStatus'),
       journeySteps: document.getElementById('journeySteps'),
       registrationPanel: document.getElementById('registrationPanel'),
+      registrationChannelLabel: document.getElementById('registrationChannelLabel'),
+      registrationIntro: document.getElementById('registrationIntro'),
       registrationForm: document.getElementById('registrationForm'),
       profileName: document.getElementById('profileName'),
       profileCpf: document.getElementById('profileCpf'),
@@ -1296,8 +1301,11 @@
       drawerDelivery: document.getElementById('drawerDelivery'),
       drawerGrandTotal: document.getElementById('drawerGrandTotal'),
       cartNotes: document.getElementById('cartNotes'),
+      cartHeadHint: document.getElementById('cartHeadHint'),
+      cartNotesHint: document.getElementById('cartNotesHint'),
       checkoutStepLabel: document.getElementById('checkoutStepLabel'),
       cartStepPanel: document.getElementById('cartStepPanel'),
+      checkoutHint: document.getElementById('checkoutHint'),
       webPaymentPanel: document.getElementById('webPaymentPanel'),
       continueToDelivery: document.getElementById('continueToDelivery'),
       clearCartDrawer: document.getElementById('clearCartDrawer'),
@@ -1314,6 +1322,8 @@
     let toastTimer = null;
     let catalogSearchTimer = null;
 
+    configurarTextosDoCanal();
+
     function showToast(message) {
       els.toast.textContent = message;
       els.toast.classList.add('show');
@@ -1329,19 +1339,79 @@
       document.documentElement.dataset.telegramScheme = webApp.colorScheme || 'light';
     }
 
+    function canalAndroidApp() {
+      const params = new URLSearchParams(window.location.search || '');
+      const path = String(window.location.pathname || '').toLowerCase();
+      return params.get('apk') === 'android' ||
+        params.get('canal') === 'android' ||
+        params.get('channel') === 'android' ||
+        path === '/app' ||
+        path === '/app/' ||
+        path === '/android' ||
+        path === '/android/';
+    }
+
+    function canalCompra() {
+      return canalAndroidApp() ? 'android_app' : 'telegram_miniapp';
+    }
+
+    function configurarTextosDoCanal() {
+      if (!canalAndroidApp()) return;
+      if (els.channelLabel) els.channelLabel.textContent = 'App Android';
+      if (els.journeyTitle) els.journeyTitle.textContent = 'Compra no App Android';
+      if (els.registrationChannelLabel) els.registrationChannelLabel.textContent = 'Cadastro no app Android';
+      if (els.registrationIntro) {
+        els.registrationIntro.textContent = 'Voce ja pode ver os produtos. Para finalizar a compra, informe os dados essenciais para a loja confirmar entrega, retirada e pagamento direto pelo app.';
+      }
+      if (els.cartHeadHint) els.cartHeadHint.textContent = 'Seu carrinho esta pronto. Agora vamos gerar pedido e Pix direto no app.';
+      if (els.cartNotesHint) els.cartNotesHint.textContent = 'O Pix sera gerado com o valor recalculado pela loja. Depois do pagamento, acompanhe o pedido pelo app e painel.';
+      if (els.checkoutHint) els.checkoutHint.textContent = 'Falta pouco: o app vai criar o pedido no backend e gerar o Pix sem passar pelo Telegram.';
+      if (els.saveProfile) els.saveProfile.textContent = 'Salvar cadastro no app Android';
+    }
+
     function apiBase() {
       const url = new URL(window.location.href);
       const fromQuery = url.searchParams.get('apiBase');
       if (fromQuery) {
         const clean = fromQuery.replace(/\/+$/, '');
-        localStorage.setItem('mj_mercadinho_api_base', clean);
+        localStorage.setItem(API_BASE_KEY, clean);
         return clean;
       }
-      return (localStorage.getItem('mj_mercadinho_api_base') || '').replace(/\/+$/, '');
+      return (localStorage.getItem(API_BASE_KEY) || '').replace(/\/+$/, '');
     }
 
     function runningOnStaticHost() {
       return /\.github\.io$/i.test(window.location.hostname) || window.location.protocol === 'file:';
+    }
+
+    function normalizarApiBasePublica(value) {
+      const text = String(value || '').trim();
+      if (!text) return '';
+      try {
+        const url = new URL(text);
+        if (runningOnStaticHost() && url.protocol !== 'https:') return '';
+        url.hash = '';
+        url.search = '';
+        return url.toString().replace(/\/+$/, '');
+      } catch (_) {
+        return '';
+      }
+    }
+
+    async function carregarRuntimeConfigPages() {
+      const url = new URL(window.location.href);
+      if (!runningOnStaticHost() || url.searchParams.get('apiBase')) return;
+      try {
+        const res = await fetch('./runtime-config.json', { cache: 'no-store' });
+        if (!res.ok) throw new Error('runtime config indisponivel');
+        const config = await res.json();
+        if (!Object.prototype.hasOwnProperty.call(config || {}, 'apiBaseUrl')) return;
+        const clean = normalizarApiBasePublica(config.apiBaseUrl);
+        if (clean) localStorage.setItem(API_BASE_KEY, clean);
+        else localStorage.removeItem(API_BASE_KEY);
+      } catch (_) {
+        // Se o GitHub Pages ainda nao publicou runtime-config.json, a loja continua com catalogo estatico.
+      }
     }
 
     function apiBaseConfigurada() {
@@ -1372,7 +1442,7 @@
     }
 
     function checkoutWebDisponivel() {
-      return apiBaseConfigurada() && (state.authMode === 'web' || (!tg?.sendData && !tg?.initData));
+      return apiBaseConfigurada() && (state.authMode === 'web' || canalAndroidApp() || (!tg?.sendData && !tg?.initData));
     }
 
     function perfilCadastroPayload() {
@@ -1395,7 +1465,7 @@
       try {
         const initData = tg?.initData || '';
         const url = new URL(window.location.href);
-        const modoWeb = url.searchParams.get('apk') === 'android' || url.searchParams.get('modo') === 'web' || (!initData && !tg?.sendData);
+        const modoWeb = canalAndroidApp() || url.searchParams.get('modo') === 'web' || (!initData && !tg?.sendData);
         if (modoWeb) {
           state.authOk = true;
           state.authMode = 'web';
@@ -1480,14 +1550,22 @@
 
     function renderJourney() {
       const atual = etapaJornadaAtual();
-      const etapas = [
-        ['catalogo', 'Produtos'],
-        ['carrinho', 'Carrinho'],
-        ['telegram', 'Confirmacao no Telegram'],
-        ['entrega_pix', 'Entrega/Pix'],
-        ['comprovante', 'Comprovante'],
-        ['confirmado', 'Pedido confirmado']
-      ];
+      const etapas = canalAndroidApp()
+        ? [
+          ['catalogo', 'Produtos'],
+          ['carrinho', 'Carrinho'],
+          ['pedido_pix', 'Pedido/Pix'],
+          ['painel', 'Painel'],
+          ['confirmado', 'Pedido confirmado']
+        ]
+        : [
+          ['catalogo', 'Produtos'],
+          ['carrinho', 'Carrinho'],
+          ['telegram', 'Confirmacao no Telegram'],
+          ['entrega_pix', 'Entrega/Pix'],
+          ['comprovante', 'Comprovante'],
+          ['confirmado', 'Pedido confirmado']
+        ];
       const indiceAtual = etapas.findIndex(([id]) => id === atual);
       if (els.journeySteps) {
         els.journeySteps.innerHTML = etapas.map(([id, label], index) => {
@@ -1500,19 +1578,21 @@
           cadastro: 'Primeiro acesso',
           catalogo: 'Escolha produtos',
           carrinho: 'Seu carrinho esta pronto',
+          pedido_pix: 'Pedido e Pix no app',
+          painel: 'Pedido no painel',
           telegram: 'Confirmacao no Telegram',
           entrega_pix: 'Entrega e Pix no chat',
           comprovante: 'Envie comprovante no Telegram',
           confirmado: 'Pedido confirmado'
         };
-        els.journeyStatus.textContent = labels[atual] || 'Compra no Mini App';
+        els.journeyStatus.textContent = labels[atual] || (canalAndroidApp() ? 'Compra no App Android' : 'Compra no Mini App');
       }
       const bloqueadoPorCadastro = clientePrecisaCadastro();
       if (els.registrationPanel) els.registrationPanel.hidden = !bloqueadoPorCadastro;
     }
 
     function avisarCadastroMiniApp() {
-      showToast('Complete seu cadastro no Mini App para continuar');
+      showToast(canalAndroidApp() ? 'Complete seu cadastro no app Android para continuar' : 'Complete seu cadastro no Mini App para continuar');
       els.registrationPanel?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
     }
 
@@ -1527,7 +1607,7 @@
       try {
         const perfil = perfilCadastroPayload();
         const data = state.authMode === 'web'
-          ? await apiFetch('/api/client/customer', {
+          ? await apiFetch('/api/app/clientes/cadastro', {
             method: 'POST',
             body: JSON.stringify({
               nome: perfil.nome,
@@ -1555,7 +1635,7 @@
         state.savingProfile = false;
         if (els.saveProfile) {
           els.saveProfile.disabled = false;
-          els.saveProfile.textContent = 'Salvar cadastro no Mini App';
+          els.saveProfile.textContent = canalAndroidApp() ? 'Salvar cadastro no app Android' : 'Salvar cadastro no Mini App';
         }
       }
     }
@@ -1568,7 +1648,7 @@
         return;
       }
       try {
-        const data = await apiFetch(state.authMode === 'web' ? '/api/client/orders' : '/api/miniapp/orders');
+        const data = await apiFetch(state.authMode === 'web' ? '/api/app/pedidos' : '/api/miniapp/orders');
         state.orders = Array.isArray(data.pedidos) ?data.pedidos : [];
       } catch (_) {
         state.orders = [];
@@ -1589,7 +1669,7 @@
           <div class="order-mini">
             <span>
               <strong>Pedido #${escapeHtml(order.id)}</strong>
-              <small>${escapeHtml(status)} | ${escapeHtml(money(order.total))} | ${state.authMode === 'web' ? 'pedido no app' : 'entrega e Pix pelo Telegram'}</small>
+              <small>${escapeHtml(status)} | ${escapeHtml(money(order.total))} | ${state.authMode === 'web' ? 'pedido direto no app' : 'entrega e Pix pelo Telegram'}</small>
             </span>
             <div class="actions">
               <button class="ghost" type="button" data-order-id="${escapeHtml(order.id)}">Atualizar</button>
@@ -1941,7 +2021,7 @@
 
     function shouldUsePagedCatalog() {
       const url = new URL(window.location.href);
-      return url.searchParams.get('apk') === 'android' || url.searchParams.get('modo') === 'web' || (!tg?.sendData && !tg?.initData);
+      return canalAndroidApp() || url.searchParams.get('modo') === 'web' || (!tg?.sendData && !tg?.initData);
     }
 
     function restoreCart() {
@@ -2021,7 +2101,8 @@
       render();
 
       try {
-        const res = await fetch(`${apiBase()}/api/client/catalog-page?${params.toString()}`, { cache: 'no-store' });
+        const catalogPageEndpoint = canalAndroidApp() ? '/api/app/catalogo-page' : '/api/client/catalog-page';
+        const res = await fetch(`${apiBase()}${catalogPageEndpoint}?${params.toString()}`, { cache: 'no-store' });
         if (!res.ok) throw new Error('catalogo paginado indisponivel');
         const payload = await res.json();
         atualizarStatusLoja(payload);
@@ -2054,7 +2135,8 @@
       render();
       if (await loadProductsPage({ reset: true })) return;
       try {
-        const res = await fetch(`${apiBase()}/api/miniapp/catalog`, { cache: 'no-store' });
+        const catalogEndpoint = canalAndroidApp() ? '/api/app/catalogo' : '/api/miniapp/catalog';
+        const res = await fetch(`${apiBase()}${catalogEndpoint}`, { cache: 'no-store' });
         if (!res.ok) throw new Error('catalogo indisponivel');
         const payload = await res.json();
         atualizarStatusLoja(payload);
@@ -2286,7 +2368,7 @@
           : (checkoutWebDisponivel() ? 'Carrinho pronto para gerar pedido e Pix' : 'Carrinho pronto para confirmar no Telegram');
       }
       if (els.continueToDelivery) {
-        const canalTelegram = Boolean(tg?.sendData);
+        const canalTelegram = Boolean(tg?.sendData) && !canalAndroidApp();
         const canalWeb = checkoutWebDisponivel();
         els.continueToDelivery.disabled = cartCount() < 1 || state.sending || (!canalTelegram && !canalWeb) || !state.loja.aceitaPedidos;
         els.continueToDelivery.textContent = state.sending
@@ -2307,7 +2389,7 @@
     }
 
     async function irParaEntrega() {
-      return sendCartToTelegram();
+      return continuarCheckoutCanal();
     }
 
     function voltarAoCarrinho() {
@@ -2538,7 +2620,7 @@
       els.drawerTotal.textContent = money(total);
       if (els.drawerSubtotal) els.drawerSubtotal.textContent = money(total);
       if (els.drawerDelivery) {
-        els.drawerDelivery.textContent = 'No Telegram';
+        els.drawerDelivery.textContent = canalAndroidApp() ? 'No app' : 'No Telegram';
       }
       if (els.drawerGrandTotal) els.drawerGrandTotal.textContent = money(total);
       [els.clearCartDrawer].forEach(button => {
@@ -2549,7 +2631,7 @@
           const textoPrincipal = state.sending
             ?'Enviando...'
             : state.checkoutStep === 'cart'
-              ?'Enviar carrinho ao Telegram'
+              ?(canalAndroidApp() ? 'Gerar pedido e Pix' : 'Enviar carrinho ao Telegram')
               : `Carrinho - ${money(total)}`;
           tg.MainButton.setText(textoPrincipal);
           tg.MainButton.show();
@@ -2581,7 +2663,7 @@
     }
 
     function acaoBotaoPrincipalTelegram() {
-      if (state.checkoutStep === 'cart') return sendCartToTelegram();
+      if (state.checkoutStep === 'cart') return continuarCheckoutCanal();
       return iniciarCheckout();
     }
 
@@ -2595,7 +2677,8 @@
     function payloadCarrinhoMiniApp() {
       return {
         type: 'mercadinho_cart',
-        source: 'telegram_mini_app_html',
+        source: canalAndroidApp() ? 'android_app_html' : 'telegram_mini_app_html',
+        origem: canalCompra(),
         client_order_id: clientOrderIdAtual(),
         items: cartItems().map(item => ({
           produto_id: item.id,
@@ -2623,7 +2706,7 @@
 
     async function enviarCarrinhoParaCheckoutTelegram(payload = payloadCarrinhoMiniApp()) {
       if (!payload.items.length) return showToast('Adicione ao menos um produto');
-      if (!tg?.sendData) return finalizarPedidoWeb(payload);
+      if (canalAndroidApp() || !tg?.sendData) return finalizarPedidoWeb(payload);
       tg.sendData(JSON.stringify(payload));
       state.cart.clear();
       if (els.cartNotes) els.cartNotes.value = '';
@@ -2650,7 +2733,7 @@
         return;
       }
       const perfil = perfilCadastroPayload();
-      const data = await apiFetch('/api/client/checkout', {
+      const data = await apiFetch('/api/app/pedidos', {
         method: 'POST',
         body: JSON.stringify({
           clientOrderId: payload.client_order_id,
@@ -2676,6 +2759,11 @@
       showToast('Pedido criado. Copie o Pix para pagar.');
     }
 
+    async function continuarCheckoutCanal() {
+      if (canalAndroidApp()) return finalizarPedidoWeb(payloadCarrinhoMiniApp());
+      return sendCartToTelegram();
+    }
+
     async function sendCartToTelegram() {
       if (state.sending) return;
       if (!state.loja.aceitaPedidos) {
@@ -2690,7 +2778,7 @@
       try {
         await enviarCarrinhoParaCheckoutTelegram(payload);
       } catch (err) {
-        showToast(err.message || 'Falha ao enviar carrinho ao Telegram.');
+        showToast(err.message || (canalAndroidApp() ? 'Falha ao criar pedido no app.' : 'Falha ao enviar carrinho ao Telegram.'));
       } finally {
         state.sending = false;
         renderSummary();
@@ -2720,7 +2808,7 @@
     els.clearCartDrawer.addEventListener('click', clearCart);
     els.registrationForm?.addEventListener('submit', salvarCadastroMiniApp);
     els.profileCep?.addEventListener('blur', preencherEnderecoPorCep);
-    els.continueToDelivery?.addEventListener('click', sendCartToTelegram);
+    els.continueToDelivery?.addEventListener('click', continuarCheckoutCanal);
     els.cartStepPanel?.addEventListener('click', event => {
       if (event.target.closest('[data-copy-pix-web]')) copiarPixWeb();
       if (event.target.closest('[data-open-orders-web]')) {
@@ -2742,10 +2830,15 @@
       if (state.viniAi.alertHideTimer) clearTimeout(state.viniAi.alertHideTimer);
     });
 
-    loadProducts();
-    sincronizarStatusLoja();
-    state.storeStatusTimer = setInterval(sincronizarStatusLoja, 15000);
-    authenticateMiniApp();
+    async function iniciarLojinha() {
+      await carregarRuntimeConfigPages();
+      loadProducts();
+      sincronizarStatusLoja();
+      state.storeStatusTimer = setInterval(sincronizarStatusLoja, 15000);
+      authenticateMiniApp();
+    }
+
+    iniciarLojinha();
   </script>
 </body>
 </html>
