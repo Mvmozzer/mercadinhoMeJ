@@ -1184,7 +1184,6 @@
       </label>
       <div class="checkout-stage" id="cartStepPanel">
         <small id="checkoutHint">Falta pouco: escolha entrega ou retirada para gerar o Pix. Voce so paga depois que a loja confirmar entrega ou retirada.</small>
-        <div class="checkout-preview" id="webPaymentPanel" hidden></div>
         <button class="primary" id="continueToDelivery" type="button" disabled>Enviar carrinho ao Telegram</button>
       </div>
       <button class="danger" id="clearCartDrawer" type="button" disabled>Limpar carrinho</button>
@@ -1217,7 +1216,6 @@
 
     const CART_KEY = 'mj_mercadinho_cart_v2';
     const MINIAPP_TOKEN_KEY = 'mj_mercadinho_miniapp_token_v1';
-    const WEB_CLIENT_KEY = 'mj_mercadinho_web_cliente_v1';
     const PENDING_ORDER_KEY = 'mj_mercadinho_pending_order_v1';
     const API_BASE_KEY = 'mj_mercadinho_api_base';
 
@@ -1234,7 +1232,6 @@
       pendingClientOrderId: localStorage.getItem(PENDING_ORDER_KEY) || '',
       authOk: false,
       authMode: 'pending',
-      webCheckout: null,
       catalogLoading: true,
       catalogSource: 'loading',
       catalogPage: {
@@ -1306,7 +1303,6 @@
       checkoutStepLabel: document.getElementById('checkoutStepLabel'),
       cartStepPanel: document.getElementById('cartStepPanel'),
       checkoutHint: document.getElementById('checkoutHint'),
-      webPaymentPanel: document.getElementById('webPaymentPanel'),
       continueToDelivery: document.getElementById('continueToDelivery'),
       clearCartDrawer: document.getElementById('clearCartDrawer'),
       reviewCart: document.getElementById('reviewCart'),
@@ -1321,8 +1317,6 @@
 
     let toastTimer = null;
     let catalogSearchTimer = null;
-
-    configurarTextosDoCanal();
 
     function showToast(message) {
       els.toast.textContent = message;
@@ -1339,34 +1333,8 @@
       document.documentElement.dataset.telegramScheme = webApp.colorScheme || 'light';
     }
 
-    function canalAndroidApp() {
-      const params = new URLSearchParams(window.location.search || '');
-      const path = String(window.location.pathname || '').toLowerCase();
-      return params.get('apk') === 'android' ||
-        params.get('canal') === 'android' ||
-        params.get('channel') === 'android' ||
-        path === '/app' ||
-        path === '/app/' ||
-        path === '/android' ||
-        path === '/android/';
-    }
-
     function canalCompra() {
-      return canalAndroidApp() ? 'android_app' : 'telegram_miniapp';
-    }
-
-    function configurarTextosDoCanal() {
-      if (!canalAndroidApp()) return;
-      if (els.channelLabel) els.channelLabel.textContent = 'App Android';
-      if (els.journeyTitle) els.journeyTitle.textContent = 'Compra no App Android';
-      if (els.registrationChannelLabel) els.registrationChannelLabel.textContent = 'Cadastro no app Android';
-      if (els.registrationIntro) {
-        els.registrationIntro.textContent = 'Voce ja pode ver os produtos. Para finalizar a compra, informe os dados essenciais para a loja confirmar entrega, retirada e pagamento direto pelo app.';
-      }
-      if (els.cartHeadHint) els.cartHeadHint.textContent = 'Seu carrinho esta pronto. Agora vamos gerar pedido e Pix direto no app.';
-      if (els.cartNotesHint) els.cartNotesHint.textContent = 'O Pix sera gerado com o valor recalculado pela loja. Depois do pagamento, acompanhe o pedido pelo app e painel.';
-      if (els.checkoutHint) els.checkoutHint.textContent = 'Falta pouco: o app vai criar o pedido no backend e gerar o Pix sem passar pelo Telegram.';
-      if (els.saveProfile) els.saveProfile.textContent = 'Salvar cadastro no app Android';
+      return 'telegram_miniapp';
     }
 
     function apiBase() {
@@ -1441,10 +1409,6 @@
       return data;
     }
 
-    function checkoutWebDisponivel() {
-      return apiBaseConfigurada() && (state.authMode === 'web' || canalAndroidApp() || (!tg?.sendData && !tg?.initData));
-    }
-
     function perfilCadastroPayload() {
       return {
         nome: String(els.profileName?.value || '').trim(),
@@ -1464,23 +1428,6 @@
     async function authenticateMiniApp() {
       try {
         const initData = tg?.initData || '';
-        const url = new URL(window.location.href);
-        const modoWeb = canalAndroidApp() || url.searchParams.get('modo') === 'web' || (!initData && !tg?.sendData);
-        if (modoWeb) {
-          state.authOk = true;
-          state.authMode = 'web';
-          const clienteSalvo = JSON.parse(localStorage.getItem(WEB_CLIENT_KEY) || 'null');
-          state.cliente = clienteSalvo || { cadastroCompleto: false };
-          els.authStatus.textContent = apiBaseConfigurada()
-            ? (state.miniappToken ? 'App Android conectado' : 'Cadastro do app')
-            : 'Servidor do app nao configurado';
-          preencherFormularioCadastro();
-          renderSummary();
-          if (state.miniappToken && apiBaseConfigurada()) await loadOrders();
-          renderJourney();
-          renderOrders();
-          return;
-        }
         const data = await apiFetch('/api/telegram/auth', {
           method: 'POST',
           body: JSON.stringify({
@@ -1550,22 +1497,14 @@
 
     function renderJourney() {
       const atual = etapaJornadaAtual();
-      const etapas = canalAndroidApp()
-        ? [
-          ['catalogo', 'Produtos'],
-          ['carrinho', 'Carrinho'],
-          ['pedido_pix', 'Pedido/Pix'],
-          ['painel', 'Painel'],
-          ['confirmado', 'Pedido confirmado']
-        ]
-        : [
-          ['catalogo', 'Produtos'],
-          ['carrinho', 'Carrinho'],
-          ['telegram', 'Confirmacao no Telegram'],
-          ['entrega_pix', 'Entrega/Pix'],
-          ['comprovante', 'Comprovante'],
-          ['confirmado', 'Pedido confirmado']
-        ];
+      const etapas = [
+        ['catalogo', 'Produtos'],
+        ['carrinho', 'Carrinho'],
+        ['telegram', 'Confirmacao no Telegram'],
+        ['entrega_pix', 'Entrega/Pix'],
+        ['comprovante', 'Comprovante'],
+        ['confirmado', 'Pedido confirmado']
+      ];
       const indiceAtual = etapas.findIndex(([id]) => id === atual);
       if (els.journeySteps) {
         els.journeySteps.innerHTML = etapas.map(([id, label], index) => {
@@ -1578,21 +1517,19 @@
           cadastro: 'Primeiro acesso',
           catalogo: 'Escolha produtos',
           carrinho: 'Seu carrinho esta pronto',
-          pedido_pix: 'Pedido e Pix no app',
-          painel: 'Pedido no painel',
           telegram: 'Confirmacao no Telegram',
           entrega_pix: 'Entrega e Pix no chat',
           comprovante: 'Envie comprovante no Telegram',
           confirmado: 'Pedido confirmado'
         };
-        els.journeyStatus.textContent = labels[atual] || (canalAndroidApp() ? 'Compra no App Android' : 'Compra no Mini App');
+        els.journeyStatus.textContent = labels[atual] || 'Compra no Mini App';
       }
       const bloqueadoPorCadastro = clientePrecisaCadastro();
       if (els.registrationPanel) els.registrationPanel.hidden = !bloqueadoPorCadastro;
     }
 
     function avisarCadastroMiniApp() {
-      showToast(canalAndroidApp() ? 'Complete seu cadastro no app Android para continuar' : 'Complete seu cadastro no Mini App para continuar');
+      showToast('Complete seu cadastro no Mini App para continuar');
       els.registrationPanel?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
     }
 
@@ -1606,49 +1543,28 @@
       }
       try {
         const perfil = perfilCadastroPayload();
-        const data = state.authMode === 'web'
-          ? await apiFetch('/api/app/clientes/cadastro', {
-            method: 'POST',
-            body: JSON.stringify({
-              nome: perfil.nome,
-              telefone: perfil.telefone,
-              endereco: perfil
-            })
-          })
-          : await apiFetch('/api/miniapp/profile', {
-            method: 'POST',
-            body: JSON.stringify(perfil)
-          });
-        if (state.authMode === 'web') {
-          state.miniappToken = data.token || '';
-          if (state.miniappToken) localStorage.setItem(MINIAPP_TOKEN_KEY, state.miniappToken);
-          state.cliente = data.customer || data.cliente || { ...perfil, cadastroCompleto: Boolean(perfil.nome && perfil.telefone) };
-          localStorage.setItem(WEB_CLIENT_KEY, JSON.stringify(state.cliente));
-        } else {
-          state.cliente = data.cliente || state.cliente;
-        }
+        const data = await apiFetch('/api/miniapp/profile', {
+          method: 'POST',
+          body: JSON.stringify(perfil)
+        });
+        state.cliente = data.cliente || state.cliente;
         renderJourney();
-        showToast(state.authMode === 'web' ? 'Cadastro salvo. Agora voce ja pode gerar o pedido e Pix.' : 'Cadastro salvo. Agora voce ja pode enviar o carrinho ao Telegram.');
+        showToast('Cadastro salvo. Agora voce ja pode enviar o carrinho ao Telegram.');
       } catch (err) {
         showToast(err.message || 'Nao foi possivel salvar seu cadastro');
       } finally {
         state.savingProfile = false;
         if (els.saveProfile) {
           els.saveProfile.disabled = false;
-          els.saveProfile.textContent = canalAndroidApp() ? 'Salvar cadastro no app Android' : 'Salvar cadastro no Mini App';
+          els.saveProfile.textContent = 'Salvar cadastro no Mini App';
         }
       }
     }
 
     async function loadOrders() {
       if (!state.authOk) return;
-      if (state.authMode === 'web' && !state.miniappToken) {
-        state.orders = [];
-        renderOrders();
-        return;
-      }
       try {
-        const data = await apiFetch(state.authMode === 'web' ? '/api/app/pedidos' : '/api/miniapp/orders');
+        const data = await apiFetch('/api/miniapp/orders');
         state.orders = Array.isArray(data.pedidos) ?data.pedidos : [];
       } catch (_) {
         state.orders = [];
@@ -1669,7 +1585,7 @@
           <div class="order-mini">
             <span>
               <strong>Pedido #${escapeHtml(order.id)}</strong>
-              <small>${escapeHtml(status)} | ${escapeHtml(money(order.total))} | ${state.authMode === 'web' ? 'pedido direto no app' : 'entrega e Pix pelo Telegram'}</small>
+              <small>${escapeHtml(status)} | ${escapeHtml(money(order.total))} | entrega e Pix pelo Telegram</small>
             </span>
             <div class="actions">
               <button class="ghost" type="button" data-order-id="${escapeHtml(order.id)}">Atualizar</button>
@@ -2020,8 +1936,7 @@
     }
 
     function shouldUsePagedCatalog() {
-      const url = new URL(window.location.href);
-      return canalAndroidApp() || url.searchParams.get('modo') === 'web' || (!tg?.sendData && !tg?.initData);
+      return runningOnStaticHost() && Boolean(apiBase());
     }
 
     function restoreCart() {
@@ -2101,8 +2016,7 @@
       render();
 
       try {
-        const catalogPageEndpoint = canalAndroidApp() ? '/api/app/catalogo-page' : '/api/client/catalog-page';
-        const res = await fetch(`${apiBase()}${catalogPageEndpoint}?${params.toString()}`, { cache: 'no-store' });
+        const res = await fetch(`${apiBase()}/api/client/catalog-page?${params.toString()}`, { cache: 'no-store' });
         if (!res.ok) throw new Error('catalogo paginado indisponivel');
         const payload = await res.json();
         atualizarStatusLoja(payload);
@@ -2135,8 +2049,7 @@
       render();
       if (await loadProductsPage({ reset: true })) return;
       try {
-        const catalogEndpoint = canalAndroidApp() ? '/api/app/catalogo' : '/api/miniapp/catalog';
-        const res = await fetch(`${apiBase()}${catalogEndpoint}`, { cache: 'no-store' });
+        const res = await fetch(`${apiBase()}/api/miniapp/catalog`, { cache: 'no-store' });
         if (!res.ok) throw new Error('catalogo indisponivel');
         const payload = await res.json();
         atualizarStatusLoja(payload);
@@ -2346,34 +2259,15 @@
     function renderCheckoutStep() {
       const etapaCarrinho = state.checkoutStep === 'cart';
       if (els.cartStepPanel) els.cartStepPanel.hidden = !etapaCarrinho;
-      if (els.webPaymentPanel) {
-        const pix = state.webCheckout?.pagamento?.pix || {};
-        els.webPaymentPanel.hidden = !state.webCheckout;
-        els.webPaymentPanel.innerHTML = state.webCheckout ? `
-          <div class="checkout-preview">
-            <strong>Pedido #${escapeHtml(state.webCheckout.pedido?.id || '')}</strong>
-            <small>Pix gerado pelo servidor. O valor final foi recalculado antes de criar o pedido.</small>
-            <div class="summary-line">
-              <span>Total</span>
-              <strong>${escapeHtml(money(pix.valor || state.webCheckout.pedido?.total || 0))}</strong>
-            </div>
-            <button class="primary" type="button" data-copy-pix-web>Copiar Pix</button>
-            <button class="ghost" type="button" data-open-orders-web>Ver pedidos</button>
-          </div>
-        ` : '';
-      }
       if (els.checkoutStepLabel) {
-        els.checkoutStepLabel.textContent = state.webCheckout
-          ? 'Pix gerado no app'
-          : (checkoutWebDisponivel() ? 'Carrinho pronto para gerar pedido e Pix' : 'Carrinho pronto para confirmar no Telegram');
+        els.checkoutStepLabel.textContent = 'Carrinho pronto para confirmar no Telegram';
       }
       if (els.continueToDelivery) {
-        const canalTelegram = Boolean(tg?.sendData) && !canalAndroidApp();
-        const canalWeb = checkoutWebDisponivel();
-        els.continueToDelivery.disabled = cartCount() < 1 || state.sending || (!canalTelegram && !canalWeb) || !state.loja.aceitaPedidos;
+        const canalTelegram = Boolean(tg?.sendData);
+        els.continueToDelivery.disabled = cartCount() < 1 || state.sending || !canalTelegram || !state.loja.aceitaPedidos;
         els.continueToDelivery.textContent = state.sending
           ?'Enviando...'
-          : (canalTelegram ? 'Enviar carrinho ao Telegram' : 'Gerar pedido e Pix');
+          : 'Enviar carrinho ao Telegram';
       }
       renderJourney();
     }
@@ -2620,7 +2514,7 @@
       els.drawerTotal.textContent = money(total);
       if (els.drawerSubtotal) els.drawerSubtotal.textContent = money(total);
       if (els.drawerDelivery) {
-        els.drawerDelivery.textContent = canalAndroidApp() ? 'No app' : 'No Telegram';
+        els.drawerDelivery.textContent = 'No Telegram';
       }
       if (els.drawerGrandTotal) els.drawerGrandTotal.textContent = money(total);
       [els.clearCartDrawer].forEach(button => {
@@ -2631,7 +2525,7 @@
           const textoPrincipal = state.sending
             ?'Enviando...'
             : state.checkoutStep === 'cart'
-              ?(canalAndroidApp() ? 'Gerar pedido e Pix' : 'Enviar carrinho ao Telegram')
+              ? 'Enviar carrinho ao Telegram'
               : `Carrinho - ${money(total)}`;
           tg.MainButton.setText(textoPrincipal);
           tg.MainButton.show();
@@ -2677,7 +2571,7 @@
     function payloadCarrinhoMiniApp() {
       return {
         type: 'mercadinho_cart',
-        source: canalAndroidApp() ? 'android_app_html' : 'telegram_mini_app_html',
+        source: 'telegram_mini_app_html',
         origem: canalCompra(),
         client_order_id: clientOrderIdAtual(),
         items: cartItems().map(item => ({
@@ -2706,7 +2600,7 @@
 
     async function enviarCarrinhoParaCheckoutTelegram(payload = payloadCarrinhoMiniApp()) {
       if (!payload.items.length) return showToast('Adicione ao menos um produto');
-      if (canalAndroidApp() || !tg?.sendData) return finalizarPedidoWeb(payload);
+      if (!tg?.sendData) return showToast('Abra a loja pelo Telegram para enviar o carrinho.');
       tg.sendData(JSON.stringify(payload));
       state.cart.clear();
       if (els.cartNotes) els.cartNotes.value = '';
@@ -2716,51 +2610,7 @@
       showToast('Sua solicitacao foi enviada com sucesso. Agora confirme entrega e pagamento no Telegram.');
     }
 
-    async function copiarPixWeb() {
-      const codigo = state.webCheckout?.pagamento?.pix?.copiaECola || '';
-      if (!codigo) return showToast('Pix ainda nao disponivel');
-      try {
-        await navigator.clipboard.writeText(codigo);
-        showToast('Pix copiado');
-      } catch (_) {
-        window.prompt('Copie o codigo Pix', codigo);
-      }
-    }
-
-    async function finalizarPedidoWeb(payload = payloadCarrinhoMiniApp()) {
-      if (!state.miniappToken) {
-        avisarCadastroMiniApp();
-        return;
-      }
-      const perfil = perfilCadastroPayload();
-      const data = await apiFetch('/api/app/pedidos', {
-        method: 'POST',
-        body: JSON.stringify({
-          clientOrderId: payload.client_order_id,
-          modalidadeEntrega: 'entrega',
-          endereco: perfil,
-          observacoes: payload.observacoes || '',
-          itens: payload.items.map(item => ({
-            produto_id: item.produto_id,
-            quantidade: item.quantidade
-          }))
-        })
-      });
-      state.webCheckout = {
-        pedido: data.pedido,
-        pagamento: data.pagamento
-      };
-      state.cart.clear();
-      if (els.cartNotes) els.cartNotes.value = '';
-      limparClientOrderIdPendente();
-      persistCart();
-      await loadOrders();
-      render();
-      showToast('Pedido criado. Copie o Pix para pagar.');
-    }
-
     async function continuarCheckoutCanal() {
-      if (canalAndroidApp()) return finalizarPedidoWeb(payloadCarrinhoMiniApp());
       return sendCartToTelegram();
     }
 
@@ -2778,7 +2628,7 @@
       try {
         await enviarCarrinhoParaCheckoutTelegram(payload);
       } catch (err) {
-        showToast(err.message || (canalAndroidApp() ? 'Falha ao criar pedido no app.' : 'Falha ao enviar carrinho ao Telegram.'));
+        showToast(err.message || 'Falha ao enviar carrinho ao Telegram.');
       } finally {
         state.sending = false;
         renderSummary();
@@ -2809,14 +2659,6 @@
     els.registrationForm?.addEventListener('submit', salvarCadastroMiniApp);
     els.profileCep?.addEventListener('blur', preencherEnderecoPorCep);
     els.continueToDelivery?.addEventListener('click', continuarCheckoutCanal);
-    els.cartStepPanel?.addEventListener('click', event => {
-      if (event.target.closest('[data-copy-pix-web]')) copiarPixWeb();
-      if (event.target.closest('[data-open-orders-web]')) {
-        setCartOpen(false);
-        loadOrders();
-        els.ordersPanel?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
-      }
-    });
     els.ordersList.addEventListener('click', event => {
       const btn = event.target.closest('[data-order-id]');
       if (!btn) return;
