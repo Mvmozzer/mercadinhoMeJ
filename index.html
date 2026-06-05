@@ -3,29 +3,43 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>M&J Mercadinho</title>
+  <title>Mercadinho M&J</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
       color-scheme: light;
-      --bg: #f7f5ef;
-      --paper: #fffefa;
-      --surface: #ffffff;
-      --surface-2: #f1eee6;
-      --ink: #17140f;
-      --text: #2a241b;
-      --muted: #746d63;
-      --line: #e2dbcf;
-      --brand: #15120d;
+      --mj-primary: #0f766e;
+      --mj-primary-strong: #115e59;
+      --mj-success: #1f7a43;
+      --mj-warning: #b7791f;
+      --mj-danger: #b42318;
+      --mj-bg: #f5f7f2;
+      --mj-card: #ffffff;
+      --mj-text: #17231f;
+      --mj-muted: #62716b;
+      --mj-border: #dfe8df;
+      --mj-shadow: 0 12px 30px rgba(12, 34, 28, .12);
+      --mj-radius: 10px;
+      --mj-space: 12px;
+      --bg: var(--mj-bg);
+      --paper: #fbfdf8;
+      --surface: var(--mj-card);
+      --surface-2: #edf4ed;
+      --ink: #0f1d19;
+      --text: var(--mj-text);
+      --muted: var(--mj-muted);
+      --line: var(--mj-border);
+      --brand: #123c35;
+      --brand-dark: #0b2824;
       --gold: #b88734;
-      --gold-2: #e3bd72;
-      --green: #1f7a43;
-      --green-2: #e7f4eb;
-      --danger: #ad2f27;
-      --warn: #9a6a16;
-      --shadow: 0 12px 30px rgba(28, 22, 12, .12);
-      --radius: 8px;
-      --footer-space: 88px;
+      --gold-2: #f2cf7b;
+      --green: var(--mj-success);
+      --green-2: #e6f5ed;
+      --danger: var(--mj-danger);
+      --warn: var(--mj-warning);
+      --shadow: var(--mj-shadow);
+      --radius: var(--mj-radius);
+      --footer-space: 96px;
     }
 
     * { box-sizing: border-box; }
@@ -292,6 +306,338 @@
       border-color: rgba(227, 189, 114, .38);
       background: rgba(255, 255, 255, .08);
       color: #fff;
+    }
+
+    .marketplace-home {
+      display: grid;
+      gap: 14px;
+    }
+
+    .marketplace-home[hidden] {
+      display: none;
+    }
+
+    .market-hero {
+      position: relative;
+      display: grid;
+      gap: 12px;
+      overflow: hidden;
+      padding: 16px;
+      border: 1px solid rgba(15, 118, 110, .18);
+      border-radius: var(--mj-radius);
+      background:
+        linear-gradient(135deg, rgba(15, 118, 110, .94), rgba(18, 60, 53, .96)),
+        radial-gradient(circle at 85% 18%, rgba(242, 207, 123, .28), transparent 34%);
+      color: #fff;
+      box-shadow: var(--mj-shadow);
+    }
+
+    .market-hero::after {
+      content: "";
+      position: absolute;
+      right: -34px;
+      bottom: -44px;
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      border: 22px solid rgba(255, 255, 255, .08);
+      pointer-events: none;
+    }
+
+    .market-hero-copy {
+      position: relative;
+      display: grid;
+      gap: 8px;
+      z-index: 1;
+    }
+
+    .market-hero h2 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.12;
+    }
+
+    .market-hero p {
+      margin: 0;
+      max-width: 58ch;
+      color: rgba(255, 255, 255, .86);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .hero-metrics {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .hero-metric {
+      display: grid;
+      gap: 2px;
+      min-height: 56px;
+      padding: 9px;
+      border: 1px solid rgba(255, 255, 255, .18);
+      border-radius: 9px;
+      background: rgba(255, 255, 255, .1);
+    }
+
+    .hero-metric small {
+      color: rgba(255, 255, 255, .74);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .hero-metric strong {
+      color: #fff;
+      font-size: 13px;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
+    .quick-category-rail,
+    .filter-chips {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 2px 1px 4px;
+      scrollbar-width: none;
+    }
+
+    .quick-category-rail::-webkit-scrollbar,
+    .filter-chips::-webkit-scrollbar,
+    .market-strip::-webkit-scrollbar,
+    .promo-banners::-webkit-scrollbar {
+      display: none;
+    }
+
+    .quick-category,
+    .filter-chip {
+      flex: 0 0 auto;
+      display: inline-grid;
+      grid-auto-flow: column;
+      align-items: center;
+      gap: 7px;
+      min-height: 40px;
+      border: 1px solid var(--mj-border);
+      border-radius: 999px;
+      background: var(--mj-card);
+      color: var(--mj-text);
+      box-shadow: 0 5px 15px rgba(12, 34, 28, .06);
+      white-space: nowrap;
+    }
+
+    .quick-category.active,
+    .filter-chip.active {
+      border-color: rgba(15, 118, 110, .45);
+      background: #e5f5ef;
+      color: var(--mj-primary-strong);
+    }
+
+    .category-icon {
+      display: grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #eef7ef;
+      font-size: 14px;
+    }
+
+    .promo-banners {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(230px, 1fr);
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+    }
+
+    .promo-card {
+      display: grid;
+      gap: 7px;
+      min-height: 120px;
+      padding: 14px;
+      border: 1px solid rgba(15, 118, 110, .14);
+      border-radius: var(--mj-radius);
+      background: linear-gradient(135deg, #ffffff, #eef9f2);
+      box-shadow: 0 10px 24px rgba(12, 34, 28, .08);
+    }
+
+    .promo-card[data-tone="points"] {
+      background: linear-gradient(135deg, #fff9e8, #edf8ef);
+    }
+
+    .promo-card[data-tone="combo"] {
+      background: linear-gradient(135deg, #f0fbff, #f7f4ff);
+    }
+
+    .promo-card small {
+      color: var(--mj-muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .promo-card strong {
+      color: var(--mj-text);
+      font-size: 18px;
+      line-height: 1.15;
+    }
+
+    .promo-card span {
+      color: var(--mj-muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .loyalty-card,
+    .market-row {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--mj-border);
+      border-radius: var(--mj-radius);
+      background: var(--mj-card);
+      box-shadow: 0 8px 22px rgba(12, 34, 28, .07);
+    }
+
+    .loyalty-card {
+      grid-template-columns: minmax(0, 1fr);
+      background: linear-gradient(135deg, #ffffff 0%, #f7fcf9 100%);
+    }
+
+    .loyalty-card p {
+      margin: 0;
+      color: var(--mj-muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .loyalty-actions,
+    .coupon-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .coupon-row input {
+      flex: 1 1 150px;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    .market-strip {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(156px, 180px);
+      gap: 10px;
+      overflow-x: auto;
+      padding: 1px 1px 4px;
+      scrollbar-width: none;
+    }
+
+    .mini-product-card {
+      position: relative;
+      display: grid;
+      gap: 8px;
+      align-content: start;
+      min-height: 248px;
+      padding: 9px;
+      border: 1px solid var(--mj-border);
+      border-radius: var(--mj-radius);
+      background: var(--mj-card);
+      box-shadow: 0 6px 16px rgba(12, 34, 28, .07);
+    }
+
+    .mini-product-card.low-stock {
+      border-color: rgba(183, 121, 31, .45);
+    }
+
+    .mini-product-card.unavailable,
+    .product.unavailable {
+      opacity: .68;
+      background: #f8faf7;
+    }
+
+    .mini-media {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      aspect-ratio: 1 / .74;
+      overflow: hidden;
+      border-radius: 9px;
+      border: 1px solid var(--mj-border);
+      background:
+        linear-gradient(135deg, rgba(15, 118, 110, .12), rgba(184, 135, 52, .18)),
+        #f1f5ed;
+      color: var(--mj-primary);
+      font-size: 30px;
+      font-weight: 900;
+    }
+
+    .mini-media img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .mini-product-card h3 {
+      margin: 0;
+      min-height: 38px;
+      color: var(--mj-text);
+      font-size: 14px;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+
+    .mini-product-card small {
+      color: var(--mj-muted);
+      font-size: 12px;
+      line-height: 1.25;
+    }
+
+    .mini-card-bottom {
+      display: grid;
+      gap: 8px;
+      margin-top: auto;
+    }
+
+    .market-badge {
+      display: inline-flex;
+      width: fit-content;
+      max-width: 100%;
+      min-height: 22px;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 7px;
+      border-radius: 999px;
+      background: #e8f6ef;
+      color: var(--mj-primary-strong);
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .market-badge.warn {
+      background: #fff6dd;
+      color: #7a4c00;
+    }
+
+    .market-empty {
+      padding: 12px;
+      border: 1px dashed var(--mj-border);
+      border-radius: var(--mj-radius);
+      color: var(--mj-muted);
+      font-size: 13px;
+      line-height: 1.4;
+      text-align: center;
     }
 
     .vini-ai-outdoor {
@@ -928,6 +1274,166 @@
       font-weight: 600;
     }
 
+    .cart-perks {
+      display: grid;
+      gap: 8px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .cart-perks strong {
+      color: var(--ink);
+      font-size: 13px;
+    }
+
+    .toggle-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .toggle-line input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--mj-primary);
+    }
+
+    .cart-progress {
+      padding: 9px 10px;
+      border-radius: 8px;
+      background: #eef8f2;
+      color: var(--mj-primary-strong);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .sheet-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 38;
+      display: none;
+      background: rgba(10, 20, 17, .38);
+    }
+
+    .sheet-backdrop.open {
+      display: block;
+    }
+
+    .product-sheet {
+      position: fixed;
+      inset: auto 0 0 0;
+      z-index: 40;
+      display: none;
+      max-height: min(88vh, 720px);
+      border-top: 1px solid var(--line);
+      border-radius: 16px 16px 0 0;
+      background: var(--paper);
+      box-shadow: 0 -18px 42px rgba(23, 18, 11, .25);
+      overflow: hidden;
+    }
+
+    .product-sheet.open {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    .sheet-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .sheet-head strong {
+      color: var(--ink);
+      font-size: 16px;
+    }
+
+    .sheet-body {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      overflow: auto;
+    }
+
+    .sheet-media {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background:
+        linear-gradient(135deg, rgba(15, 118, 110, .12), rgba(184, 135, 52, .18)),
+        #eef4ef;
+      color: var(--mj-primary);
+      font-size: 46px;
+      font-weight: 900;
+    }
+
+    .sheet-media img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .sheet-copy {
+      display: grid;
+      gap: 7px;
+    }
+
+    .sheet-copy h2 {
+      margin: 0;
+      color: var(--ink);
+      font-size: 20px;
+      line-height: 1.18;
+      overflow-wrap: anywhere;
+    }
+
+    .sheet-copy p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .sheet-actions {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      padding-top: 4px;
+    }
+
+    .item-note {
+      display: grid;
+      gap: 6px;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .item-note textarea {
+      min-height: 62px;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 10px;
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+      font-weight: 500;
+    }
+
     .bottom-bar {
       position: fixed;
       left: 0;
@@ -1021,6 +1527,19 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
+      .market-hero {
+        grid-template-columns: minmax(0, 1.35fr) minmax(260px, .75fr);
+        align-items: end;
+      }
+
+      .promo-banners {
+        grid-auto-columns: minmax(260px, 1fr);
+      }
+
+      .market-strip {
+        grid-auto-columns: minmax(176px, 210px);
+      }
+
       .product {
         grid-template-columns: 92px minmax(0, 1fr);
         min-height: 132px;
@@ -1040,6 +1559,15 @@
         border-radius: 12px;
       }
 
+      .product-sheet {
+        left: auto;
+        right: max(16px, calc((100vw - 1120px) / 2 + 456px));
+        bottom: 18px;
+        width: min(440px, calc(100vw - 32px));
+        border: 1px solid var(--line);
+        border-radius: 14px;
+      }
+
       .bottom-bar {
         left: 50%;
         transform: translateX(-50%);
@@ -1051,15 +1579,30 @@
 
       .bottom-bar { align-items: center; }
     }
+
+    [data-telegram-scheme="dark"] {
+      color-scheme: dark;
+      --mj-bg: #101815;
+      --mj-card: #17221e;
+      --mj-text: #edf7f1;
+      --mj-muted: #9fb0a8;
+      --mj-border: #2b3934;
+      --mj-shadow: 0 16px 34px rgba(0, 0, 0, .38);
+      --paper: #121b18;
+      --surface-2: #21302a;
+      --ink: #f6fff9;
+      --brand: #0f3d36;
+      --green-2: #17362a;
+    }
   </style>
 </head>
 <body>
   <div class="app">
     <header class="topbar">
       <div class="brand-row">
-        <img class="logo" src="assets/logo-mj-mercadinho.png" alt="M&J Mercadinho">
+        <img class="logo" src="assets/logo-mj-mercadinho.png" alt="Mercadinho M&J">
         <div class="brand-copy">
-          <h1>M&J Mercadinho</h1>
+          <h1>Mercadinho M&J</h1>
           <div class="store-meta">
             <span class="pill ok" id="storeStatus">Aberto para pedidos</span>
             <span id="channelLabel">Compra no Mini App</span>
@@ -1137,6 +1680,67 @@
         </div>
       </section>
 
+      <section class="marketplace-home" id="marketHome" aria-label="Vitrine do Mercadinho">
+        <section class="market-hero" id="marketHero">
+          <div class="market-hero-copy">
+            <span class="pill">Compra rapida pelo Telegram</span>
+            <h2>Mercadinho M&J na palma da mao</h2>
+            <p>Escolha seus produtos no Mini App e continue no Telegram para confirmar entrega, pagamento Pix e comprovante com seguranca.</p>
+            <div class="hero-actions">
+              <button class="primary" id="heroSearchFocus" type="button">Buscar produtos</button>
+              <button class="ghost" id="heroOpenCart" type="button">Ver carrinho</button>
+            </div>
+          </div>
+          <div class="hero-metrics" aria-label="Resumo da compra">
+            <div class="hero-metric">
+              <small>Status</small>
+              <strong id="heroStatus">Aberto</strong>
+            </div>
+            <div class="hero-metric">
+              <small>Entrega</small>
+              <strong id="heroDelivery">A combinar</strong>
+            </div>
+            <div class="hero-metric">
+              <small>Pagamento</small>
+              <strong>Pix no Telegram</strong>
+            </div>
+          </div>
+        </section>
+
+        <nav class="quick-category-rail" id="categoryRail" aria-label="Atalhos de categorias"></nav>
+
+        <section class="promo-banners" id="promoBanners" aria-label="Promocoes e beneficios"></section>
+
+        <section class="loyalty-card" id="loyaltyInviteCard">
+          <div class="section-head">
+            <h2>Pontos e indicacao</h2>
+            <span id="pointsBalanceLabel">Saldo em consulta</span>
+          </div>
+          <p>Convide amigos e ganhe pontos quando a primeira compra deles for confirmada. Pontos e cupons sao validados pela loja antes do Pix.</p>
+          <div class="coupon-row">
+            <input id="couponCode" type="text" inputmode="text" autocomplete="off" maxlength="40" placeholder="Cupom ou codigo de indicacao">
+            <button class="ghost" id="copyInviteCode" type="button">Convidar amigo</button>
+          </div>
+          <label class="toggle-line">
+            <input id="usePointsIntent" type="checkbox">
+            Usar pontos se a loja liberar no fechamento
+          </label>
+        </section>
+
+        <div class="filter-chips" id="marketFilters" aria-label="Filtros rapidos">
+          <button class="filter-chip" type="button" data-market-filter="">Todos</button>
+          <button class="filter-chip" type="button" data-market-filter="offers">Ofertas</button>
+          <button class="filter-chip" type="button" data-market-filter="best_sellers">Mais vendidos</button>
+          <button class="filter-chip" type="button" data-market-sort="price_asc">Menor preco</button>
+        </div>
+
+        <section class="market-row" id="buyAgainSection" aria-label="Compre de novo"></section>
+        <section class="market-row" id="bestSellersSection" aria-label="Mais vendidos"></section>
+        <section class="market-row" id="todayOffersSection" aria-label="Ofertas de hoje"></section>
+        <section class="market-row" id="comboSection" aria-label="Combos sugeridos"></section>
+        <section class="market-row" id="lowStockSection" aria-label="Produtos perto de acabar"></section>
+      </section>
+
       <section class="orders-panel" id="ordersPanel" hidden>
         <div class="section-head">
           <h2>Seus pedidos</h2>
@@ -1178,19 +1782,39 @@
           <strong id="drawerGrandTotal">R$ 0,00</strong>
         </div>
       </div>
+      <div class="cart-perks">
+        <strong>Beneficios para validar no Telegram</strong>
+        <div class="coupon-row">
+          <input id="cartCouponCode" type="text" inputmode="text" autocomplete="off" maxlength="40" placeholder="Cupom ou codigo de indicacao">
+        </div>
+        <label class="toggle-line">
+          <input id="cartUsePointsIntent" type="checkbox">
+          Tentar usar meus pontos no fechamento
+        </label>
+        <div class="cart-progress" id="freeDeliveryHint">O valor final, entrega, descontos e pontos serao recalculados com seguranca antes do Pix.</div>
+      </div>
       <label class="cart-notes">Observacoes do pedido
         <textarea id="cartNotes" maxlength="500" placeholder="Ex: separar troco, evitar substituicoes ou detalhe importante"></textarea>
         <small id="cartNotesHint">O Pix sera gerado com o valor recalculado pela loja. Depois do pagamento, envie o comprovante pelo botao indicado.</small>
       </label>
       <div class="checkout-stage" id="cartStepPanel">
         <small id="checkoutHint">Falta pouco: escolha entrega ou retirada para gerar o Pix. Voce so paga depois que a loja confirmar entrega ou retirada.</small>
-        <button class="primary" id="continueToDelivery" type="button" disabled>Enviar carrinho ao Telegram</button>
+        <button class="primary" id="continueToDelivery" type="button" aria-label="Enviar carrinho ao Telegram" disabled>Continuar no Telegram para pagar</button>
       </div>
       <button class="danger" id="clearCartDrawer" type="button" disabled>Limpar carrinho</button>
     </div>
   </aside>
 
-  <footer class="bottom-bar">
+  <div class="sheet-backdrop" id="productSheetBackdrop"></div>
+  <aside class="product-sheet" id="productSheet" aria-label="Detalhe do produto" aria-modal="true">
+    <div class="sheet-head">
+      <strong>Detalhe do produto</strong>
+      <button class="ghost" id="closeProductSheet" type="button">Fechar</button>
+    </div>
+    <div class="sheet-body" id="productSheetBody"></div>
+  </aside>
+
+  <footer class="bottom-bar" id="stickyCartBar" hidden>
     <div class="bottom-main">
       <div class="bottom-total">
         <span id="bottomCount">Carrinho vazio</span>
@@ -1225,9 +1849,15 @@
       catalogSections: [],
       section: '',
       query: '',
+      marketFilter: '',
+      marketSort: '',
       cart: new Map(),
+      itemNotes: new Map(),
       cartOpen: false,
+      productSheetId: '',
       checkoutStep: 'catalog',
+      usePointsIntent: false,
+      couponCode: '',
       miniappToken: localStorage.getItem(MINIAPP_TOKEN_KEY) || '',
       pendingClientOrderId: localStorage.getItem(PENDING_ORDER_KEY) || '',
       authOk: false,
@@ -1283,6 +1913,25 @@
       profileCidade: document.getElementById('profileCidade'),
       profileEstado: document.getElementById('profileEstado'),
       saveProfile: document.getElementById('saveProfile'),
+      marketHome: document.getElementById('marketHome'),
+      marketHero: document.getElementById('marketHero'),
+      heroStatus: document.getElementById('heroStatus'),
+      heroDelivery: document.getElementById('heroDelivery'),
+      heroSearchFocus: document.getElementById('heroSearchFocus'),
+      heroOpenCart: document.getElementById('heroOpenCart'),
+      categoryRail: document.getElementById('categoryRail'),
+      promoBanners: document.getElementById('promoBanners'),
+      loyaltyInviteCard: document.getElementById('loyaltyInviteCard'),
+      pointsBalanceLabel: document.getElementById('pointsBalanceLabel'),
+      couponCode: document.getElementById('couponCode'),
+      copyInviteCode: document.getElementById('copyInviteCode'),
+      usePointsIntent: document.getElementById('usePointsIntent'),
+      marketFilters: document.getElementById('marketFilters'),
+      buyAgainSection: document.getElementById('buyAgainSection'),
+      bestSellersSection: document.getElementById('bestSellersSection'),
+      todayOffersSection: document.getElementById('todayOffersSection'),
+      comboSection: document.getElementById('comboSection'),
+      lowStockSection: document.getElementById('lowStockSection'),
       products: document.getElementById('products'),
       search: document.getElementById('search'),
       clearSearch: document.getElementById('clearSearch'),
@@ -1297,6 +1946,9 @@
       drawerSubtotal: document.getElementById('drawerSubtotal'),
       drawerDelivery: document.getElementById('drawerDelivery'),
       drawerGrandTotal: document.getElementById('drawerGrandTotal'),
+      cartCouponCode: document.getElementById('cartCouponCode'),
+      cartUsePointsIntent: document.getElementById('cartUsePointsIntent'),
+      freeDeliveryHint: document.getElementById('freeDeliveryHint'),
       cartNotes: document.getElementById('cartNotes'),
       cartHeadHint: document.getElementById('cartHeadHint'),
       cartNotesHint: document.getElementById('cartNotesHint'),
@@ -1306,6 +1958,11 @@
       continueToDelivery: document.getElementById('continueToDelivery'),
       clearCartDrawer: document.getElementById('clearCartDrawer'),
       reviewCart: document.getElementById('reviewCart'),
+      stickyCartBar: document.getElementById('stickyCartBar'),
+      productSheetBackdrop: document.getElementById('productSheetBackdrop'),
+      productSheet: document.getElementById('productSheet'),
+      productSheetBody: document.getElementById('productSheetBody'),
+      closeProductSheet: document.getElementById('closeProductSheet'),
       viniAiOutdoor: document.getElementById('viniAiOutdoor'),
       viniAiAlert: document.getElementById('viniAiAlert'),
       storeStatus: document.getElementById('storeStatus'),
@@ -1327,9 +1984,26 @@
 
     function applyTelegramTheme(webApp) {
       const theme = webApp.themeParams || {};
-      if (theme.bg_color) document.documentElement.style.setProperty('--bg', theme.bg_color);
-      if (theme.text_color) document.documentElement.style.setProperty('--text', theme.text_color);
-      if (theme.button_color) document.documentElement.style.setProperty('--green', theme.button_color);
+      if (theme.bg_color) {
+        document.documentElement.style.setProperty('--bg', theme.bg_color);
+        document.documentElement.style.setProperty('--mj-bg', theme.bg_color);
+      }
+      if (theme.text_color) {
+        document.documentElement.style.setProperty('--text', theme.text_color);
+        document.documentElement.style.setProperty('--mj-text', theme.text_color);
+      }
+      if (theme.secondary_bg_color) {
+        document.documentElement.style.setProperty('--surface', theme.secondary_bg_color);
+        document.documentElement.style.setProperty('--mj-card', theme.secondary_bg_color);
+      }
+      if (theme.hint_color) {
+        document.documentElement.style.setProperty('--muted', theme.hint_color);
+        document.documentElement.style.setProperty('--mj-muted', theme.hint_color);
+      }
+      if (theme.button_color) {
+        document.documentElement.style.setProperty('--green', theme.button_color);
+        document.documentElement.style.setProperty('--mj-primary', theme.button_color);
+      }
       document.documentElement.dataset.telegramScheme = webApp.colorScheme || 'light';
     }
 
@@ -1808,6 +2482,8 @@
             normalPrice: Number(product.preco_normal || product.preco || 0),
             promoPrice: Number(product.preco_promocional || 0),
             promotion: product.promocao === true,
+            bestSeller: product.mais_vendido === true || product.maisVendido === true || product.bestSeller === true,
+            salesRank: Number(product.ranking_vendas || product.salesRank || product.vendas || 0),
             saleMode: normalizeSaleMode(product),
             modoVenda: normalizeSaleMode(product) === 'weighted' ? 'granel' : 'unidade',
             unidadeVenda: normalizeUnit(product.unidadeVenda || product.saleUnit || product.unidade_venda || product.unidadeMedida || product.unidade_medida || product.tamanho || 'un'),
@@ -1860,6 +2536,8 @@
           normalPrice: prices.normal,
           promoPrice: prices.promo,
           promotion: prices.active,
+          bestSeller: product.mais_vendido === true || product.maisVendido === true || product.bestSeller === true,
+          salesRank: Number(product.ranking_vendas || product.salesRank || product.vendas || 0),
           saleMode: normalizeSaleMode(product),
           modoVenda: normalizeSaleMode(product) === 'weighted' ? 'granel' : 'unidade',
           unidadeVenda: normalizeUnit(product.unidadeVenda || product.saleUnit || product.unidade_venda || product.unidadeMedida || product.unidade || 'un'),
@@ -1991,6 +2669,254 @@
       return state.products.filter(product => Number(product.stock || 0) > 0);
     }
 
+    function productSearchText(item = {}) {
+      return normalizeText(`${item.name || ''} ${item.sectionLabel || ''} ${item.brand || ''} ${item.unit || ''} ${item.description || ''} ${item.sku || ''} ${item.barcode || ''}`);
+    }
+
+    function isBestSeller(item = {}) {
+      return item.bestSeller === true || item.maisVendido === true || item.mais_vendido === true || Number(item.salesRank || item.ranking_vendas || item.vendas || 0) > 0;
+    }
+
+    function isLowStock(item = {}) {
+      const stock = Number(item.stock || 0);
+      return stock > 0 && stock <= 3;
+    }
+
+    function matchesMarketFilter(item = {}) {
+      if (state.marketFilter === 'offers') return item.promotion === true;
+      if (state.marketFilter === 'best_sellers') {
+        const hasRealBestSellers = state.products.some(isBestSeller);
+        return hasRealBestSellers ? isBestSeller(item) : true;
+      }
+      return true;
+    }
+
+    function sortForMarket(items = []) {
+      const copy = [...items];
+      if (state.marketSort === 'price_asc') {
+        return copy.sort((a, b) => Number(a.price || 0) - Number(b.price || 0) || a.name.localeCompare(b.name, 'pt-BR'));
+      }
+      if (state.marketFilter === 'best_sellers') {
+        return copy.sort((a, b) => Number(b.salesRank || b.ranking_vendas || b.vendas || 0) - Number(a.salesRank || a.ranking_vendas || a.vendas || 0) || a.name.localeCompare(b.name, 'pt-BR'));
+      }
+      return copy;
+    }
+
+    function homeCollections() {
+      const active = availableProducts();
+      const offers = active.filter(item => item.promotion).slice(0, 10);
+      const lowStock = active.filter(isLowStock).slice(0, 10);
+      const bestReal = active.filter(isBestSeller).slice(0, 10);
+      const bestSellers = (bestReal.length ? bestReal : active.slice(0, 10));
+      const buyAgainIds = new Set(cartItems().map(item => item.id));
+      const buyAgain = active.filter(item => buyAgainIds.has(item.id)).concat(active.filter(item => !buyAgainIds.has(item.id))).slice(0, 8);
+      // Dados reais de recompras, rankings e combos podem substituir estes fallbacks quando o painel expuser esses contratos.
+      const combos = buildSuggestedCombos(active).slice(0, 6);
+      return {
+        active,
+        offers: offers.length ? offers : active.slice(0, 8),
+        lowStock: lowStock.length ? lowStock : active.slice(0, 6),
+        bestSellers,
+        buyAgain,
+        combos
+      };
+    }
+
+    function buildSuggestedCombos(items = []) {
+      const bySection = new Map();
+      items.forEach(item => {
+        const key = item.section || 'outros';
+        if (!bySection.has(key)) bySection.set(key, []);
+        bySection.get(key).push(item);
+      });
+      const combos = [];
+      Array.from(bySection.values()).forEach(group => {
+        if (group.length < 2) return;
+        combos.push(...group.slice(0, 2));
+      });
+      return combos.length ? combos : items.slice(0, 6);
+    }
+
+    function iconForSection(label = '') {
+      const text = normalizeText(label);
+      if (/oferta|promo/.test(text)) return '%';
+      if (/bebida|refrigerante|suco|agua/.test(text)) return 'B';
+      if (/hort|fruta|verdura|legume/.test(text)) return 'H';
+      if (/limpeza/.test(text)) return 'L';
+      if (/higiene|perfumaria/.test(text)) return 'C';
+      if (/padaria|pao|bolo/.test(text)) return 'P';
+      if (/congelado|frio/.test(text)) return 'F';
+      if (/mercearia|arroz|feijao|cafe/.test(text)) return 'M';
+      return '#';
+    }
+
+    function renderCategoryRail() {
+      if (!els.categoryRail) return;
+      const defaults = [
+        { id: '', name: 'Todos', icon: '#' },
+        { id: 'offers', name: 'Ofertas', icon: '%' },
+        { id: 'best_sellers', name: 'Mais vendidos', icon: '*' }
+      ];
+      const sections = sectionItems().slice(0, 9).map(section => ({
+        id: section.id,
+        name: section.name,
+        icon: iconForSection(section.name)
+      }));
+      const items = defaults.concat(sections);
+      els.categoryRail.innerHTML = items.map(item => {
+        const active = item.id === state.section || item.id === state.marketFilter || (!item.id && !state.section && !state.marketFilter);
+        const attr = item.id === 'offers' || item.id === 'best_sellers'
+          ? `data-market-filter="${escapeHtml(item.id)}"`
+          : `data-section="${escapeHtml(item.id)}"`;
+        return `<button class="quick-category ${active ? 'active' : ''}" type="button" ${attr}><span class="category-icon">${escapeHtml(item.icon)}</span>${escapeHtml(item.name)}</button>`;
+      }).join('');
+      els.categoryRail.querySelectorAll('[data-section]').forEach(button => {
+        button.addEventListener('click', () => {
+          state.section = button.dataset.section || '';
+          state.marketFilter = '';
+          state.marketSort = '';
+          if (state.catalogPage.usePaged || shouldUsePagedCatalog()) loadProducts();
+          else render();
+        });
+      });
+      els.categoryRail.querySelectorAll('[data-market-filter]').forEach(button => {
+        button.addEventListener('click', () => {
+          state.section = '';
+          state.marketFilter = button.dataset.marketFilter || '';
+          state.marketSort = '';
+          render();
+        });
+      });
+    }
+
+    function renderPromoBanners(collections = homeCollections()) {
+      if (!els.promoBanners) return;
+      const offer = collections.offers[0];
+      const combo = collections.combos[0];
+      const points = promotionalPointsPreview();
+      const banners = [
+        {
+          tone: 'offer',
+          eyebrow: 'Promocoes de hoje',
+          title: offer ? `${offer.name} por ${priceLabel(offer)}` : 'Ofertas selecionadas',
+          body: offer ? 'Preco promocional sujeito a estoque e confirmacao da loja.' : 'Produtos ativos aparecem aqui enquanto o painel nao publicar banners.'
+        },
+        {
+          tone: 'combo',
+          eyebrow: 'Combos para economizar',
+          title: combo ? `Combine com ${combo.sectionLabel || 'sua compra'}` : 'Sugestoes prontas',
+          body: 'Sugestao visual. Desconto real so entra quando o backend de combos validar.'
+        },
+        {
+          tone: 'points',
+          eyebrow: 'Pontos e indicacao',
+          title: points.totalPromotionalPoints > 0 ? `+${points.totalPromotionalPoints} pontos previstos` : 'Convide amigos e ganhe pontos',
+          body: 'Voce ganha pontos quando a compra elegivel for confirmada.'
+        }
+      ];
+      els.promoBanners.innerHTML = banners.map(item => `
+        <article class="promo-card" data-tone="${escapeHtml(item.tone)}">
+          <small>${escapeHtml(item.eyebrow)}</small>
+          <strong>${escapeHtml(item.title)}</strong>
+          <span>${escapeHtml(item.body)}</span>
+        </article>
+      `).join('');
+    }
+
+    function compactProductCard(item, context = '') {
+      const qty = cartQty(item.id);
+      const card = document.createElement('article');
+      card.className = `mini-product-card ${isLowStock(item) ? 'low-stock' : ''} ${Number(item.stock || 0) <= 0 ? 'unavailable' : ''}`;
+      card.dataset.productId = item.id;
+      const media = item.image
+        ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}" loading="lazy" referrerpolicy="no-referrer">`
+        : `<span>${escapeHtml(item.name.slice(0, 1).toUpperCase())}</span>`;
+      const badge = item.promotion
+        ? '<span class="market-badge">Oferta</span>'
+        : isLowStock(item)
+          ? '<span class="market-badge warn">Perto de acabar</span>'
+          : context ? `<span class="market-badge">${escapeHtml(context)}</span>` : '';
+      const control = Number(item.stock || 0) <= 0
+        ? '<span class="stock-empty">Indisponivel</span>'
+        : qty > 0
+          ? `<div class="qty"><button type="button" data-action="minus">-</button><span>${isWeightedProduct(item) ? formatMeasure(qty, item.unidadeVenda) : qty}</span><button type="button" data-action="plus">+</button></div>`
+          : '<button class="primary add-single" type="button" data-action="plus">Adicionar</button>';
+      card.innerHTML = `
+        <div class="mini-media">${media}</div>
+        ${badge}
+        <h3>${escapeHtml(item.name)}</h3>
+        <small>${escapeHtml([item.brand, item.unit || item.sectionLabel].filter(Boolean).join(' | '))}</small>
+        <div class="mini-card-bottom">
+          <div class="price"><strong>${priceLabel(item)}</strong>${item.promotion ? `<del>${money(item.normalPrice)}</del>` : ''}</div>
+          ${control}
+        </div>
+      `;
+      card.addEventListener('click', event => {
+        if (event.target.closest('button')) return;
+        openProductSheet(item.id);
+      });
+      card.querySelector('[data-action="minus"]')?.addEventListener('click', () => changeQty(item.id, -1));
+      card.querySelector('[data-action="plus"]')?.addEventListener('click', () => changeQty(item.id, 1));
+      card.querySelector('[data-action="plus"]')?.toggleAttribute('disabled', qty >= item.stock);
+      return card;
+    }
+
+    function renderProductRail(target, title, subtitle, items = [], emptyText = 'Produtos serao exibidos aqui quando houver dados.') {
+      if (!target) return;
+      target.innerHTML = `
+        <div class="section-head">
+          <h2>${escapeHtml(title)}</h2>
+          <span>${escapeHtml(subtitle)}</span>
+        </div>
+        <div class="market-strip"></div>
+      `;
+      const strip = target.querySelector('.market-strip');
+      if (!items.length) {
+        strip.outerHTML = `<div class="market-empty">${escapeHtml(emptyText)}</div>`;
+        return;
+      }
+      items.forEach(item => strip.appendChild(compactProductCard(item, subtitle)));
+    }
+
+    function renderLoyaltyCard() {
+      if (!els.pointsBalanceLabel) return;
+      const saldo = Number(state.cliente?.pontosDisponiveis ?? state.cliente?.saldoFidelidade ?? state.cliente?.pontosFidelidade ?? 0) || 0;
+      els.pointsBalanceLabel.textContent = saldo > 0 ? `${saldo} pontos` : 'Pontos no Telegram';
+      if (els.usePointsIntent) els.usePointsIntent.checked = state.usePointsIntent;
+      if (els.cartUsePointsIntent) els.cartUsePointsIntent.checked = state.usePointsIntent;
+      if (els.couponCode && els.couponCode.value !== state.couponCode) els.couponCode.value = state.couponCode;
+      if (els.cartCouponCode && els.cartCouponCode.value !== state.couponCode) els.cartCouponCode.value = state.couponCode;
+    }
+
+    function renderMarketFilters() {
+      if (!els.marketFilters) return;
+      els.marketFilters.querySelectorAll('[data-market-filter]').forEach(button => {
+        button.classList.toggle('active', String(button.dataset.marketFilter || '') === state.marketFilter && !state.marketSort);
+      });
+      els.marketFilters.querySelectorAll('[data-market-sort]').forEach(button => {
+        button.classList.toggle('active', String(button.dataset.marketSort || '') === state.marketSort);
+      });
+    }
+
+    function renderHome() {
+      if (!els.marketHome) return;
+      const searching = Boolean(state.query.trim()) || Boolean(state.section);
+      els.marketHome.hidden = searching;
+      renderCategoryRail();
+      renderMarketFilters();
+      renderLoyaltyCard();
+      if (els.heroStatus) els.heroStatus.textContent = state.loja.aceitaPedidos ? 'Aberto' : 'Pausado';
+      if (els.heroDelivery) els.heroDelivery.textContent = 'Entrega ou retirada';
+      if (searching) return;
+      const collections = homeCollections();
+      renderPromoBanners(collections);
+      renderProductRail(els.buyAgainSection, 'Compre de novo', 'Atalho rapido', collections.buyAgain, 'Quando houver historico de compras, seus itens frequentes aparecem aqui.');
+      renderProductRail(els.bestSellersSection, 'Mais vendidos', 'Populares', collections.bestSellers, 'Ranking real entra aqui quando o painel publicar vendas por produto.');
+      renderProductRail(els.todayOffersSection, 'Ofertas de hoje', 'Preco especial', collections.offers, 'Promocoes ativas aparecem aqui sem alterar preco real.');
+      renderProductRail(els.comboSection, 'Combos sugeridos', 'Sugestao visual', collections.combos, 'Combos reais dependem de regra no backend antes de conceder desconto.');
+      renderProductRail(els.lowStockSection, 'Produtos perto de acabar', 'Estoque baixo', collections.lowStock, 'Itens com estoque baixo aparecem aqui para compra rapida.');
+    }
+
     async function loadProductsPage({ reset = false } = {}) {
       if (!shouldUsePagedCatalog()) return false;
       if (!apiBaseConfigurada()) return false;
@@ -2099,6 +3025,7 @@
         if (state.catalogPage.usePaged || shouldUsePagedCatalog()) {
           loadProducts();
         } else {
+          renderHome();
           renderProducts();
         }
         renderViniAIOutdoor();
@@ -2122,11 +3049,11 @@
     function filteredProducts() {
       if (state.catalogPage.usePaged) return state.products;
       const query = normalizeText(state.query.trim());
-      return state.products.filter(item => {
+      return sortForMarket(state.products.filter(item => {
         const sectionOk = !state.section || item.section === state.section;
-        const queryOk = !query || item.keywords.includes(query);
-        return sectionOk && queryOk;
-      });
+        const queryOk = !query || item.keywords.includes(query) || productSearchText(item).includes(query);
+        return sectionOk && queryOk && matchesMarketFilter(item);
+      }));
     }
 
     function productsBySection() {
@@ -2186,7 +3113,10 @@
       const next = clampProductQuantity(product, current + (isWeightedProduct(product) ? delta * measureStep(product) : delta));
       if (next !== current) limparClientOrderIdPendente();
       if (next > 0) state.cart.set(id, next);
-      else state.cart.delete(id);
+      else {
+        state.cart.delete(id);
+        state.itemNotes.delete(id);
+      }
       persistCart();
       if (delta > 0 && current === 0) showToast('Produto adicionado ao carrinho');
       renderProducts();
@@ -2200,7 +3130,10 @@
       const current = cartQty(id);
       if (next !== current) limparClientOrderIdPendente();
       if (next > 0) state.cart.set(id, next);
-      else state.cart.delete(id);
+      else {
+        state.cart.delete(id);
+        state.itemNotes.delete(id);
+      }
       persistCart();
       if (current === 0 && next > 0) showToast('Produto adicionado ao carrinho');
       renderProducts();
@@ -2267,7 +3200,7 @@
         els.continueToDelivery.disabled = cartCount() < 1 || state.sending || !canalTelegram || !state.loja.aceitaPedidos;
         els.continueToDelivery.textContent = state.sending
           ?'Enviando...'
-          : 'Enviar carrinho ao Telegram';
+          : 'Continuar no Telegram para pagar';
       }
       renderJourney();
     }
@@ -2324,6 +3257,8 @@
         button.setAttribute('aria-label', `${item.label}: ${item.count || 0} produtos`);
         button.addEventListener('click', () => {
           state.section = item.section;
+          state.marketFilter = '';
+          state.marketSort = '';
           state.viniAi.focusedProductId = '';
           if (item.section) {
             state.viniAi.viewedSections.set(item.section, Number(state.viniAi.viewedSections.get(item.section) || 0) + 1);
@@ -2342,14 +3277,14 @@
     function productCard(item) {
       const qty = cartQty(item.id);
       const card = document.createElement('article');
-      card.className = 'product';
+      const semEstoque = Number(item.stock || 0) <= 0;
+      card.className = `product ${semEstoque ? 'unavailable' : ''}`;
       card.dataset.productId = item.id;
       const itemTarjas = item.tarjas || [];
 
       const media = item.image
         ?`<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}" loading="lazy" referrerpolicy="no-referrer">`
         : `<span>${item.name.slice(0, 1).toUpperCase()}</span>`;
-      const semEstoque = Number(item.stock || 0) <= 0;
       const detalhesPeso = isWeightedProduct(item) ? `${priceLabel(item)} · vendido por peso` : item.unit;
       const estoqueTexto = semEstoque
         ? 'Sem estoque'
@@ -2375,6 +3310,10 @@
           <div class="product-title">
             <h3>${escapeHtml(item.name)}</h3>
             <small>${escapeHtml(details || item.sectionLabel)}</small>
+            ${item.description ? `<small>${escapeHtml(String(item.description).slice(0, 90))}</small>` : ''}
+            ${item.promotion ? '<span class="market-badge">Oferta</span>' : ''}
+            ${isBestSeller(item) ? '<span class="market-badge">Mais vendido</span>' : ''}
+            ${isLowStock(item) ? '<span class="market-badge warn">Estoque baixo</span>' : ''}
             ${itemTarjas.length ? `<div class="product-badges">${productBadges(item)}</div>` : ''}
             ${item.pointsLabel ?`<span class="points-badge">${escapeHtml(item.pointsLabel)}</span>` : ''}
             ${isWeightedProduct(item) ? `<small>${escapeHtml(item.textoPesoAproximado || 'Produto vendido por peso. O valor final pode mudar apos a pesagem na loja.')}</small>` : ''}
@@ -2390,6 +3329,7 @@
         if (event.target.closest('button')) return;
         state.viniAi.focusedProductId = item.id;
         state.viniAi.interactedProducts.add(item.id);
+        openProductSheet(item.id);
         renderViniAIOutdoor();
       });
       card.querySelector('[data-action="minus"]')?.addEventListener('click', () => changeQty(item.id, -1));
@@ -2399,6 +3339,92 @@
       });
       card.querySelector('[data-action="plus"]')?.toggleAttribute('disabled', qty >= item.stock);
       return card;
+    }
+
+    function itemNoteValue(id) {
+      return String(state.itemNotes.get(id) || '').trim().slice(0, 240);
+    }
+
+    function setItemNoteValue(id, value) {
+      const text = String(value || '').trim().replace(/\s+/g, ' ').slice(0, 240);
+      if (text) state.itemNotes.set(id, text);
+      else state.itemNotes.delete(id);
+    }
+
+    function renderProductSheet() {
+      if (!els.productSheet || !els.productSheetBody) return;
+      const item = state.productCache.get(state.productSheetId) || state.products.find(product => product.id === state.productSheetId);
+      if (!item) {
+        closeProductSheet();
+        return;
+      }
+      const qty = cartQty(item.id);
+      const semEstoque = Number(item.stock || 0) <= 0;
+      const media = item.image
+        ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}" loading="lazy" referrerpolicy="no-referrer">`
+        : `<span>${escapeHtml(item.name.slice(0, 1).toUpperCase())}</span>`;
+      const control = semEstoque
+        ? '<span class="stock-empty">Indisponivel</span>'
+        : qty > 0
+          ? `<div class="qty"><button type="button" data-sheet-action="minus">-</button><span>${isWeightedProduct(item) ? formatMeasure(qty, item.unidadeVenda) : qty}</span><button type="button" data-sheet-action="plus">+</button></div>`
+          : '<button class="primary" type="button" data-sheet-action="plus">Adicionar ao carrinho</button>';
+      const opcoesPeso = isWeightedProduct(item)
+        ? `<div class="weight-options">${measureOptions(item).map(value => `<button type="button" data-sheet-action="set-weight" data-weight="${value}">${formatMeasure(value, item.unidadeVenda)}</button>`).join('')}</div>`
+        : '';
+      els.productSheetBody.innerHTML = `
+        <div class="sheet-media">${media}</div>
+        <div class="sheet-copy">
+          <h2>${escapeHtml(item.name)}</h2>
+          <div class="price"><strong>${priceLabel(item)}</strong>${item.promotion ? `<del>${money(item.normalPrice)}</del>` : ''}</div>
+          <p>${escapeHtml(item.description || [item.brand, item.unit || item.sectionLabel].filter(Boolean).join(' | ') || 'Produto disponivel para adicionar ao carrinho.')}</p>
+          ${item.promotion ? '<span class="market-badge">Oferta ativa</span>' : ''}
+          ${isLowStock(item) ? '<span class="market-badge warn">Estoque baixo</span>' : ''}
+          ${isWeightedProduct(item) ? `<p>${escapeHtml(item.textoPesoAproximado || 'Produto vendido por peso. O valor final pode mudar apos a pesagem na loja.')}</p>` : ''}
+        </div>
+        ${opcoesPeso}
+        <label class="item-note">Observacao deste item
+          <textarea id="productItemNote" maxlength="240" placeholder="Ex: escolher bem maduro ou substituir se faltar">${escapeHtml(itemNoteValue(item.id))}</textarea>
+        </label>
+        <div class="sheet-actions">
+          ${control}
+          <button class="ghost" type="button" data-sheet-action="cart">Ver carrinho</button>
+        </div>
+      `;
+      els.productSheetBody.querySelector('[data-sheet-action="minus"]')?.addEventListener('click', () => {
+        changeQty(item.id, -1);
+        renderProductSheet();
+      });
+      els.productSheetBody.querySelector('[data-sheet-action="plus"]')?.addEventListener('click', () => {
+        changeQty(item.id, 1);
+        renderProductSheet();
+      });
+      els.productSheetBody.querySelectorAll('[data-sheet-action="set-weight"]').forEach(button => {
+        button.addEventListener('click', () => {
+          setWeightedQty(item.id, Number(button.dataset.weight || 0));
+          renderProductSheet();
+        });
+      });
+      els.productSheetBody.querySelector('[data-sheet-action="cart"]')?.addEventListener('click', () => {
+        closeProductSheet();
+        iniciarCheckout();
+      });
+      els.productSheetBody.querySelector('#productItemNote')?.addEventListener('input', event => {
+        setItemNoteValue(item.id, event.target.value);
+      });
+    }
+
+    function openProductSheet(id) {
+      state.productSheetId = id;
+      renderProductSheet();
+      els.productSheet?.classList.add('open');
+      els.productSheetBackdrop?.classList.add('open');
+    }
+
+    function closeProductSheet() {
+      state.productSheetId = '';
+      els.productSheet?.classList.remove('open');
+      els.productSheetBackdrop?.classList.remove('open');
+      if (els.productSheetBody) els.productSheetBody.innerHTML = '';
     }
 
     function escapeHtml(value) {
@@ -2485,6 +3511,7 @@
                 <button type="button" data-action="plus" aria-label="Aumentar quantidade">+</button>
               </div>
             </div>
+            ${itemNoteValue(item.id) ? `<small>${escapeHtml(itemNoteValue(item.id))}</small>` : ''}
             <button class="cart-remove" type="button" data-action="remove">Remover</button>
           </div>
         `;
@@ -2514,9 +3541,13 @@
       els.drawerTotal.textContent = money(total);
       if (els.drawerSubtotal) els.drawerSubtotal.textContent = money(total);
       if (els.drawerDelivery) {
-        els.drawerDelivery.textContent = 'No Telegram';
+        els.drawerDelivery.textContent = 'A confirmar';
       }
       if (els.drawerGrandTotal) els.drawerGrandTotal.textContent = money(total);
+      if (els.stickyCartBar) els.stickyCartBar.hidden = count < 1;
+      if (els.freeDeliveryHint) {
+        els.freeDeliveryHint.textContent = 'O valor final, entrega, descontos, cupom e pontos serao recalculados com seguranca antes do Pix.';
+      }
       [els.clearCartDrawer].forEach(button => {
         button.disabled = count < 1 || state.sending;
       });
@@ -2535,12 +3566,15 @@
       }
       renderCart();
       renderCheckoutStep();
+      renderLoyaltyCard();
       renderJourney();
       renderViniAIOutdoor();
+      if (state.productSheetId) renderProductSheet();
     }
 
     function render() {
       renderTabs();
+      renderHome();
       renderProducts();
       renderSummary();
     }
@@ -2548,6 +3582,7 @@
     function clearCart() {
       if (!state.cart.size) return;
       state.cart.clear();
+      state.itemNotes.clear();
       if (els.cartNotes) els.cartNotes.value = '';
       limparClientOrderIdPendente();
       persistCart();
@@ -2568,12 +3603,35 @@
         .slice(0, 500);
     }
 
+    function cupomDigitadoMiniApp() {
+      return String(state.couponCode || '')
+        .trim()
+        .replace(/\s+/g, '')
+        .slice(0, 40);
+    }
+
+    function syncCouponFromInput(value) {
+      state.couponCode = String(value || '').trim().slice(0, 40);
+      renderLoyaltyCard();
+    }
+
+    function syncUsePointsIntent(value) {
+      state.usePointsIntent = value === true;
+      renderLoyaltyCard();
+    }
+
     function payloadCarrinhoMiniApp() {
       return {
         type: 'mercadinho_cart',
         source: 'telegram_mini_app_html',
         origem: canalCompra(),
         client_order_id: clientOrderIdAtual(),
+        use_points_intent: Boolean(state.usePointsIntent),
+        cupom_digitado: cupomDigitadoMiniApp(),
+        cliente_intencoes: {
+          usar_pontos: Boolean(state.usePointsIntent),
+          cupom_digitado: cupomDigitadoMiniApp()
+        },
         items: cartItems().map(item => ({
           produto_id: item.id,
           secao: item.section,
@@ -2586,15 +3644,14 @@
           unidade_base_preco: item.unidadeBasePreco || item.unidadeVenda || item.unit || 'un',
           quantidade: item.quantity,
           quantidade_solicitada: item.quantity,
+          observacao_item: itemNoteValue(item.id),
           peso_estimado: item.saleMode === 'weighted' ? item.quantity : null,
           preco_unitario_exibido: item.price,
           preco_base_centavos: item.precoBaseCentavos || Math.round(item.price * 100),
           subtotal_exibido: Number((item.price * item.quantity).toFixed(2)),
           subtotal_estimado_exibido: Number((item.price * item.quantity).toFixed(2))
         })),
-        observacoes: observacoesCarrinhoMiniApp(),
-        total: cartTotal(),
-        total_exibido: cartTotal()
+        observacoes: observacoesCarrinhoMiniApp()
       };
     }
 
@@ -2603,6 +3660,9 @@
       if (!tg?.sendData) return showToast('Abra a loja pelo Telegram para enviar o carrinho.');
       tg.sendData(JSON.stringify(payload));
       state.cart.clear();
+      state.itemNotes.clear();
+      state.couponCode = '';
+      state.usePointsIntent = false;
       if (els.cartNotes) els.cartNotes.value = '';
       limparClientOrderIdPendente();
       persistCart();
@@ -2637,6 +3697,8 @@
 
     els.search.addEventListener('input', event => {
       state.query = event.target.value;
+      state.marketFilter = '';
+      state.marketSort = '';
       scheduleCatalogReload();
     });
 
@@ -2644,6 +3706,8 @@
       state.query = '';
       els.search.value = '';
       state.section = '';
+      state.marketFilter = '';
+      state.marketSort = '';
       if (state.catalogPage.usePaged || shouldUsePagedCatalog()) loadProducts();
       else {
         renderTabs();
@@ -2654,7 +3718,44 @@
 
     els.cartButton.addEventListener('click', iniciarCheckout);
     els.reviewCart.addEventListener('click', iniciarCheckout);
+    els.heroSearchFocus?.addEventListener('click', () => {
+      els.search?.focus();
+      els.search?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+    });
+    els.heroOpenCart?.addEventListener('click', iniciarCheckout);
+    els.marketFilters?.addEventListener('click', event => {
+      const filterButton = event.target.closest('[data-market-filter]');
+      const sortButton = event.target.closest('[data-market-sort]');
+      if (filterButton) {
+        state.section = '';
+        state.marketSort = '';
+        state.marketFilter = filterButton.dataset.marketFilter || '';
+        render();
+      }
+      if (sortButton) {
+        state.section = '';
+        state.marketFilter = '';
+        state.marketSort = sortButton.dataset.marketSort || '';
+        render();
+      }
+    });
+    els.couponCode?.addEventListener('input', event => syncCouponFromInput(event.target.value));
+    els.cartCouponCode?.addEventListener('input', event => syncCouponFromInput(event.target.value));
+    els.usePointsIntent?.addEventListener('change', event => syncUsePointsIntent(event.target.checked));
+    els.cartUsePointsIntent?.addEventListener('change', event => syncUsePointsIntent(event.target.checked));
+    els.copyInviteCode?.addEventListener('click', async () => {
+      const code = String(state.cliente?.codigoIndicacao || state.cliente?.codigo_indicacao || '').trim();
+      const text = code || 'Abra o Mercadinho M&J pelo Telegram e informe meu codigo de indicacao.';
+      try {
+        await navigator.clipboard?.writeText?.(text);
+        showToast(code ? 'Codigo de indicacao copiado' : 'Convite copiado');
+      } catch (_) {
+        showToast(code || 'Convide pelo Telegram quando finalizar a compra');
+      }
+    });
     els.closeCart.addEventListener('click', () => setCartOpen(false));
+    els.closeProductSheet?.addEventListener('click', closeProductSheet);
+    els.productSheetBackdrop?.addEventListener('click', closeProductSheet);
     els.clearCartDrawer.addEventListener('click', clearCart);
     els.registrationForm?.addEventListener('submit', salvarCadastroMiniApp);
     els.profileCep?.addEventListener('blur', preencherEnderecoPorCep);
