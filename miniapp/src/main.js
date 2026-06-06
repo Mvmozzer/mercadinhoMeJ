@@ -10,7 +10,7 @@ import {
 } from './api.js';
 import { pruneCart, restoreCart, cartItems } from './cart.js';
 import { sectionItems } from './catalog.js';
-import { finalizarCheckoutMiniApp, limparClientOrderIdPendente } from './checkout.js';
+import { finalizarCheckoutMiniApp, limparClientOrderIdPendente, previewCheckoutMiniApp } from './checkout.js';
 import { loadLoyalty, shareReferralCode } from './loyalty.js';
 import { loadOrder, loadOrders as loadOrdersApi, pollOrderStatus } from './orders.js';
 import { copyPix, refreshPixStatus, uploadReceipt } from './pix.js';
@@ -89,7 +89,8 @@ async function saveProfile() {
     await salvarCadastroMiniApp(state, renderer.els);
     renderer.preencherFormularioCadastro();
     renderer.renderJourney();
-    renderer.showToast('Cadastro salvo. Agora voce ja pode gerar Pix no Mini App.');
+    renderer.navigateTo('home');
+    renderer.showToast('Cadastro salvo. Agora voce ja pode comprar.');
   } catch (error) {
     renderer.showToast(error.message || 'Nao foi possivel salvar seu cadastro');
   } finally {
@@ -126,15 +127,28 @@ async function sendCartToTelegram() {
         loadLoyaltyState(),
         state.pedidoAtual?.id ? loadTracking(state, state.pedidoAtual.id).catch(() => null) : Promise.resolve()
       ]);
+      renderer.navigateTo('payment');
     }
   } catch (error) {
     renderer.showToast(error.message || 'Falha ao finalizar pedido.');
   } finally {
     state.sending = false;
     setMainButtonLoading(telegram.webApp, false);
-    state.checkoutStep = 'catalog';
-    renderer.setCartOpen(false);
+    if (!state.pix?.copiaCola) {
+      state.checkoutStep = 'catalog';
+      renderer.setCartOpen(false);
+    }
     renderer.render();
+  }
+}
+
+async function previewCheckout() {
+  try {
+    await previewCheckoutMiniApp(state, renderer.els);
+    renderer.render();
+  } catch (error) {
+    renderer.showToast(error.message || 'Revise entrega e carrinho antes de continuar.');
+    throw error;
   }
 }
 
@@ -142,6 +156,7 @@ async function showPix(pedidoId) {
   try {
     const pedido = await loadOrder(state, pedidoId);
     if (pedido?.id) await refreshPixStatus(state, pedido.id);
+    renderer.navigateTo('payment');
     renderer.render();
   } catch (error) {
     renderer.showToast(error.message || 'Nao foi possivel carregar o Pix.');
@@ -152,6 +167,7 @@ async function showTracking(pedidoId) {
   try {
     const pedido = await loadOrder(state, pedidoId);
     if (pedido?.id) await loadTracking(state, pedido.id);
+    renderer.navigateTo('tracking');
     renderer.render();
   } catch (error) {
     renderer.showToast(error.message || 'Nao foi possivel carregar acompanhamento.');
@@ -248,6 +264,7 @@ async function init() {
   handlers.loadMoreProducts = loadMoreProducts;
   handlers.saveProfile = saveProfile;
   handlers.sendCart = sendCartToTelegram;
+  handlers.previewCheckout = previewCheckout;
   handlers.loadOrders = loadOrders;
   handlers.showPix = showPix;
   handlers.showTracking = showTracking;

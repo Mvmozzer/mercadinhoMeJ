@@ -9,6 +9,7 @@ export function createInitialState() {
     query: '',
     marketFilter: '',
     marketSort: '',
+    currentPage: 'identify',
     cart: new Map(),
     itemNotes: new Map(),
     cartOpen: false,
@@ -69,6 +70,7 @@ export function createInitialState() {
       carrinhoFixo: true,
       botoesCta: true,
       pontosIndicacao: true,
+      acompanhamentoMapa: true,
       layoutHome: 'delivery',
       buscaFiltros: true
     },

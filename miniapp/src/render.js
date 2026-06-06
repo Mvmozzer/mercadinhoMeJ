@@ -74,7 +74,7 @@ function shellMarkup() {
       </header>
 
       <main>
-        <section class="store-search-panel" aria-label="Busca">
+        <section class="store-search-panel" id="searchPanel" aria-label="Busca">
           <div class="search-row">
             <div class="search-wrap">
               <span aria-hidden="true">B</span>
@@ -97,47 +97,52 @@ function shellMarkup() {
           <div class="journey-steps" id="journeySteps"></div>
         </section>
 
-        <section class="registration-panel" id="registrationPanel" hidden>
+        <section class="registration-panel miniapp-page" id="registrationPanel" data-page="identify" hidden>
           <div class="section-head">
             <h2>Primeiro acesso</h2>
             <span id="registrationChannelLabel">Cadastro no Mini App</span>
           </div>
-          <p id="registrationIntro">Voce ja pode ver os produtos. Para finalizar a compra, informe os dados essenciais para a loja confirmar entrega, retirada e pagamento pelo Telegram.</p>
+          <p id="registrationIntro">Informe seus dados essenciais para continuar para as compras. Endereco fica para a etapa de entrega.</p>
           <form class="registration-form" id="registrationForm">
             <label>Nome completo
               <input id="profileName" type="text" autocomplete="name" required>
             </label>
-            <label>CPF
-              <input id="profileCpf" type="text" inputmode="numeric" autocomplete="off" required>
-            </label>
-            <label>Data de nascimento
-              <input id="profileBirthDate" type="date" required>
-            </label>
             <label>Telefone com DDD
               <input id="profilePhone" type="tel" inputmode="tel" autocomplete="tel" required>
             </label>
+            <details class="optional-profile-fields">
+              <summary>Completar dados agora (opcional)</summary>
+              <div class="registration-form optional-profile-grid">
+            <label>CPF
+              <input id="profileCpf" type="text" inputmode="numeric" autocomplete="off">
+            </label>
+            <label>Data de nascimento
+              <input id="profileBirthDate" type="date">
+            </label>
             <label>CEP
-              <input id="profileCep" type="text" inputmode="numeric" autocomplete="postal-code" required>
+              <input id="profileCep" type="text" inputmode="numeric" autocomplete="postal-code">
             </label>
             <label>Rua
-              <input id="profileRua" type="text" autocomplete="address-line1" required>
+              <input id="profileRua" type="text" autocomplete="address-line1">
             </label>
             <label>Numero
-              <input id="profileNumero" type="text" autocomplete="address-line2" required>
+              <input id="profileNumero" type="text" autocomplete="address-line2">
             </label>
             <label>Complemento (opcional)
               <input id="profileComplemento" type="text" autocomplete="address-line2">
             </label>
             <label>Bairro
-              <input id="profileBairro" type="text" autocomplete="address-level3" required>
+              <input id="profileBairro" type="text" autocomplete="address-level3">
             </label>
             <label>Cidade
-              <input id="profileCidade" type="text" autocomplete="address-level2" required>
+              <input id="profileCidade" type="text" autocomplete="address-level2">
             </label>
             <label>Estado (UF)
-              <input id="profileEstado" type="text" maxlength="2" autocomplete="address-level1" required>
+              <input id="profileEstado" type="text" maxlength="2" autocomplete="address-level1">
             </label>
-            <button class="primary" id="saveProfile" type="submit">Salvar cadastro no Mini App</button>
+              </div>
+            </details>
+            <button class="primary" id="saveProfile" type="submit">Continuar para compras</button>
           </form>
         </section>
 
@@ -148,7 +153,7 @@ function shellMarkup() {
           </div>
         </section>
 
-        <section class="marketplace-home" id="marketHome" aria-label="Vitrine do Mercadinho">
+        <section class="marketplace-home miniapp-page" id="marketHome" data-page="home" aria-label="Vitrine do Mercadinho">
           <section class="promo-banners" id="promoBanners" aria-label="Promocoes e beneficios"></section>
 
           <section class="loyalty-card" id="loyaltyInviteCard" hidden>
@@ -181,7 +186,7 @@ function shellMarkup() {
           <section class="market-row" id="lowStockSection" aria-label="Produtos perto de acabar"></section>
         </section>
 
-        <section class="orders-panel" id="ordersPanel" hidden>
+        <section class="orders-panel miniapp-page" id="ordersPanel" data-page="orders" hidden>
           <div class="section-head">
             <h2>Meus pedidos</h2>
             <span id="authStatus">Conectando</span>
@@ -189,7 +194,7 @@ function shellMarkup() {
           <div id="ordersList"></div>
         </section>
 
-        <section class="pix-panel" id="pixPanel" hidden>
+        <section class="pix-panel miniapp-page" id="pixPanel" data-page="payment" hidden>
           <div class="section-head">
             <h2>Pix do pedido</h2>
             <span id="pixStatus">Aguardando</span>
@@ -197,7 +202,7 @@ function shellMarkup() {
           <div id="pixContent"></div>
         </section>
 
-        <section class="loyalty-panel" id="loyaltyPanel" hidden>
+        <section class="loyalty-panel miniapp-page" id="loyaltyPanel" data-page="loyalty" hidden>
           <div class="section-head">
             <h2>Meus pontos</h2>
             <span id="loyaltyBalance">0 pontos</span>
@@ -205,7 +210,15 @@ function shellMarkup() {
           <div id="loyaltyContent"></div>
         </section>
 
-        <section class="tracking-panel" id="trackingPanel" hidden>
+        <section class="profile-panel miniapp-page" id="profilePanel" data-page="profile" hidden>
+          <div class="section-head">
+            <h2>Perfil e conta</h2>
+            <span id="profileStatus">Mini App</span>
+          </div>
+          <div id="profileContent"></div>
+        </section>
+
+        <section class="tracking-panel miniapp-page" id="trackingPanel" data-page="tracking" hidden>
           <div class="section-head">
             <h2>Acompanhar entrega</h2>
             <span id="trackingStatus">Atualizando</span>
@@ -214,17 +227,25 @@ function shellMarkup() {
           <div class="map-box" id="trackingMap"></div>
         </section>
 
-        <div id="products"></div>
+        <section class="miniapp-page catalog-page" id="categoriesPage" data-page="categories" hidden>
+          <div class="section-head">
+            <h2>Categorias e busca</h2>
+            <span>Escolha uma secao</span>
+          </div>
+          <div id="categoriesPageList" class="category-page-list"></div>
+        </section>
+
+        <div class="miniapp-page" id="products" data-page="products" hidden></div>
       </main>
     </div>
 
-    <aside class="cart-drawer" id="cartDrawer" aria-label="Carrinho">
+    <aside class="cart-drawer miniapp-page cart-page" id="cartDrawer" data-page="cart" aria-label="Carrinho" hidden>
       <div class="cart-head">
         <div class="cart-head-copy">
           <h2>Seu carrinho</h2>
           <small id="cartHeadHint">Seu carrinho esta pronto. Agora vamos gerar o Pix dentro do Mini App.</small>
         </div>
-        <button class="ghost" id="closeCart" type="button">Fechar</button>
+        <button class="ghost" id="closeCart" type="button">Continuar comprando</button>
       </div>
       <div class="cart-list" id="cartList"></div>
       <div class="cart-foot">
@@ -247,7 +268,7 @@ function shellMarkup() {
             <strong id="drawerGrandTotal">R$ 0,00</strong>
           </div>
         </div>
-        <div class="cart-perks">
+        <div class="cart-perks" id="cartPerksPanel">
           <strong>Beneficios para validar no backend</strong>
           <div class="coupon-row">
             <input id="cartCouponCode" type="text" inputmode="text" autocomplete="off" maxlength="40" placeholder="Cupom ou codigo de indicacao">
@@ -256,13 +277,17 @@ function shellMarkup() {
             <input id="cartUsePointsIntent" type="checkbox">
             Tentar usar meus pontos no fechamento
           </label>
+          <label>Usar pontos neste pedido
+            <input id="checkoutPoints" type="number" min="0" step="1" inputmode="numeric" placeholder="0">
+          </label>
           <div class="cart-progress" id="freeDeliveryHint">O valor final, entrega, descontos e pontos serao recalculados com seguranca antes do Pix.</div>
+          <div class="checkout-preview" id="checkoutPreviewBox">O backend vai recalcular produtos, estoque, frete, pontos e Pix.</div>
         </div>
-        <label class="cart-notes">Observacoes do pedido
+        <label class="cart-notes" id="cartNotesPanel">Observacoes do pedido
           <textarea id="cartNotes" maxlength="500" placeholder="Ex: separar troco, evitar substituicoes ou detalhe importante"></textarea>
           <small id="cartNotesHint">O Pix sera gerado com o valor recalculado pela loja. A loja confirma o pagamento antes de preparar.</small>
         </label>
-        <div class="checkout-form-panel" id="checkoutFormPanel">
+        <div class="checkout-form-panel miniapp-page checkout-subpage" id="checkoutFormPanel" data-page="delivery">
           <label>Modalidade
             <select id="deliveryMode">
               <option value="retirada">Retirada no local</option>
@@ -279,21 +304,17 @@ function shellMarkup() {
             <label>Estado <input id="checkoutEstado" type="text" maxlength="2" autocomplete="address-level1"></label>
             <label>Telefone <input id="checkoutPhone" type="tel" inputmode="tel" autocomplete="tel"></label>
           </div>
-          <label>Usar pontos
-            <input id="checkoutPoints" type="number" min="0" step="1" inputmode="numeric" placeholder="0">
-          </label>
-          <div class="checkout-preview" id="checkoutPreviewBox">O backend vai recalcular produtos, estoque, frete, pontos e Pix.</div>
         </div>
         <div class="checkout-stage" id="cartStepPanel">
           <small id="checkoutHint">Falta pouco: escolha entrega ou retirada, revise os pontos e gere o Pix.</small>
-          <button class="primary" id="continueToDelivery" type="button" aria-label="Gerar Pix e finalizar" disabled>Gerar Pix e finalizar</button>
+          <button class="primary" id="continueToDelivery" type="button" aria-label="Continuar" disabled>Continuar</button>
         </div>
         <button class="danger" id="clearCartDrawer" type="button" disabled>Limpar carrinho</button>
       </div>
     </aside>
 
-    <div class="sheet-backdrop" id="productSheetBackdrop"></div>
-    <aside class="product-sheet" id="productSheet" aria-label="Detalhe do produto" aria-modal="true">
+    <div class="sheet-backdrop" id="productSheetBackdrop" hidden></div>
+    <aside class="product-sheet miniapp-page product-detail-page" id="productSheet" data-page="product" aria-label="Detalhe do produto" hidden>
       <div class="sheet-head">
         <strong>Detalhe do produto</strong>
         <button class="ghost" id="closeProductSheet" type="button">Fechar</button>
@@ -313,6 +334,15 @@ function shellMarkup() {
       </div>
     </footer>
 
+    <nav class="miniapp-bottom-nav" id="bottomNav" aria-label="Navegacao principal">
+      <button type="button" data-nav-page="home">Inicio</button>
+      <button type="button" data-nav-page="categories">Categorias</button>
+      <button type="button" data-nav-page="cart">Carrinho</button>
+      <button type="button" data-nav-page="orders">Pedidos</button>
+      <button type="button" data-nav-page="loyalty">Pontos</button>
+      <button type="button" data-nav-page="profile">Perfil</button>
+    </nav>
+
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
   `;
 }
@@ -323,16 +353,17 @@ function collectElements() {
     'registrationPanel', 'registrationChannelLabel', 'registrationIntro', 'registrationForm',
     'profileName', 'profileCpf', 'profileBirthDate', 'profilePhone', 'profileCep',
     'profileRua', 'profileNumero', 'profileComplemento', 'profileBairro', 'profileCidade',
-    'profileEstado', 'saveProfile', 'marketHome', 'marketHero', 'categoryRail',
+    'profileEstado', 'saveProfile', 'marketHome', 'marketHero', 'searchPanel', 'categoryRail',
     'promoBanners', 'loyaltyInviteCard', 'pointsBalanceLabel', 'couponCode',
     'copyInviteCode', 'usePointsIntent', 'marketFilters', 'buyAgainSection',
     'bestSellersSection', 'todayOffersSection', 'comboSection', 'lowStockSection',
     'pixPanel', 'pixStatus', 'pixContent', 'loyaltyPanel', 'loyaltyBalance',
-    'loyaltyContent', 'trackingPanel', 'trackingStatus', 'trackingContent',
+    'loyaltyContent', 'profilePanel', 'profileStatus', 'profileContent',
+    'trackingPanel', 'trackingStatus', 'trackingContent',
     'trackingMap', 'products', 'search', 'clearSearch', 'cartButton', 'cartDrawer', 'closeCart',
     'cartList', 'itemsCount', 'bottomCount', 'bottomFreeDeliveryHint', 'total',
     'drawerTotal', 'drawerSubtotal', 'drawerDelivery', 'drawerGrandTotal',
-    'cartCouponCode', 'cartUsePointsIntent', 'freeDeliveryHint', 'cartNotes',
+    'cartCouponCode', 'cartUsePointsIntent', 'freeDeliveryHint', 'cartNotes', 'cartPerksPanel', 'cartNotesPanel',
     'cartHeadHint', 'cartNotesHint', 'checkoutStepLabel', 'cartStepPanel',
     'checkoutHint', 'checkoutFormPanel', 'deliveryMode', 'checkoutAddressGrid',
     'checkoutCep', 'checkoutRua', 'checkoutNumero', 'checkoutComplemento',
@@ -340,7 +371,8 @@ function collectElements() {
     'checkoutPoints', 'checkoutPreviewBox', 'continueToDelivery', 'clearCartDrawer', 'reviewCart',
     'stickyCartBar', 'productSheetBackdrop', 'productSheet', 'productSheetBody',
     'closeProductSheet', 'viniAiOutdoor', 'viniAiAlert', 'storeStatus',
-    'ordersPanel', 'ordersList', 'authStatus', 'toast'
+    'ordersPanel', 'ordersList', 'authStatus', 'categoriesPage', 'categoriesPageList',
+    'bottomNav', 'toast'
   ];
   return Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
 }
@@ -372,7 +404,27 @@ export function createRenderer({ state, telegram, handlers }) {
   }
 
   function clientePrecisaCadastro() {
-    return state.authOk && state.cliente?.cadastroCompleto !== true;
+    return !state.authOk || !String(state.cliente?.nome || '').trim() || !String(state.cliente?.telefone || '').trim();
+  }
+
+  function paginaAtualSegura() {
+    if (clientePrecisaCadastro()) return 'identify';
+    const paginas = new Set(['home', 'categories', 'products', 'product', 'cart', 'delivery', 'payment', 'orders', 'tracking', 'loyalty', 'profile']);
+    return paginas.has(state.currentPage) ? state.currentPage : 'home';
+  }
+
+  function navigateTo(page, options = {}) {
+    const next = page === 'identify' && !clientePrecisaCadastro() ? 'home' : page;
+    state.currentPage = next;
+    if (next !== 'product' && !options.keepProduct) state.productSheetId = '';
+    if (next === 'products' && options.section !== undefined) {
+      state.section = options.section || '';
+      state.query = '';
+      state.marketFilter = '';
+      state.marketSort = '';
+    }
+    render();
+    window.scrollTo?.({ top: 0, behavior: 'smooth' });
   }
 
   function preencherFormularioCadastro() {
@@ -392,19 +444,25 @@ export function createRenderer({ state, telegram, handlers }) {
 
   function etapaJornadaAtual() {
     if (clientePrecisaCadastro()) return 'cadastro';
-    if (state.checkoutStep === 'cart') return 'carrinho';
+    if (state.currentPage === 'cart') return 'carrinho';
+    if (state.currentPage === 'delivery') return 'entrega';
+    if (state.currentPage === 'payment') return state.pix?.copiaCola ? 'pix' : 'pagamento';
+    if (state.currentPage === 'tracking') return 'acompanhar';
+    if (state.currentPage === 'orders') return 'confirmado';
     return 'catalogo';
   }
 
   function renderJourney() {
     const atual = etapaJornadaAtual();
     const etapas = [
+      ['cadastro', 'Cadastro'],
       ['catalogo', 'Produtos'],
       ['carrinho', 'Carrinho'],
-      ['checkout', 'Checkout'],
+      ['entrega', 'Entrega'],
+      ['pagamento', 'Pagamento'],
       ['pix', 'Pix'],
-      ['comprovante', 'Comprovante'],
-      ['confirmado', 'Pedido confirmado']
+      ['confirmado', 'Confirmado'],
+      ['acompanhar', 'Acompanhar']
     ];
     const indiceAtual = etapas.findIndex(([id]) => id === atual);
     if (els.journeySteps) {
@@ -418,20 +476,18 @@ export function createRenderer({ state, telegram, handlers }) {
         cadastro: 'Primeiro acesso',
         catalogo: 'Escolha produtos',
         carrinho: 'Seu carrinho esta pronto',
-        checkout: 'Entrega e pontos',
+        entrega: 'Entrega ou retirada',
+        pagamento: 'Pagamento no Mini App',
         pix: 'Pix no Mini App',
-        comprovante: 'Comprovante opcional',
-        confirmado: 'Pedido confirmado'
+        confirmado: 'Pedido confirmado',
+        acompanhar: 'Acompanhe seu pedido'
       };
       els.journeyStatus.textContent = labels[atual] || 'Compra no Mini App';
     }
-    if (els.registrationPanel) els.registrationPanel.hidden = !clientePrecisaCadastro();
   }
 
   function renderOrders() {
     if (!els.ordersPanel || !els.ordersList) return;
-    els.ordersPanel.hidden = !state.orders.length;
-    if (els.ordersPanel.hidden) return;
     if (!state.orders.length) {
       els.ordersList.innerHTML = '<div class="empty">Quando seu primeiro pedido for enviado, o acompanhamento aparece aqui.</div>';
       return;
@@ -456,8 +512,10 @@ export function createRenderer({ state, telegram, handlers }) {
   function renderPixPanel() {
     if (!els.pixPanel || !els.pixContent) return;
     const pix = state.pix || state.pedidoAtual?.pix || null;
-    els.pixPanel.hidden = !pix?.copiaCola;
-    if (els.pixPanel.hidden) return;
+    if (!pix?.copiaCola) {
+      els.pixContent.innerHTML = '<div class="empty">Revise o pedido e gere o Pix para pagar dentro do Mini App.</div>';
+      return;
+    }
     if (els.pixStatus) els.pixStatus.textContent = pix.status || state.pedidoAtual?.statusPagamento || 'Aguardando pagamento';
     els.pixContent.innerHTML = `
       <div class="pix-card">
@@ -491,8 +549,10 @@ export function createRenderer({ state, telegram, handlers }) {
   function renderLoyaltyPanel() {
     if (!els.loyaltyPanel || !els.loyaltyContent) return;
     const loyalty = state.loyalty || {};
-    els.loyaltyPanel.hidden = !state.authOk;
-    if (els.loyaltyPanel.hidden) return;
+    if (!state.authOk) {
+      els.loyaltyContent.innerHTML = '<div class="empty">Entre pelo Telegram ou use o modo dev para consultar pontos.</div>';
+      return;
+    }
     if (els.loyaltyBalance) els.loyaltyBalance.textContent = `${Number(loyalty.saldoPontos || loyalty.pontosDisponiveis || 0)} pontos`;
     const historico = Array.isArray(loyalty.historico) ? loyalty.historico.slice(0, 5) : [];
     els.loyaltyContent.innerHTML = `
@@ -516,11 +576,45 @@ export function createRenderer({ state, telegram, handlers }) {
     `;
   }
 
+  function renderProfilePanel() {
+    if (!els.profilePanel || !els.profileContent) return;
+    const cliente = state.cliente || {};
+    const telegram = state.telegramUser || {};
+    const endereco = [cliente.rua, cliente.numero, cliente.bairro, cliente.cidade, cliente.estado].filter(Boolean).join(', ');
+    if (els.profileStatus) {
+      els.profileStatus.textContent = state.authOk ? 'Identificado' : 'Aguardando Telegram';
+    }
+    els.profileContent.innerHTML = `
+      <div class="profile-card">
+        <div class="summary-line">
+          <span>Nome</span>
+          <strong>${escapeHtml(cliente.nome || telegram.first_name || 'Cliente')}</strong>
+        </div>
+        <div class="summary-line">
+          <span>Telefone</span>
+          <strong>${escapeHtml(cliente.telefone || 'Nao informado')}</strong>
+        </div>
+        <div class="summary-line">
+          <span>Endereco</span>
+          <strong>${escapeHtml(endereco || 'Informado no checkout')}</strong>
+        </div>
+        <div class="summary-line">
+          <span>Pontos</span>
+          <strong>${Number(state.loyalty?.saldoPontos || state.loyalty?.pontosDisponiveis || 0)} pts</strong>
+        </div>
+        <small>Dados sensiveis nao sao exibidos no Mini App. A loja valida endereco, pontos e pagamento no backend.</small>
+      </div>
+    `;
+  }
+
   function renderTrackingPanel() {
     if (!els.trackingPanel || !els.trackingContent) return;
     const tracking = state.tracking || null;
-    els.trackingPanel.hidden = !tracking;
-    if (!tracking) return;
+    if (!tracking) {
+      els.trackingContent.innerHTML = '<div class="empty">Escolha um pedido para acompanhar o status e a entrega.</div>';
+      if (els.trackingMap) els.trackingMap.innerHTML = '<div class="map-fallback">Localizacao indisponivel ate o pedido sair para entrega.</div>';
+      return;
+    }
     const status = tracking.status || state.pedidoAtual?.status || '';
     if (els.trackingStatus) els.trackingStatus.textContent = tracking.statusDetalhe?.label || status || 'Acompanhando';
     const map = mapStateFromTracking(tracking);
@@ -537,6 +631,10 @@ export function createRenderer({ state, telegram, handlers }) {
       </div>
     `;
     if (els.trackingMap) {
+      if (designConfig(state).acompanhamentoMapa === false) {
+        els.trackingMap.innerHTML = '<div class="map-fallback">Localizacao do motoboy desativada pela loja.</div>';
+        return;
+      }
       els.trackingMap.innerHTML = map.aoVivo && map.mapaUrl
         ? `<iframe title="Mapa do motoboy" src="${escapeHtml(map.mapaUrl)}" loading="lazy" referrerpolicy="no-referrer"></iframe>`
         : `<div class="map-fallback">${escapeHtml(map.mensagem || 'Mapa indisponivel agora.')}</div>`;
@@ -554,6 +652,37 @@ export function createRenderer({ state, telegram, handlers }) {
     els.storeStatus.classList.remove('ok', 'warn', 'closed');
     els.storeStatus.classList.add(state.loja.aceitaPedidos ? 'ok' : (state.loja.status === 'pausada' ? 'warn' : 'closed'));
     els.storeStatus.title = state.loja.mensagem || '';
+  }
+
+  function renderPageVisibility() {
+    const page = paginaAtualSegura();
+    state.currentPage = page;
+    document.querySelectorAll('.miniapp-page').forEach(el => {
+      const target = String(el.dataset.page || '');
+      const visible = target === page || (page === 'payment' && target === 'payment');
+      el.hidden = !visible;
+      el.classList.toggle('active-page', visible);
+    });
+    if (els.searchPanel) els.searchPanel.hidden = !['home', 'categories', 'products'].includes(page);
+    if (els.categoryRail) els.categoryRail.hidden = !['home', 'categories', 'products'].includes(page);
+    if (els.marketFilters) els.marketFilters.hidden = !['categories', 'products'].includes(page);
+    if (els.marketHero) els.marketHero.hidden = page === 'identify';
+    if (els.bottomNav) {
+      els.bottomNav.hidden = ['identify', 'cart', 'delivery', 'payment', 'product'].includes(page);
+      els.bottomNav.querySelectorAll('[data-nav-page]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.navPage === page || (btn.dataset.navPage === 'home' && page === 'products'));
+      });
+    }
+    const cartFlow = ['cart', 'delivery', 'payment'].includes(page) && !state.pix?.copiaCola;
+    if (els.cartDrawer) els.cartDrawer.hidden = !cartFlow;
+    els.cartDrawer?.classList.toggle('open', cartFlow);
+    els.cartDrawer?.classList.toggle('as-page', cartFlow);
+    if (els.checkoutFormPanel) els.checkoutFormPanel.hidden = page !== 'delivery';
+    if (els.cartPerksPanel) els.cartPerksPanel.hidden = page !== 'payment';
+    if (els.cartNotesPanel) els.cartNotesPanel.hidden = page !== 'payment';
+    if (els.productSheetBackdrop) els.productSheetBackdrop.hidden = true;
+    els.productSheet?.classList.toggle('open', page === 'product');
+    els.productSheet?.classList.toggle('as-page', page === 'product');
   }
 
   function renderTabs() {
@@ -616,8 +745,8 @@ export function createRenderer({ state, telegram, handlers }) {
         state.section = button.dataset.section || '';
         state.marketFilter = '';
         state.marketSort = '';
+        navigateTo('products', { section: state.section });
         if (state.catalogPage.usePaged) handlers.reloadCatalog?.();
-        else render();
       });
     });
     els.categoryRail.querySelectorAll('[data-category-search]').forEach(button => {
@@ -627,6 +756,7 @@ export function createRenderer({ state, telegram, handlers }) {
         state.marketSort = '';
         state.query = button.dataset.categorySearch || '';
         if (els.search) els.search.value = state.query;
+        state.currentPage = 'products';
         if (state.catalogPage.usePaged) handlers.reloadCatalog?.();
         else render();
       });
@@ -761,6 +891,32 @@ export function createRenderer({ state, telegram, handlers }) {
     });
   }
 
+  function renderCategoriesPage() {
+    if (!els.categoriesPageList) return;
+    const sections = sectionItems(state);
+    if (!sections.length) {
+      els.categoriesPageList.innerHTML = '<div class="empty">Nenhuma categoria disponivel agora.</div>';
+      return;
+    }
+    els.categoriesPageList.innerHTML = [
+      `<button class="category-page-item" type="button" data-category-page-section="">
+        <span class="category-icon">#</span>
+        <strong>Todos os produtos</strong>
+        <small>${state.products.length} produto(s)</small>
+      </button>`,
+      ...sections.map(section => `
+        <button class="category-page-item" type="button" data-category-page-section="${escapeHtml(section.id)}">
+          <span class="category-icon">${escapeHtml(iconForSection(section.name))}</span>
+          <strong>${escapeHtml(section.name)}</strong>
+          <small>${Number(section.products || 0)} produto(s)</small>
+        </button>
+      `)
+    ].join('');
+    els.categoriesPageList.querySelectorAll('[data-category-page-section]').forEach(button => {
+      button.addEventListener('click', () => navigateTo('products', { section: button.dataset.categoryPageSection || '' }));
+    });
+  }
+
   function renderHome() {
     if (!els.marketHome) return;
     const design = designConfig(state);
@@ -847,7 +1003,7 @@ export function createRenderer({ state, telegram, handlers }) {
   function renderProducts() {
     if (!els.products) return;
     els.products.innerHTML = '';
-    const homeOnly = !state.query.trim() && !state.section && !state.marketFilter && !state.marketSort;
+    const homeOnly = state.currentPage !== 'products' && !state.query.trim() && !state.section && !state.marketFilter && !state.marketSort;
     els.products.hidden = homeOnly;
     if (homeOnly) return;
     els.products.hidden = false;
@@ -946,13 +1102,32 @@ export function createRenderer({ state, telegram, handlers }) {
   }
 
   function renderCheckoutStep() {
-    const etapaCarrinho = state.checkoutStep === 'cart';
+    const page = paginaAtualSegura();
+    const etapaCarrinho = ['cart', 'delivery', 'payment'].includes(page);
     if (els.cartStepPanel) els.cartStepPanel.hidden = !etapaCarrinho;
-    if (els.checkoutStepLabel) els.checkoutStepLabel.textContent = 'Carrinho pronto para gerar Pix';
+    const labels = {
+      cart: 'Carrinho separado',
+      delivery: 'Entrega ou retirada',
+      payment: 'Pagamento direto no Mini App'
+    };
+    if (els.checkoutStepLabel) els.checkoutStepLabel.textContent = labels[page] || 'Carrinho pronto para gerar Pix';
     if (els.continueToDelivery) {
       els.continueToDelivery.disabled = cartCount(state) < 1 || state.sending || !state.loja.aceitaPedidos;
-      els.continueToDelivery.textContent = state.sending ? 'Gerando Pix...' : 'Gerar Pix e finalizar';
-      els.continueToDelivery.setAttribute('aria-label', 'Gerar Pix e finalizar');
+      const textos = {
+        cart: 'Continuar para entrega',
+        delivery: 'Continuar para pagamento',
+        payment: state.sending ? 'Gerando Pix...' : 'Gerar Pix e finalizar'
+      };
+      els.continueToDelivery.textContent = textos[page] || 'Continuar';
+      els.continueToDelivery.setAttribute('aria-label', textos[page] || 'Continuar');
+    }
+    if (els.checkoutHint) {
+      const hints = {
+        cart: 'Revise os itens antes de escolher entrega ou retirada.',
+        delivery: 'Escolha receber em casa ou retirar no local. Endereco so e obrigatorio para entrega.',
+        payment: 'O backend recalcula total, frete, pontos e gera o Pix seguro.'
+      };
+      els.checkoutHint.textContent = hints[page] || '';
     }
     renderJourney();
   }
@@ -984,7 +1159,10 @@ export function createRenderer({ state, telegram, handlers }) {
         ? `Subtotal ${money(preview.subtotal)} | Frete ${money(preview.frete)} | Pontos -${money(preview.descontoPontos)} | Total ${money(preview.total)}`
         : 'O backend vai recalcular produtos, estoque, frete, pontos e Pix.';
     }
-    if (els.stickyCartBar) els.stickyCartBar.hidden = count < 1 || designConfig(state).carrinhoFixo === false;
+    if (els.stickyCartBar) {
+      const paginaSemBarra = ['identify', 'cart', 'delivery', 'payment', 'product'].includes(paginaAtualSegura());
+      els.stickyCartBar.hidden = count < 1 || paginaSemBarra || designConfig(state).carrinhoFixo === false;
+    }
     if (els.freeDeliveryHint) {
       els.freeDeliveryHint.textContent = 'O valor final, entrega, descontos, cupom e pontos serao recalculados com seguranca antes do Pix.';
     }
@@ -1065,25 +1243,25 @@ export function createRenderer({ state, telegram, handlers }) {
 
   function openProductSheet(id) {
     state.productSheetId = id;
+    state.currentPage = 'product';
     renderProductSheet();
-    els.productSheet?.classList.add('open');
-    els.productSheetBackdrop?.classList.add('open');
+    renderPageVisibility();
   }
 
   function closeProductSheet() {
     state.productSheetId = '';
-    els.productSheet?.classList.remove('open');
-    els.productSheetBackdrop?.classList.remove('open');
+    state.currentPage = state.section || state.query ? 'products' : 'home';
     if (els.productSheetBody) els.productSheetBody.innerHTML = '';
+    render();
   }
 
   function setCartOpen(open) {
     state.cartOpen = open;
-    if (open && state.checkoutStep !== 'cart') state.checkoutStep = 'cart';
-    if (!open && state.checkoutStep === 'cart') state.checkoutStep = 'catalog';
-    els.cartDrawer?.classList.toggle('open', open);
+    if (open) state.currentPage = 'cart';
+    if (!open && ['cart', 'delivery', 'payment'].includes(state.currentPage)) state.currentPage = 'home';
     renderCart();
     renderCheckoutStep();
+    renderPageVisibility();
   }
 
   function iniciarCheckout() {
@@ -1091,6 +1269,7 @@ export function createRenderer({ state, telegram, handlers }) {
       showToast('Adicione ao menos um produto');
       return;
     }
+    state.currentPage = 'cart';
     state.checkoutStep = 'cart';
     setCartOpen(true);
     renderCheckoutStep();
@@ -1121,9 +1300,12 @@ export function createRenderer({ state, telegram, handlers }) {
     renderOrders();
     renderPixPanel();
     renderLoyaltyPanel();
+    renderProfilePanel();
     renderTrackingPanel();
     renderSummary();
     if (state.productSheetId) renderProductSheet();
+    renderCategoriesPage();
+    renderPageVisibility();
   }
 
   const scheduleCatalogReload = debounce(() => {
@@ -1136,6 +1318,7 @@ export function createRenderer({ state, telegram, handlers }) {
       state.query = event.target.value;
       state.marketFilter = '';
       state.marketSort = '';
+      if (!clientePrecisaCadastro()) state.currentPage = state.query.trim() ? 'products' : 'home';
       scheduleCatalogReload();
     });
     els.clearSearch?.addEventListener('click', () => {
@@ -1213,7 +1396,32 @@ export function createRenderer({ state, telegram, handlers }) {
       handlers.saveProfile?.();
     });
     els.profileCep?.addEventListener('blur', () => handlers.fillAddressByCep?.());
-    els.continueToDelivery?.addEventListener('click', () => handlers.sendCart?.());
+    els.continueToDelivery?.addEventListener('click', async () => {
+      const page = paginaAtualSegura();
+      if (page === 'cart') {
+        navigateTo('delivery');
+        return;
+      }
+      if (page === 'delivery') {
+        try {
+          await handlers.previewCheckout?.();
+          navigateTo('payment');
+        } catch (_) {
+          // A mensagem amigavel e exibida pelo handler.
+        }
+        return;
+      }
+      handlers.sendCart?.();
+    });
+    els.bottomNav?.addEventListener('click', event => {
+      const btn = event.target.closest('[data-nav-page]');
+      if (!btn) return;
+      if (btn.dataset.navPage === 'cart' && !cartItems(state).length) {
+        showToast('Seu carrinho esta vazio');
+        return;
+      }
+      navigateTo(btn.dataset.navPage || 'home');
+    });
     els.ordersList?.addEventListener('click', event => {
       const pixButton = event.target.closest('[data-order-pix]');
       const trackingButton = event.target.closest('[data-order-track]');
@@ -1249,6 +1457,7 @@ export function createRenderer({ state, telegram, handlers }) {
     renderJourney,
     renderOrders,
     renderStatusLoja,
+    navigateTo,
     setCartOpen,
     iniciarCheckout,
     renderViniAIAlert
