@@ -2,7 +2,10 @@ import {
   bridgeSendAction,
   checkoutCreate,
   checkoutPreview,
-  getOrderTracking
+  getOrderTracking,
+  loadCustomerAddress,
+  sendMiniAppEvent,
+  validateCheckoutAddress
 } from './api.js';
 import {
   cartItems,
@@ -88,6 +91,99 @@ export function entregaCheckoutMiniApp(els = {}) {
   };
 }
 
+export function deliveryAddressFromCustomer(state) {
+  const cliente = state.cliente || {};
+  return {
+    cep: String(cliente.cep || '').trim(),
+    rua: String(cliente.rua || '').trim(),
+    numero: String(cliente.numero || '').trim(),
+    complemento: String(cliente.complemento || '').trim(),
+    bairro: String(cliente.bairro || '').trim(),
+    cidade: String(cliente.cidade || '').trim(),
+    estado: String(cliente.estado || '').trim().toUpperCase(),
+    telefone: String(cliente.telefone || '').trim()
+  };
+}
+
+export function enderecoEntregaCompleto(endereco = {}) {
+  const cep = String(endereco.cep || '').replace(/\D/g, '');
+  return /^\d{8}$/.test(cep) &&
+    Boolean(String(endereco.rua || '').trim()) &&
+    Boolean(String(endereco.numero || '').trim()) &&
+    Boolean(String(endereco.bairro || '').trim()) &&
+    Boolean(String(endereco.cidade || '').trim()) &&
+    /^[A-Z]{2}$/.test(String(endereco.estado || '').trim().toUpperCase()) &&
+    String(endereco.telefone || '').replace(/\D/g, '').length >= 10;
+}
+
+export function resumoEnderecoEntrega(endereco = {}) {
+  const ruaNumero = [endereco.rua, endereco.numero].filter(Boolean).join(', ');
+  const linha = [ruaNumero, endereco.bairro].filter(Boolean).join(' - ');
+  return linha ? `Entrega em: ${linha}` : 'Endereco de entrega incompleto';
+}
+
+export function prefillCheckoutAddressFromCustomer(state, els = {}, options = {}) {
+  if (!state.checkout) return {};
+  if (state.checkout.deliveryAddressDirty && !options.force) return state.checkout.deliveryAddress || {};
+  const atual = state.checkout.deliveryAddress || {};
+  const endereco = {
+    ...deliveryAddressFromCustomer(state),
+    ...Object.fromEntries(Object.entries(atual).filter(([, value]) => String(value || '').trim()))
+  };
+  state.checkout.deliveryAddress = endereco;
+  state.checkout.deliveryAddressSummary = resumoEnderecoEntrega(endereco);
+  const fields = {
+    checkoutCep: endereco.cep,
+    checkoutRua: endereco.rua,
+    checkoutNumero: endereco.numero,
+    checkoutComplemento: endereco.complemento,
+    checkoutBairro: endereco.bairro,
+    checkoutCidade: endereco.cidade,
+    checkoutEstado: endereco.estado,
+    checkoutPhone: endereco.telefone
+  };
+  Object.entries(fields).forEach(([id, value]) => {
+    if (!els[id]) return;
+    if (options.force || !String(els[id].value || '').trim()) els[id].value = value || '';
+  });
+  return endereco;
+}
+
+export async function loadCheckoutAddressFromApi(state, els = {}) {
+  const data = await loadCustomerAddress(state).catch(() => null);
+  if (data?.endereco && !state.checkout.deliveryAddressDirty) {
+    state.checkout.deliveryAddress = data.endereco;
+    prefillCheckoutAddressFromCustomer(state, els, { force: true });
+  }
+  return data;
+}
+
+export function effectiveDeliveryAddressMiniApp(state, els = {}) {
+  const fromFields = entregaCheckoutMiniApp(els);
+  const hasFieldValue = Object.values(fromFields).some(value => String(value || '').trim());
+  const stateAddress = state.checkout.deliveryAddress || {};
+  const hasStateValue = Object.values(stateAddress).some(value => String(value || '').trim());
+  const endereco = hasFieldValue ? fromFields : (hasStateValue ? stateAddress : deliveryAddressFromCustomer(state));
+  state.checkout.deliveryAddress = endereco;
+  state.checkout.deliveryAddressSummary = resumoEnderecoEntrega(endereco);
+  return endereco;
+}
+
+export async function validateDeliveryAddressMiniApp(state, els = {}) {
+  if (modalidadeEntregaMiniApp(state, els) !== 'entrega') return null;
+  const endereco = effectiveDeliveryAddressMiniApp(state, els);
+  const payload = {
+    entrega: endereco,
+    salvarCadastro: state.checkout.saveAddressToProfile === true
+  };
+  const data = await validateCheckoutAddress(state, payload);
+  if (data?.endereco) {
+    state.checkout.deliveryAddress = data.endereco;
+    state.checkout.deliveryAddressSummary = data.resumo || resumoEnderecoEntrega(data.endereco);
+  }
+  return data;
+}
+
 export function pontosUsarMiniApp(state, els = {}) {
   const bruto = els.checkoutPoints?.value || (state.usePointsIntent ? state.loyalty?.saldoPontos : 0);
   return Math.max(0, Math.floor(Number(bruto || 0) || 0));
@@ -123,7 +219,11 @@ export function payloadPedidoMiniApp(state, els = {}) {
     })),
     modalidade_entrega: modalidade,
     forma_pagamento: 'pix',
-    entrega: modalidade === 'entrega' ? entregaCheckoutMiniApp(els) : {},
+    entrega: modalidade === 'entrega' ? {
+      ...effectiveDeliveryAddressMiniApp(state, els),
+      salvarCadastro: state.checkout.saveAddressToProfile === true
+    } : {},
+    salvar_endereco_cadastro: modalidade === 'entrega' && state.checkout.saveAddressToProfile === true,
     pontos_usar: pontosUsarMiniApp(state, els),
     codigo_indicacao: cupomDigitadoMiniApp(state),
     observacao: observacoesCarrinhoMiniApp(els)
@@ -131,18 +231,23 @@ export function payloadPedidoMiniApp(state, els = {}) {
 }
 
 export async function previewCheckoutMiniApp(state, els = {}) {
+  await validateDeliveryAddressMiniApp(state, els);
   const payload = payloadPedidoMiniApp(state, els);
   if (!payload.items.length) throw new Error('Adicione ao menos um produto');
   return checkoutPreview(state, payload);
 }
 
 export async function createOrderMiniApp(state, els = {}) {
+  await validateDeliveryAddressMiniApp(state, els);
   const payload = payloadPedidoMiniApp(state, els);
   if (!payload.items.length) throw new Error('Adicione ao menos um produto');
   return checkoutCreate(state, payload);
 }
 
 export async function finalizarCheckoutMiniApp(state, els, telegram, callbacks = {}) {
+  if (modalidadeEntregaMiniApp(state, els) === 'entrega') {
+    await validateDeliveryAddressMiniApp(state, els);
+  }
   const payload = payloadPedidoMiniApp(state, els);
   if (!payload.items.length) {
     callbacks.showToast?.('Adicione ao menos um produto');
@@ -150,6 +255,11 @@ export async function finalizarCheckoutMiniApp(state, els, telegram, callbacks =
   }
   payload.promotional_points_preview = promotionalPointsPreview(state);
   try {
+    await sendMiniAppEvent(state, 'checkout_payment_start', {
+      itemCount: payload.items.length,
+      modalidade: payload.modalidade_entrega,
+      usePoints: payload.pontos_usar > 0
+    }).catch(() => null);
     await checkoutPreview(state, payload);
     const data = await checkoutCreate(state, payload);
     if (data.pedido?.id) {
@@ -192,7 +302,10 @@ export async function finalizarCheckoutMiniApp(state, els, telegram, callbacks =
     if (els.cartNotes) els.cartNotes.value = '';
     persistCart(state);
     callbacks.render?.();
-    callbacks.showToast?.(telegram?.webApp ? 'API indisponivel. Enviei seu pedido ao Telegram.' : 'API indisponivel. Payload de fallback no console.');
+    const diagnostico = error?.message ? ` ${error.message}` : '';
+    callbacks.showToast?.(telegram?.webApp
+      ? `Nao finalizei pela API.${diagnostico} Enviei seu pedido ao Telegram.`
+      : `Nao finalizei pela API.${diagnostico} Payload de fallback no console.`);
     return { ok: true, mode: 'fallback', error };
   }
 }

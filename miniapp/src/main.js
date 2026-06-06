@@ -4,14 +4,21 @@ import {
   apiBaseConfigurada,
   bridgeSendAction,
   carregarRuntimeConfigPages,
+  healthMiniApp,
   loadBootstrap,
   loadMoreProducts as loadMoreProductsApi,
   loadProducts as loadProductsApi,
+  sendMiniAppEvent,
   sincronizarStatusLoja as sincronizarStatusLojaApi
 } from './api.js';
 import { pruneCart, restoreCart, cartItems } from './cart.js';
 import { sectionItems } from './catalog.js';
-import { finalizarCheckoutMiniApp, limparClientOrderIdPendente, previewCheckoutMiniApp } from './checkout.js';
+import {
+  finalizarCheckoutMiniApp,
+  limparClientOrderIdPendente,
+  loadCheckoutAddressFromApi,
+  previewCheckoutMiniApp
+} from './checkout.js';
 import { loadLoyalty, shareReferralCode } from './loyalty.js';
 import { loadOrder, loadOrders as loadOrdersApi, pollOrderStatus } from './orders.js';
 import { copyPix, refreshPixStatus, uploadReceipt } from './pix.js';
@@ -88,6 +95,7 @@ async function loadOrders() {
 async function bootstrapMiniApp() {
   if (!state.authOk) return;
   await loadBootstrap(state);
+  await loadCheckoutAddressFromApi(state, renderer.els).catch(() => null);
   renderer.render();
 }
 
@@ -275,6 +283,10 @@ async function sendReceipt(file = null) {
     payload = { texto };
   }
   try {
+    await sendMiniAppEvent(state, 'pix_receipt_upload_start', {
+      pedidoId: String(pedidoId),
+      hasFile: payload instanceof FormData
+    }).catch(() => null);
     await uploadReceipt(state, pedidoId, payload);
     await pollOrderStatus(state, pedidoId).catch(() => null);
     renderer.showToast('Comprovante registrado para conferencia.');
@@ -337,6 +349,14 @@ async function authenticate() {
     validateRestoredMiniAppUiOwner(state);
     renderer.render();
     await bootstrapMiniApp();
+    const health = await healthMiniApp(state).catch(() => null);
+    state.apiHealth = health;
+    if (health?.ok) {
+      await sendMiniAppEvent(state, 'health_ping', {
+        checkoutApi: health.checkout?.apiEnabled === true,
+        bridgeHybrid: health.bridge?.hybrid === true
+      }).catch(() => null);
+    }
     validateRestoredMiniAppUiOwner(state);
     await Promise.all([loadOrders(), loadLoyaltyState()]);
     await resumeRestoredFlow();
@@ -369,6 +389,7 @@ async function init() {
   handlers.shareReferral = shareReferral;
   handlers.persistUiState = () => persistMiniAppUiState(state);
   handlers.syncCartAction = (action, payload) => bridgeSendAction(state, action, payload).catch(() => null);
+  handlers.trackEvent = (tipo, payload) => sendMiniAppEvent(state, tipo, payload).catch(() => null);
 
   await carregarRuntimeConfigPages(state);
   restoreCart(state);

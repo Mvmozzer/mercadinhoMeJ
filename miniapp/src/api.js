@@ -5,18 +5,29 @@ import {
   normalizeCatalogPayload
 } from './catalog.js';
 import { API_BASE_KEY, MINIAPP_TOKEN_KEY, writeText, removeKey } from './storage.js';
-import { normalizePublicApiBase, runningOnStaticHost } from './utils.js';
+import { isTemporaryPublicApiBase, normalizePublicApiBase, runningOnStaticHost } from './utils.js';
 
 export function apiBase(state) {
   const url = new URL(window.location.href);
   const fromQuery = url.searchParams.get('apiBase');
   if (fromQuery) {
-    const clean = fromQuery.replace(/\/+$/, '');
+    const clean = normalizePublicApiBase(fromQuery);
+    if (!clean || baseTemporariaBloqueada(clean)) {
+      state.apiBaseUrl = '';
+      removeKey(API_BASE_KEY);
+      return '';
+    }
     state.apiBaseUrl = clean;
     writeText(API_BASE_KEY, clean);
     return clean;
   }
-  return String(state.apiBaseUrl || '').replace(/\/+$/, '');
+  const saved = normalizePublicApiBase(state.apiBaseUrl || '');
+  if (saved && !baseTemporariaBloqueada(saved)) return saved;
+  if (state.apiBaseUrl) {
+    state.apiBaseUrl = '';
+    removeKey(API_BASE_KEY);
+  }
+  return '';
 }
 
 export async function carregarRuntimeConfigPages(state, options = {}) {
@@ -38,7 +49,7 @@ export async function carregarRuntimeConfigPages(state, options = {}) {
     if (!config) throw new Error('runtime config indisponivel');
     if (!Object.prototype.hasOwnProperty.call(config || {}, 'apiBaseUrl')) return;
     const clean = normalizePublicApiBase(config.apiBaseUrl);
-    if (clean) {
+    if (clean && !baseTemporariaBloqueada(clean)) {
       state.apiBaseUrl = clean;
       writeText(API_BASE_KEY, clean);
     } else {
@@ -69,7 +80,33 @@ export function apiBaseConfigurada(state) {
 
 export function exigirApiBaseConfigurada(state) {
   if (apiBaseConfigurada(state)) return;
-  throw new Error('Servidor do app nao configurado. Abra pelo servidor local ou informe apiBase.');
+  throw new Error('URL publica do servidor da loja nao configurada. Vou tentar continuar pelo Telegram quando possivel.');
+}
+
+export function baseTemporariaBloqueada(value) {
+  if (!isTemporaryPublicApiBase(value)) return false;
+  const params = new URL(window.location.href).searchParams;
+  if (params.get('allowTempApi') === '1' || window.__ALLOW_TEMP_TUNNEL_API__ === true) return false;
+  return runningOnStaticHost();
+}
+
+export function apiDiagnosticMessage(error, state, path, response = null, data = null) {
+  const status = Number(response?.status || error?.status || 0);
+  const base = apiBase(state);
+  if (!base && runningOnStaticHost()) {
+    return 'URL publica do servidor da loja ausente. Vou tentar continuar pelo Telegram.';
+  }
+  if (base && baseTemporariaBloqueada(base)) {
+    return 'A URL publica configurada e temporaria ou expirada. Vou tentar continuar pelo Telegram.';
+  }
+  if (error?.name === 'AbortError') return `Timeout ao chamar ${path}. A loja nao respondeu dentro do limite.`;
+  if (status === 401) return 'Sessao Telegram invalida ou expirada. Feche e abra a loja pelo bot novamente.';
+  if (status === 403) return 'Esta origem nao esta autorizada a acessar a API da loja.';
+  if (status === 404) return `Rota ${path} nao encontrada no servidor da loja.`;
+  if (status === 409) return data?.erro || data?.error || 'A loja recusou esta etapa do checkout.';
+  if (status >= 500) return `Servidor da loja respondeu HTTP ${status}. Tente novamente em instantes.`;
+  if (status > 0) return data?.erro || data?.error || `API da loja respondeu HTTP ${status}.`;
+  return `Nao consegui acessar a API da loja em ${base || 'mesma origem'}. Vou tentar continuar pelo Telegram.`;
 }
 
 function devUserFromTelegram(webApp) {
@@ -123,21 +160,116 @@ export async function apiFetch(state, path, options = {}) {
   } catch (error) {
     const retry = await retryApiFetchWithFreshRuntimeConfig(state, path, options).catch(() => null);
     if (retry) return retry;
-    const friendly = new Error(error?.name === 'AbortError'
-      ? 'Servidor demorou para responder. Verifique se o node index.js esta rodando.'
-      : 'Nao consegui conectar ao servidor da loja. Verifique se o node index.js esta rodando.');
+    const friendly = new Error(apiDiagnosticMessage(error, state, path));
     friendly.status = 0;
+    friendly.path = path;
+    friendly.apiBase = apiBase(state);
     throw friendly;
   } finally {
     window.clearTimeout(timeout);
   }
   const data = await response.json().catch(() => ({}));
   if (!response.ok || data.ok === false) {
-    const error = new Error(data.erro || data.error || `Falha HTTP ${response.status}`);
+    const error = new Error(apiDiagnosticMessage(null, state, path, response, data));
     error.status = response.status;
+    error.path = path;
+    error.apiBase = apiBase(state);
     throw error;
   }
   return data;
+}
+
+export async function healthMiniApp(state) {
+  try {
+    return await apiFetch(state, '/api/miniapp/health', { method: 'GET', timeoutMs: 5000 });
+  } catch (error) {
+    return {
+      ok: false,
+      erro: error.message,
+      status: error.status || 0,
+      apiBase: apiBase(state)
+    };
+  }
+}
+
+export async function loadCustomerAddress(state) {
+  const data = await apiFetch(state, '/api/miniapp/cliente/endereco', { method: 'GET' });
+  state.checkout.deliveryAddress = data.endereco || state.checkout.deliveryAddress || {};
+  state.checkout.deliveryAddressSummary = data.resumo || '';
+  return data;
+}
+
+export async function validateCheckoutAddress(state, payload) {
+  const data = await apiFetch(state, '/api/miniapp/checkout/endereco', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+  state.checkout.deliveryAddress = data.endereco || state.checkout.deliveryAddress || {};
+  state.checkout.deliveryAddressSummary = data.resumo || '';
+  if (data.cliente) state.cliente = data.cliente;
+  return data;
+}
+
+export async function saveCustomerDeliveryAddress(state, endereco) {
+  const data = await apiFetch(state, '/api/miniapp/cliente/endereco-entrega', {
+    method: 'PUT',
+    body: JSON.stringify(endereco || {})
+  });
+  state.checkout.deliveryAddress = data.endereco || state.checkout.deliveryAddress || {};
+  state.checkout.deliveryAddressSummary = data.resumo || '';
+  if (data.cliente) state.cliente = data.cliente;
+  return data;
+}
+
+const MINIAPP_EVENTOS_PERMITIDOS = new Set([
+  'button_click',
+  'cart_open',
+  'cart_update',
+  'checkout_continue',
+  'checkout_address_change',
+  'checkout_payment_start',
+  'pix_receipt_upload_start',
+  'product_open',
+  'category_open',
+  'page_view',
+  'error',
+  'health_ping'
+]);
+
+function safeMiniAppEventPayload(payload = {}) {
+  const blocked = new Set(['cpf', 'telefone', 'phone', 'endereco', 'rua', 'numero', 'complemento', 'cep', 'bairro', 'pix', 'copiaCola', 'qrCodeDataUrl', 'latitude', 'longitude', 'token', 'initData']);
+  const safe = {};
+  Object.entries(payload && typeof payload === 'object' ? payload : {}).slice(0, 20).forEach(([key, value]) => {
+    if (blocked.has(key)) return;
+    if (typeof value === 'boolean' || typeof value === 'number') {
+      safe[key] = value;
+      return;
+    }
+    if (typeof value === 'string') safe[key] = value.replace(/\s+/g, ' ').trim().slice(0, 160);
+  });
+  return safe;
+}
+
+export async function sendMiniAppEvent(state, tipo, payload = {}) {
+  const eventType = String(tipo || '').trim();
+  if (!MINIAPP_EVENTOS_PERMITIDOS.has(eventType)) return null;
+  const body = { tipo: eventType, payload: safeMiniAppEventPayload(payload) };
+  try {
+    return await apiFetch(state, '/api/miniapp/events', {
+      method: 'POST',
+      body: JSON.stringify(body),
+      timeoutMs: 5000
+    });
+  } catch (error) {
+    const bridge = window.MJTelegramTunnel || window.MJMiniAppBridge;
+    if (bridge && typeof bridge.sendCommand === 'function') {
+      return bridge.sendCommand('event/track', body, { fallbackSendData: false }).catch(() => null);
+    }
+    if (window.MJMiniAppBridge && typeof window.MJMiniAppBridge.sendAction === 'function') {
+      return window.MJMiniAppBridge.sendAction('event/track', body).catch(() => null);
+    }
+    return null;
+  }
 }
 
 export async function initMiniAppBridge(state, webApp) {

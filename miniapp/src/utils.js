@@ -77,12 +77,36 @@ export function runningOnStaticHost() {
   return /\.github\.io$/i.test(window.location.hostname) || window.location.protocol === 'file:';
 }
 
+export function isTemporaryPublicApiBase(value) {
+  const text = String(value || '').trim();
+  if (!text) return false;
+  try {
+    const host = new URL(text).hostname.toLowerCase();
+    return [
+      /\.lhr\.life$/,
+      /\.trycloudflare\.com$/,
+      /\.loca\.lt$/,
+      /\.localhost\.run$/,
+      /\.ngrok-free\.app$/,
+      /\.ngrok\.io$/,
+      /\.ngrok\.app$/,
+      /\.localtunnel\.me$/,
+      /\.serveo\.net$/
+    ].some(pattern => pattern.test(host));
+  } catch (_) {
+    return false;
+  }
+}
+
 export function normalizePublicApiBase(value) {
   const text = String(value || '').trim();
   if (!text) return '';
   try {
     const url = new URL(text);
     if (runningOnStaticHost() && url.protocol !== 'https:') return '';
+    const allowTemporary = window.__ALLOW_TEMP_TUNNEL_API__ === true ||
+      new URL(window.location.href).searchParams.get('allowTempApi') === '1';
+    if (!allowTemporary && runningOnStaticHost() && isTemporaryPublicApiBase(url.toString())) return '';
     url.hash = '';
     url.search = '';
     return url.toString().replace(/\/+$/, '');

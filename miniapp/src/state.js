@@ -49,7 +49,12 @@ export function createInitialState() {
       preview: null,
       lastCreate: null,
       deliveryMode: 'retirada',
-      pointsToUse: 0
+      pointsToUse: 0,
+      deliveryAddress: {},
+      deliveryAddressSummary: '',
+      deliveryAddressEditing: false,
+      deliveryAddressDirty: false,
+      saveAddressToProfile: false
     },
     checkoutConfig: {},
     paymentConfig: {},

@@ -26,7 +26,13 @@ import {
   productsBySection,
   sectionItems
 } from './catalog.js';
-import { limparClientOrderIdPendente } from './checkout.js';
+import {
+  effectiveDeliveryAddressMiniApp,
+  enderecoEntregaCompleto,
+  limparClientOrderIdPendente,
+  prefillCheckoutAddressFromCustomer,
+  resumoEnderecoEntrega
+} from './checkout.js';
 import { debounce, escapeHtml, money, normalizeText } from './utils.js';
 import { updateMainButton } from './telegram.js';
 import { timelineSteps } from './orders.js';
@@ -247,6 +253,14 @@ function shellMarkup() {
               <option value="entrega">Entrega</option>
             </select>
           </label>
+          <div class="delivery-address-summary" id="deliveryAddressSummary" hidden>
+            <div>
+              <strong id="deliveryAddressTitle">Endereco cadastrado</strong>
+              <span id="deliveryAddressText">Escolha entrega para usar seu endereco.</span>
+              <small id="deliveryAddressCep"></small>
+            </div>
+            <button class="ghost" id="editDeliveryAddress" type="button">Alterar endereco de entrega</button>
+          </div>
           <div class="checkout-address-grid" id="checkoutAddressGrid">
             <label>CEP <input id="checkoutCep" type="text" inputmode="numeric" autocomplete="postal-code"></label>
             <label>Rua <input id="checkoutRua" type="text" autocomplete="address-line1"></label>
@@ -257,6 +271,10 @@ function shellMarkup() {
             <label>Estado <input id="checkoutEstado" type="text" maxlength="2" autocomplete="address-level1"></label>
             <label>Telefone <input id="checkoutPhone" type="tel" inputmode="tel" autocomplete="tel"></label>
           </div>
+          <label class="toggle-line delivery-save-line" id="saveDeliveryAddressLine" hidden>
+            <input id="saveDeliveryAddressToProfile" type="checkbox">
+            Salvar este endereco no meu cadastro
+          </label>
         </div>
         <div class="checkout-stage" id="cartStepPanel">
           <small id="checkoutHint">Falta pouco: escolha entrega ou retirada, revise os pontos e gere o Pix.</small>
@@ -317,7 +335,9 @@ function collectElements() {
     'drawerTotal', 'drawerSubtotal', 'drawerDelivery', 'drawerGrandTotal',
     'cartCouponCode', 'cartUsePointsIntent', 'freeDeliveryHint', 'cartNotes', 'cartPerksPanel', 'cartNotesPanel',
     'cartHeadHint', 'cartNotesHint', 'checkoutStepLabel', 'cartStepPanel',
-    'checkoutHint', 'checkoutFormPanel', 'deliveryMode', 'checkoutAddressGrid',
+    'checkoutHint', 'checkoutFormPanel', 'deliveryMode', 'deliveryAddressSummary',
+    'deliveryAddressTitle', 'deliveryAddressText', 'deliveryAddressCep', 'editDeliveryAddress',
+    'checkoutAddressGrid', 'saveDeliveryAddressLine', 'saveDeliveryAddressToProfile',
     'checkoutCep', 'checkoutRua', 'checkoutNumero', 'checkoutComplemento',
     'checkoutBairro', 'checkoutCidade', 'checkoutEstado', 'checkoutPhone',
     'checkoutPoints', 'checkoutPreviewBox', 'continueToDelivery', 'clearCartDrawer', 'reviewCart',
@@ -385,6 +405,10 @@ export function createRenderer({ state, telegram, handlers }) {
     toastTimer = window.setTimeout(() => els.toast.classList.remove('show'), 2400);
   }
 
+  function trackMiniAppEvent(tipo, payload = {}) {
+    handlers.trackEvent?.(tipo, payload);
+  }
+
   function clienteTemCadastroCompleto() {
     const cliente = state.cliente || {};
     if (cliente.cadastroCompleto === true) return true;
@@ -420,6 +444,7 @@ export function createRenderer({ state, telegram, handlers }) {
     }
     render();
     window.scrollTo?.({ top: 0, behavior: 'smooth' });
+    trackMiniAppEvent('page_view', { page: next });
   }
 
   function etapaJornadaAtual() {
@@ -786,6 +811,7 @@ export function createRenderer({ state, telegram, handlers }) {
         state.section = button.dataset.section || '';
         state.marketFilter = '';
         state.marketSort = '';
+        trackMiniAppEvent('category_open', { section: state.section });
         navigateTo('products', { section: state.section });
         if (state.catalogPage.usePaged) handlers.reloadCatalog?.();
       });
@@ -798,6 +824,7 @@ export function createRenderer({ state, telegram, handlers }) {
         state.query = button.dataset.categorySearch || '';
         if (els.search) els.search.value = state.query;
         state.currentPage = 'products';
+        trackMiniAppEvent('category_open', { search: state.query });
         if (state.catalogPage.usePaged) handlers.reloadCatalog?.();
         else render();
       });
@@ -851,6 +878,7 @@ export function createRenderer({ state, telegram, handlers }) {
         produto_id: id,
         quantidade: result.next
       });
+      trackMiniAppEvent('cart_update', { productId: id, quantity: result.next });
     }
     render();
   }
@@ -866,6 +894,7 @@ export function createRenderer({ state, telegram, handlers }) {
         produto_id: id,
         quantidade: result.next
       });
+      trackMiniAppEvent('cart_update', { productId: id, quantity: result.next });
     }
     render();
   }
@@ -1156,6 +1185,38 @@ export function createRenderer({ state, telegram, handlers }) {
     }
   }
 
+  function renderDeliveryAddressPanel() {
+    const entrega = String(state.checkout.deliveryMode || 'retirada') === 'entrega';
+    if (entrega) prefillCheckoutAddressFromCustomer(state, els);
+    const endereco = entrega ? effectiveDeliveryAddressMiniApp(state, els) : {};
+    const completo = enderecoEntregaCompleto(endereco);
+    const editando = state.checkout.deliveryAddressEditing === true || !completo;
+    if (els.deliveryAddressSummary) {
+      els.deliveryAddressSummary.hidden = !entrega;
+      els.deliveryAddressSummary.classList.toggle('incomplete', entrega && !completo);
+    }
+    if (els.deliveryAddressTitle) {
+      els.deliveryAddressTitle.textContent = completo ? 'Endereco cadastrado' : 'Complete o endereco de entrega';
+    }
+    if (els.deliveryAddressText) {
+      els.deliveryAddressText.textContent = entrega
+        ? resumoEnderecoEntrega(endereco)
+        : 'Retirada no local selecionada.';
+    }
+    if (els.deliveryAddressCep) {
+      els.deliveryAddressCep.textContent = entrega && endereco.cep ? `CEP ${String(endereco.cep).replace(/\D/g, '')}` : '';
+    }
+    if (els.checkoutAddressGrid) {
+      els.checkoutAddressGrid.hidden = !entrega || !editando;
+    }
+    if (els.saveDeliveryAddressLine) {
+      els.saveDeliveryAddressLine.hidden = !entrega || !editando;
+    }
+    if (els.saveDeliveryAddressToProfile) {
+      els.saveDeliveryAddressToProfile.checked = state.checkout.saveAddressToProfile === true;
+    }
+  }
+
   function renderCheckoutStep() {
     const page = paginaAtualSegura();
     const etapaCarrinho = ['cart', 'delivery', 'payment'].includes(page);
@@ -1184,6 +1245,7 @@ export function createRenderer({ state, telegram, handlers }) {
       };
       els.checkoutHint.textContent = hints[page] || '';
     }
+    renderDeliveryAddressPanel();
     renderJourney();
   }
 
@@ -1299,6 +1361,7 @@ export function createRenderer({ state, telegram, handlers }) {
   function openProductSheet(id) {
     state.productSheetId = id;
     state.currentPage = 'product';
+    trackMiniAppEvent('product_open', { productId: id });
     renderProductSheet();
     renderPageVisibility();
   }
@@ -1333,6 +1396,7 @@ export function createRenderer({ state, telegram, handlers }) {
     }
     state.currentPage = 'cart';
     state.checkoutStep = 'cart';
+    trackMiniAppEvent('cart_open', { itemCount: cartCount(state) });
     setCartOpen(true);
     renderCheckoutStep();
   }
@@ -1404,6 +1468,7 @@ export function createRenderer({ state, telegram, handlers }) {
         state.section = '';
         state.marketSort = '';
         state.marketFilter = filterButton.dataset.marketFilter || '';
+        trackMiniAppEvent('category_open', { filter: state.marketFilter || 'todos' });
         render();
       }
       if (sortButton) {
@@ -1451,7 +1516,44 @@ export function createRenderer({ state, telegram, handlers }) {
     });
     els.deliveryMode?.addEventListener('change', event => {
       state.checkout.deliveryMode = event.target.value === 'entrega' ? 'entrega' : 'retirada';
+      state.checkout.deliveryAddressEditing = state.checkout.deliveryMode === 'entrega' && !enderecoEntregaCompleto(state.checkout.deliveryAddress || {});
+      trackMiniAppEvent('checkout_address_change', {
+        mode: state.checkout.deliveryMode,
+        editing: state.checkout.deliveryAddressEditing === true
+      });
       render();
+    });
+    els.editDeliveryAddress?.addEventListener('click', () => {
+      state.checkout.deliveryAddressEditing = true;
+      trackMiniAppEvent('checkout_address_change', { editing: true, mode: state.checkout.deliveryMode });
+      renderDeliveryAddressPanel();
+    });
+    [
+      els.checkoutCep,
+      els.checkoutRua,
+      els.checkoutNumero,
+      els.checkoutComplemento,
+      els.checkoutBairro,
+      els.checkoutCidade,
+      els.checkoutEstado,
+      els.checkoutPhone
+    ].filter(Boolean).forEach(input => {
+      input.addEventListener('input', () => {
+        state.checkout.deliveryAddressDirty = true;
+        state.checkout.deliveryAddressEditing = true;
+        state.checkout.deliveryAddress = effectiveDeliveryAddressMiniApp(state, els);
+        renderDeliveryAddressPanel();
+      });
+      input.addEventListener('change', () => {
+        trackMiniAppEvent('checkout_address_change', {
+          mode: state.checkout.deliveryMode,
+          complete: enderecoEntregaCompleto(state.checkout.deliveryAddress || {})
+        });
+      });
+    });
+    els.saveDeliveryAddressToProfile?.addEventListener('change', event => {
+      state.checkout.saveAddressToProfile = event.target.checked === true;
+      trackMiniAppEvent('checkout_address_change', { saveToProfile: state.checkout.saveAddressToProfile === true });
     });
     els.checkoutPoints?.addEventListener('input', event => {
       state.checkout.pointsToUse = Math.max(0, Math.floor(Number(event.target.value || 0) || 0));
@@ -1473,6 +1575,7 @@ export function createRenderer({ state, telegram, handlers }) {
       if (!state.cart.size) return;
       clearCart(state, () => limparClientOrderIdPendente(state));
       handlers.syncCartAction?.('cart/clear', {});
+      trackMiniAppEvent('cart_update', { action: 'clear', itemCount: 0 });
       if (els.cartNotes) els.cartNotes.value = '';
       render();
       showToast('Carrinho limpo');
@@ -1485,11 +1588,13 @@ export function createRenderer({ state, telegram, handlers }) {
     els.continueToDelivery?.addEventListener('click', async () => {
       const page = paginaAtualSegura();
       if (page === 'cart') {
+        trackMiniAppEvent('checkout_continue', { from: 'cart', to: 'delivery', itemCount: cartCount(state) });
         navigateTo('delivery');
         return;
       }
       if (page === 'delivery') {
         try {
+          trackMiniAppEvent('checkout_continue', { from: 'delivery', to: 'payment', mode: state.checkout.deliveryMode });
           await handlers.previewCheckout?.();
           navigateTo('payment');
         } catch (_) {
@@ -1497,6 +1602,7 @@ export function createRenderer({ state, telegram, handlers }) {
         }
         return;
       }
+      trackMiniAppEvent('checkout_payment_start', { itemCount: cartCount(state), mode: state.checkout.deliveryMode });
       handlers.sendCart?.();
     });
     els.bottomNav?.addEventListener('click', event => {
