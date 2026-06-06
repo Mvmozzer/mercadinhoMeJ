@@ -23,9 +23,19 @@ export async function carregarRuntimeConfigPages(state) {
   const url = new URL(window.location.href);
   if (!runningOnStaticHost() || url.searchParams.get('apiBase')) return;
   try {
-    const res = await fetch('./runtime-config.json', { cache: 'no-store' });
-    if (!res.ok) throw new Error('runtime config indisponivel');
-    const config = await res.json();
+    let config = null;
+    const candidates = ['./runtime-config.json', '../runtime-config.json'];
+    for (const candidate of candidates) {
+      try {
+        const res = await fetch(candidate, { cache: 'no-store' });
+        if (!res.ok) continue;
+        config = await res.json();
+        break;
+      } catch (_) {
+        config = null;
+      }
+    }
+    if (!config) throw new Error('runtime config indisponivel');
     if (!Object.prototype.hasOwnProperty.call(config || {}, 'apiBaseUrl')) return;
     const clean = normalizePublicApiBase(config.apiBaseUrl);
     if (clean) {
