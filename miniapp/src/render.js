@@ -78,7 +78,7 @@ function shellMarkup() {
           <div class="search-row">
             <div class="search-wrap">
               <span aria-hidden="true">B</span>
-              <input id="search" type="search" placeholder="Buscar produtos, marcas e mais..." autocomplete="off">
+              <input id="search" type="search" placeholder="O que voce precisa hoje?" autocomplete="off">
             </div>
             <button class="scan-button" id="clearSearch" type="button" aria-label="Limpar busca">
               <span aria-hidden="true">X</span>
@@ -345,6 +345,17 @@ function collectElements() {
   return Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
 }
 
+function designConfig(state) {
+  return state.miniappDesign || {};
+}
+
+function designBanner(state) {
+  const design = designConfig(state);
+  return Array.isArray(design.banners?.itens) && design.banners.itens.length
+    ? design.banners.itens[0]
+    : null;
+}
+
 export function createRenderer({ state, telegram, handlers }) {
   const root = document.getElementById('miniapp-root') || document.body;
   root.className = '';
@@ -571,21 +582,26 @@ export function createRenderer({ state, telegram, handlers }) {
 
   function renderCategoryRail() {
     if (!els.categoryRail) return;
+    const design = designConfig(state);
     const knownSections = sectionItems(state);
     const shortcuts = [
-      { name: 'Frutas', query: 'fruta' },
-      { name: 'Verduras', query: 'verdura' },
-      { name: 'Padaria', query: 'pao' },
-      { name: 'Bebidas', query: 'bebida' },
-      { name: 'Limpeza', query: 'limpeza' },
-      { name: 'Carnes', query: 'carne' }
+      { name: 'Ofertas', query: 'oferta' },
+      { name: 'Mercearia', query: 'mercearia' },
+      { name: 'Hortifruti', query: 'hortifruti' },
+      { name: 'Bebidas', query: 'bebida' }
     ].map(shortcut => {
       const found = knownSections.find(section => normalizeText(section.name).includes(normalizeText(shortcut.query)));
       return { ...shortcut, id: found?.id || '', section: found?.id || '', search: found ? '' : shortcut.query, icon: iconForSection(found?.name || shortcut.name) };
     });
-    const sections = knownSections
+    const ordered = Array.isArray(design.categorias?.ordem) && design.categorias.ordem.length
+      ? [
+        ...design.categorias.ordem.map(id => knownSections.find(section => section.id === id)).filter(Boolean),
+        ...knownSections.filter(section => !design.categorias.ordem.includes(section.id))
+      ]
+      : knownSections;
+    const sections = ordered
       .filter(section => !shortcuts.some(shortcut => shortcut.section === section.id))
-      .slice(0, 4)
+      .slice(0, Math.max(0, Number(design.categorias?.limite || 8) - shortcuts.length))
       .map(section => ({ id: section.id, name: section.name, section: section.id, search: '', icon: iconForSection(section.name) }));
     const items = shortcuts.concat(sections);
     els.categoryRail.innerHTML = items.map(item => {
@@ -619,13 +635,27 @@ export function createRenderer({ state, telegram, handlers }) {
 
   function renderPromoBanners(collections = homeCollections(state, cartItems(state))) {
     if (!els.promoBanners) return;
+    const design = designConfig(state);
+    if (design.banners?.ativo === false) {
+      els.promoBanners.innerHTML = '';
+      els.promoBanners.hidden = true;
+      return;
+    }
+    els.promoBanners.hidden = false;
     const points = cartItems(state).length ? `${cartItems(state).length} itens` : 'Meus pontos';
+    const principal = designBanner(state);
     const banners = [
-      { tone: 'offer', title: 'Ofertas do dia', body: 'Descontos imperdiveis!', visual: '%', cta: 'Ver ofertas' },
+      principal ? {
+        tone: principal.tom || 'offer',
+        title: principal.titulo || 'Ofertas do dia',
+        body: principal.subtitulo || 'Descontos imperdiveis!',
+        visual: principal.emoji || '%',
+        cta: principal.cta || 'Ver ofertas'
+      } : { tone: 'offer', title: 'Ofertas do dia', body: 'Descontos imperdiveis!', visual: '%', cta: 'Ver ofertas' },
       { tone: 'combo', title: 'Combos economicos', body: 'Mais produtos, mais economia!', visual: '+', cta: 'Ver combos' },
       { tone: 'points', title: 'Acumule pontos', body: 'Comprou, ganhou!', visual: '*', cta: points },
       { tone: 'invite', title: 'Indique e ganhe', body: 'Chame amigos e ganhe descontos!', visual: 'I', cta: 'Quero indicar' }
-    ];
+    ].filter((_, index) => index === 0 || design.modo === 'avancado');
     els.promoBanners.innerHTML = banners.map(item => `
       <article class="promo-card" data-tone="${escapeHtml(item.tone)}">
         <strong>${escapeHtml(item.title)}</strong>
@@ -733,16 +763,21 @@ export function createRenderer({ state, telegram, handlers }) {
 
   function renderHome() {
     if (!els.marketHome) return;
+    const design = designConfig(state);
     const searching = Boolean(state.query.trim()) || Boolean(state.section) || Boolean(state.marketFilter) || Boolean(state.marketSort);
     els.marketHome.hidden = searching;
     renderCategoryRail();
     renderMarketFilters();
-    renderLoyaltyCard();
+    if (design.pontosIndicacao === false && els.loyaltyInviteCard) els.loyaltyInviteCard.hidden = true;
+    else renderLoyaltyCard();
     if (searching) return;
     const collections = homeCollections(state, cartItems(state));
     renderPromoBanners(collections);
     renderProductRail(els.buyAgainSection, 'Comprar novamente', 'Ver todos', collections.buyAgain, 'Quando houver historico de compras, seus itens frequentes aparecem aqui.');
-    renderProductRail(els.bestSellersSection, 'Mais vendidos', 'Ver todos', collections.bestSellers, 'Ranking real entra aqui quando o painel publicar vendas por produto.');
+    if (els.bestSellersSection) {
+      els.bestSellersSection.hidden = design.maisVendidos === false;
+      if (design.maisVendidos !== false) renderProductRail(els.bestSellersSection, 'Mais vendidos', 'Ver todos', collections.bestSellers, 'Ranking real entra aqui quando o painel publicar vendas por produto.');
+    }
     renderProductRail(els.todayOffersSection, 'Ofertas imperdiveis', 'Ver todas', collections.offers, 'Promocoes ativas aparecem aqui sem alterar preco real.');
     if (els.comboSection) els.comboSection.hidden = true;
     if (els.lowStockSection) els.lowStockSection.hidden = true;
@@ -949,7 +984,7 @@ export function createRenderer({ state, telegram, handlers }) {
         ? `Subtotal ${money(preview.subtotal)} | Frete ${money(preview.frete)} | Pontos -${money(preview.descontoPontos)} | Total ${money(preview.total)}`
         : 'O backend vai recalcular produtos, estoque, frete, pontos e Pix.';
     }
-    if (els.stickyCartBar) els.stickyCartBar.hidden = count < 1;
+    if (els.stickyCartBar) els.stickyCartBar.hidden = count < 1 || designConfig(state).carrinhoFixo === false;
     if (els.freeDeliveryHint) {
       els.freeDeliveryHint.textContent = 'O valor final, entrega, descontos, cupom e pontos serao recalculados com seguranca antes do Pix.';
     }
@@ -1075,6 +1110,10 @@ export function createRenderer({ state, telegram, handlers }) {
   }
 
   function render() {
+    const design = designConfig(state);
+    const tema = ['verde_fresco', 'vermelho_energia', 'escuro_premium'].includes(design.tema) ? design.tema : 'verde_fresco';
+    document.body.dataset.miniappTheme = tema;
+    document.body.dataset.miniappMode = design.modo || 'simples';
     renderStatusLoja();
     renderTabs();
     renderHome();

@@ -118,6 +118,7 @@ export async function loadBootstrap(state) {
   };
   state.checkoutConfig = data.checkout || state.checkoutConfig;
   state.paymentConfig = data.pagamentos || state.paymentConfig;
+  state.miniappDesign = data.design || data.catalogo?.design || state.miniappDesign;
   state.loyalty = {
     ...(state.loyalty || {}),
     ...(data.programa || {}),
@@ -198,6 +199,7 @@ export async function loadProductsPage(state, { reset = false } = {}) {
     if (!res.ok) throw new Error('catalogo paginado indisponivel');
     const payload = await res.json();
     atualizarStatusLoja(state, payload);
+    state.miniappDesign = payload.catalogo?.design || payload.design || state.miniappDesign;
     const products = normalizeCatalogPayload(payload);
     state.products = reset ? products : mergeProducts(state.products, products);
     cacheProducts(state, products);
@@ -225,6 +227,7 @@ export async function loadProducts(state) {
     if (!res.ok) throw new Error('catalogo indisponivel');
     const payload = await res.json();
     atualizarStatusLoja(state, payload);
+    state.miniappDesign = payload.catalogo?.design || payload.design || state.miniappDesign;
     state.products = normalizeCatalogPayload(payload);
     cacheProducts(state, state.products);
     state.catalogSections = catalogSectionsFromPayload(payload, state.products);
@@ -235,6 +238,7 @@ export async function loadProducts(state) {
       if (!res.ok) throw new Error('catalogo indisponivel');
       const payload = await res.json();
       atualizarStatusLoja(state, payload);
+      state.miniappDesign = payload.catalogo?.design || payload.design || state.miniappDesign;
       state.products = normalizeCatalogPayload(payload);
       cacheProducts(state, state.products);
       state.catalogSections = catalogSectionsFromPayload(payload, state.products);

@@ -51,6 +51,27 @@ export function createInitialState() {
     },
     checkoutConfig: {},
     paymentConfig: {},
+    miniappDesign: {
+      tema: 'verde_fresco',
+      modo: 'simples',
+      banners: {
+        ativo: true,
+        itens: [{
+          titulo: 'OFERTAS DA SEMANA',
+          subtitulo: 'Descontos de ate 40%',
+          cta: 'Ver ofertas',
+          emoji: '🥑',
+          tom: 'offer'
+        }]
+      },
+      categorias: { destaque: true, limite: 8, ordem: [] },
+      maisVendidos: true,
+      carrinhoFixo: true,
+      botoesCta: true,
+      pontosIndicacao: true,
+      layoutHome: 'delivery',
+      buscaFiltros: true
+    },
     bootstrap: null,
     tracking: null,
     location: null,
