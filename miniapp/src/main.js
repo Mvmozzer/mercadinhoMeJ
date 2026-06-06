@@ -25,7 +25,7 @@ import { copyPix, refreshPixStatus, uploadReceipt } from './pix.js';
 import { createRenderer } from './render.js';
 import { createInitialState } from './state.js';
 import { persistMiniAppUiState, restoreMiniAppUiState, validateRestoredMiniAppUiOwner } from './storage.js';
-import { fallbackSendData, getUser, isActive, setMainButtonLoading, setupTelegram } from './telegram.js';
+import { getUser, isActive, setMainButtonLoading, setupTelegram } from './telegram.js';
 import { loadTracking, pollLocation, stopTrackingWhenDelivered } from './tracking.js';
 
 const state = createInitialState();
@@ -122,18 +122,6 @@ async function sincronizarStatusLoja() {
   await sincronizarStatusLojaApi(state);
   renderer.renderStatusLoja();
   renderer.render();
-}
-
-function openTelegramRegistration() {
-  const payload = {
-    type: 'mercadinho_cadastro',
-    source: 'telegram_mini_app_html',
-    origem: 'telegram_miniapp',
-    client_event_id: `cadastro_${Date.now()}`
-  };
-  const sent = fallbackSendData(telegram.webApp, payload);
-  if (sent) return;
-  renderer.showToast('Abra o chat do Mercadinho no Telegram e envie /cadastro.');
 }
 
 async function sendCartToTelegram() {
@@ -377,7 +365,6 @@ async function authenticate() {
 async function init() {
   handlers.reloadCatalog = reloadCatalog;
   handlers.loadMoreProducts = loadMoreProducts;
-  handlers.openTelegramRegistration = openTelegramRegistration;
   handlers.sendCart = sendCartToTelegram;
   handlers.previewCheckout = previewCheckout;
   handlers.loadOrders = loadOrders;

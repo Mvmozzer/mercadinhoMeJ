@@ -92,18 +92,6 @@ function shellMarkup() {
           <div class="journey-steps" id="journeySteps"></div>
         </section>
 
-        <section class="registration-panel miniapp-page" id="registrationPanel" data-page="identify" hidden>
-          <div class="section-head">
-            <h2>Cadastro pelo Telegram</h2>
-            <span id="registrationChannelLabel">Atendimento no chat</span>
-          </div>
-          <p id="registrationIntro">Para proteger seus dados e voltar ao fluxo que ja estava funcionando, o cadastro voltou para o chat do Telegram.</p>
-          <div class="registration-form">
-            <button class="primary" id="openTelegramRegistration" type="button">Cadastrar no Telegram</button>
-            <button class="ghost" id="continueBrowsingProducts" type="button">Continuar vendo produtos</button>
-          </div>
-        </section>
-
         <section class="vini-ai-outdoor" id="viniAiOutdoor" aria-label="Alertas do Vini" hidden>
           <div class="vini-ai-alert is-hidden" id="viniAiAlert" aria-live="polite" role="status" aria-hidden="true">
             <strong>Alerta do Vini</strong>
@@ -321,8 +309,7 @@ function shellMarkup() {
 function collectElements() {
   const ids = [
     'tabs', 'channelLabel', 'journeyTitle', 'journeyStatus', 'journeySteps',
-    'registrationPanel', 'registrationChannelLabel', 'registrationIntro',
-    'openTelegramRegistration', 'continueBrowsingProducts', 'marketHome', 'marketHero', 'deliveryLogo',
+    'marketHome', 'marketHero', 'deliveryLogo',
     'customerGreeting', 'customerAddressLine', 'profileButton', 'searchPanel', 'categoryRail',
     'promoBanners', 'loyaltyInviteCard', 'pointsBalanceLabel', 'couponCode',
     'copyInviteCode', 'usePointsIntent', 'marketFilters', 'buyAgainSection',
@@ -409,31 +396,13 @@ export function createRenderer({ state, telegram, handlers }) {
     handlers.trackEvent?.(tipo, payload);
   }
 
-  function clienteTemCadastroCompleto() {
-    const cliente = state.cliente || {};
-    if (cliente.cadastroCompleto === true) return true;
-    return false;
-  }
-
-  function clientePrecisaCadastro() {
-    if (!state.authOk && state.authMode === 'pending' && !state.authError) return false;
-    return !state.authOk || !clienteTemCadastroCompleto();
-  }
-
   function paginaAtualSegura() {
-    if (clientePrecisaCadastro()) {
-      if (['identify', 'cart', 'delivery', 'payment'].includes(state.currentPage)) return 'identify';
-      const paginasDeConsulta = new Set(['home', 'categories', 'products', 'product', 'orders', 'tracking', 'loyalty', 'profile']);
-      if (state.registrationPromptDismissed && paginasDeConsulta.has(state.currentPage)) return state.currentPage;
-      return 'identify';
-    }
-    if (state.currentPage === 'identify') return 'home';
     const paginas = new Set(['home', 'categories', 'products', 'product', 'cart', 'delivery', 'payment', 'orders', 'tracking', 'loyalty', 'profile']);
     return paginas.has(state.currentPage) ? state.currentPage : 'home';
   }
 
   function navigateTo(page, options = {}) {
-    const next = page === 'identify' && !clientePrecisaCadastro() ? 'home' : page;
+    const next = page === 'identify' ? 'home' : page;
     state.currentPage = next;
     if (next !== 'product' && !options.keepProduct) state.productSheetId = '';
     if (next === 'products' && options.section !== undefined) {
@@ -448,7 +417,6 @@ export function createRenderer({ state, telegram, handlers }) {
   }
 
   function etapaJornadaAtual() {
-    if (clientePrecisaCadastro() && state.currentPage === 'identify') return 'cadastro';
     if (state.currentPage === 'cart') return 'carrinho';
     if (state.currentPage === 'delivery') return 'entrega';
     if (state.currentPage === 'payment') return state.pix?.copiaCola ? 'pix' : 'pagamento';
@@ -460,7 +428,6 @@ export function createRenderer({ state, telegram, handlers }) {
   function renderJourney() {
     const atual = etapaJornadaAtual();
     const etapas = [
-      ['cadastro', 'Cadastro'],
       ['catalogo', 'Produtos'],
       ['carrinho', 'Carrinho'],
       ['entrega', 'Entrega'],
@@ -478,7 +445,6 @@ export function createRenderer({ state, telegram, handlers }) {
     }
     if (els.journeyStatus) {
       const labels = {
-        cadastro: 'Primeiro acesso',
         catalogo: 'Escolha produtos',
         carrinho: 'Seu carrinho esta pronto',
         entrega: 'Entrega ou retirada',
@@ -732,9 +698,9 @@ export function createRenderer({ state, telegram, handlers }) {
     if (els.searchPanel) els.searchPanel.hidden = !['home', 'categories', 'products'].includes(page);
     if (els.categoryRail) els.categoryRail.hidden = !['home', 'categories', 'products'].includes(page);
     if (els.marketFilters) els.marketFilters.hidden = !['categories', 'products'].includes(page);
-    if (els.marketHero) els.marketHero.hidden = page === 'identify';
+    if (els.marketHero) els.marketHero.hidden = false;
     if (els.bottomNav) {
-      els.bottomNav.hidden = ['identify', 'cart', 'delivery', 'payment', 'product'].includes(page);
+      els.bottomNav.hidden = ['cart', 'delivery', 'payment', 'product'].includes(page);
       els.bottomNav.querySelectorAll('[data-nav-page]').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.navPage === page || (btn.dataset.navPage === 'home' && page === 'products'));
       });
@@ -1277,7 +1243,7 @@ export function createRenderer({ state, telegram, handlers }) {
         : 'O backend vai recalcular produtos, estoque, frete, pontos e Pix.';
     }
     if (els.stickyCartBar) {
-      const paginaSemBarra = ['identify', 'cart', 'delivery', 'payment', 'product'].includes(paginaAtualSegura());
+      const paginaSemBarra = ['cart', 'delivery', 'payment', 'product'].includes(paginaAtualSegura());
       els.stickyCartBar.hidden = count < 1 || paginaSemBarra || designConfig(state).carrinhoFixo === false;
     }
     if (els.freeDeliveryHint) {
@@ -1385,13 +1351,6 @@ export function createRenderer({ state, telegram, handlers }) {
   function iniciarCheckout() {
     if (!cartItems(state).length) {
       showToast('Adicione ao menos um produto');
-      return;
-    }
-    if (clientePrecisaCadastro()) {
-      state.registrationPromptDismissed = false;
-      state.currentPage = 'identify';
-      showToast('Finalize seu cadastro pelo Telegram para comprar.');
-      render();
       return;
     }
     state.currentPage = 'cart';
@@ -1579,11 +1538,6 @@ export function createRenderer({ state, telegram, handlers }) {
       if (els.cartNotes) els.cartNotes.value = '';
       render();
       showToast('Carrinho limpo');
-    });
-    els.openTelegramRegistration?.addEventListener('click', () => handlers.openTelegramRegistration?.());
-    els.continueBrowsingProducts?.addEventListener('click', () => {
-      state.registrationPromptDismissed = true;
-      navigateTo(state.query.trim() ? 'products' : 'home');
     });
     els.continueToDelivery?.addEventListener('click', async () => {
       const page = paginaAtualSegura();
