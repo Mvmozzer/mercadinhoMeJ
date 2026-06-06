@@ -59,6 +59,24 @@ export function exigirApiBaseConfigurada(state) {
   throw new Error('Servidor do app nao configurado. Abra pelo servidor local ou informe apiBase.');
 }
 
+function devUserFromTelegram(webApp) {
+  const user = webApp?.initDataUnsafe?.user || {};
+  let queryUserId = '';
+  try {
+    const params = new URL(window.location.href).searchParams;
+    queryUserId = String(params.get('devChatId') || params.get('devTelegramId') || '').trim();
+  } catch (_) {
+    queryUserId = '';
+  }
+  return {
+    id: String(queryUserId || user.id || 'dev_telegram_1'),
+    first_name: String(user.first_name || 'Cliente'),
+    last_name: String(user.last_name || 'Dev'),
+    username: String(user.username || 'cliente_dev'),
+    language_code: String(user.language_code || 'pt-BR')
+  };
+}
+
 export async function apiFetch(state, path, options = {}) {
   exigirApiBaseConfigurada(state);
   const controller = new AbortController();
@@ -100,7 +118,8 @@ export async function initMiniAppBridge(state, webApp) {
   const data = await bridge.init({
     apiBase: apiBase(state),
     initData: webApp?.initData || state.telegramInitData || '',
-    devChatId: 'dev_telegram_1',
+    devChatId: devUserFromTelegram(webApp).id,
+    devUser: devUserFromTelegram(webApp),
     onSnapshot: snapshot => {
       if (!snapshot || typeof snapshot !== 'object') return;
       state.bridgeSnapshot = snapshot;
@@ -130,20 +149,27 @@ export async function initMiniAppBridge(state, webApp) {
 }
 
 export async function bridgeSendAction(state, action, payload = {}) {
+  const aplicarSnapshot = data => {
+    if (data.snapshot?.cliente) state.cliente = data.snapshot.cliente;
+    if (Array.isArray(data.snapshot?.pedidos)) state.orders = data.snapshot.pedidos;
+    if (data.snapshot?.loja) {
+      state.loja = {
+        status: data.snapshot.loja.status || state.loja.status,
+        mensagem: data.snapshot.loja.mensagemStatus || state.loja.mensagem,
+        aceitaPedidos: data.snapshot.loja.aceitaPedidos !== false
+      };
+    }
+    state.lastUpdated = Date.now();
+    return data;
+  };
+  const tunnel = window.MJTelegramTunnel;
+  if (tunnel && tunnel.mode !== 'strict' && typeof tunnel.sendCommand === 'function') {
+    return aplicarSnapshot(await tunnel.sendCommand(action, payload));
+  }
   const bridge = window.MJMiniAppBridge;
   if (!bridge || typeof bridge.sendAction !== 'function') throw new Error('Ponte da Mini App indisponivel.');
   const data = await bridge.sendAction(action, payload);
-  if (data.snapshot?.cliente) state.cliente = data.snapshot.cliente;
-  if (Array.isArray(data.snapshot?.pedidos)) state.orders = data.snapshot.pedidos;
-  if (data.snapshot?.loja) {
-    state.loja = {
-      status: data.snapshot.loja.status || state.loja.status,
-      mensagem: data.snapshot.loja.mensagemStatus || state.loja.mensagem,
-      aceitaPedidos: data.snapshot.loja.aceitaPedidos !== false
-    };
-  }
-  state.lastUpdated = Date.now();
-  return data;
+  return aplicarSnapshot(data);
 }
 
 export function normalizarStatusLojaPayload(payload = {}) {
@@ -170,7 +196,7 @@ export async function authenticateMiniApp(state, webApp) {
       method: 'POST',
       body: JSON.stringify({
         initData,
-        devUser: !initData ? { id: 'dev_telegram_1', first_name: 'Cliente', last_name: 'Dev' } : undefined
+        devUser: !initData ? devUserFromTelegram(webApp) : undefined
       })
     });
   } catch (error) {

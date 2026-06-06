@@ -114,7 +114,7 @@ async function saveProfile() {
       cidade: renderer.els.profileCidade?.value || '',
       estado: renderer.els.profileEstado?.value || ''
     }).catch(() => null);
-    renderer.preencherFormularioCadastro();
+    renderer.preencherFormularioCadastro({ force: true });
     renderer.renderJourney();
     if (state.cliente?.cadastroCompleto !== true) {
       renderer.showToast('Complete CPF, nascimento e endereco para liberar as compras.');

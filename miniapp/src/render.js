@@ -407,6 +407,7 @@ export function createRenderer({ state, telegram, handlers }) {
   }
 
   function clientePrecisaCadastro() {
+    if (!state.authOk && state.authMode === 'pending' && !state.authError) return false;
     return !state.authOk || !clienteTemCadastroCompleto();
   }
 
@@ -430,7 +431,8 @@ export function createRenderer({ state, telegram, handlers }) {
     window.scrollTo?.({ top: 0, behavior: 'smooth' });
   }
 
-  function preencherFormularioCadastro() {
+  function preencherFormularioCadastro(options = {}) {
+    if (state.profileDirty && options.force !== true) return;
     const cliente = state.cliente || {};
     if (els.profileName) els.profileName.value = cliente.nome || cliente.telegramNome || '';
     if (els.profileCpf) els.profileCpf.value = cliente.cpf || '';
@@ -443,6 +445,7 @@ export function createRenderer({ state, telegram, handlers }) {
     if (els.profileBairro) els.profileBairro.value = cliente.bairro || '';
     if (els.profileCidade) els.profileCidade.value = cliente.cidade || '';
     if (els.profileEstado) els.profileEstado.value = cliente.estado || '';
+    state.profileDirty = false;
   }
 
   function etapaJornadaAtual() {
@@ -1408,6 +1411,13 @@ export function createRenderer({ state, telegram, handlers }) {
       showToast('Carrinho limpo');
     });
     els.registrationForm?.addEventListener('submit', event => {
+      event.preventDefault();
+      handlers.saveProfile?.();
+    });
+    els.registrationForm?.addEventListener('input', () => {
+      state.profileDirty = true;
+    });
+    els.saveProfile?.addEventListener('click', event => {
       event.preventDefault();
       handlers.saveProfile?.();
     });
