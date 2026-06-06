@@ -1,5 +1,7 @@
 import {
   authenticateMiniApp,
+  apiBase,
+  apiBaseConfigurada,
   bridgeSendAction,
   carregarRuntimeConfigPages,
   loadBootstrap,
@@ -30,6 +32,29 @@ const telegram = setupTelegram(() => {
 });
 
 renderer = createRenderer({ state, telegram, handlers });
+
+function installMiniAppDesignRuntime() {
+  if (!apiBaseConfigurada(state)) return;
+  const base = apiBase(state);
+  const runtimeBase = base || '';
+
+  if (!document.getElementById('miniapp-design-runtime-css')) {
+    const link = document.createElement('link');
+    link.id = 'miniapp-design-runtime-css';
+    link.rel = 'stylesheet';
+    link.href = `${runtimeBase}/mini-app-design/runtime.css`;
+    document.head.appendChild(link);
+  }
+
+  if (!document.getElementById('miniapp-design-runtime-js')) {
+    const script = document.createElement('script');
+    script.id = 'miniapp-design-runtime-js';
+    script.src = `${runtimeBase}/mini-app-design/runtime.js`;
+    script.defer = true;
+    if (base) script.dataset.apiBase = base;
+    document.head.appendChild(script);
+  }
+}
 
 function clearPendingOrderId() {
   limparClientOrderIdPendente(state);
@@ -313,6 +338,7 @@ async function init() {
   handlers.fillAddressByCep = () => preencherEnderecoPorCep(renderer.els);
 
   await carregarRuntimeConfigPages(state);
+  installMiniAppDesignRuntime();
   restoreCart(state);
   renderer.render();
 

@@ -151,6 +151,7 @@ function shellMarkup() {
         </section>
 
         <section class="marketplace-home miniapp-page" id="marketHome" data-page="home" aria-label="Vitrine do Mercadinho">
+          <div class="miniapp-design-home-slot" data-design-slot="home-top"></div>
           <section class="promo-banners" id="promoBanners" aria-label="Promocoes e beneficios"></section>
 
           <section class="loyalty-card" id="loyaltyInviteCard" hidden>
