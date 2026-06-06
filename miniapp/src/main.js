@@ -338,9 +338,9 @@ async function init() {
   handlers.fillAddressByCep = () => preencherEnderecoPorCep(renderer.els);
 
   await carregarRuntimeConfigPages(state);
-  installMiniAppDesignRuntime();
   restoreCart(state);
   renderer.render();
+  installMiniAppDesignRuntime();
 
   await Promise.all([
     reloadCatalog(),
