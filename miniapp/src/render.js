@@ -102,7 +102,7 @@ function shellMarkup() {
             <h2>Primeiro acesso</h2>
             <span id="registrationChannelLabel">Cadastro no Mini App</span>
           </div>
-          <p id="registrationIntro">Informe seus dados essenciais para continuar para as compras. Endereco fica para a etapa de entrega.</p>
+          <p id="registrationIntro">Seu Telegram ja foi reconhecido. Complete seus dados uma vez para liberar compras, Pix e entrega no Mini App.</p>
           <form class="registration-form" id="registrationForm">
             <label>Nome completo
               <input id="profileName" type="text" autocomplete="name" required>
@@ -110,38 +110,35 @@ function shellMarkup() {
             <label>Telefone com DDD
               <input id="profilePhone" type="tel" inputmode="tel" autocomplete="tel" required>
             </label>
-            <details class="optional-profile-fields">
-              <summary>Completar dados agora (opcional)</summary>
-              <div class="registration-form optional-profile-grid">
+            <div class="registration-form optional-profile-grid">
             <label>CPF
-              <input id="profileCpf" type="text" inputmode="numeric" autocomplete="off">
+              <input id="profileCpf" type="text" inputmode="numeric" autocomplete="off" required>
             </label>
             <label>Data de nascimento
-              <input id="profileBirthDate" type="date">
+              <input id="profileBirthDate" type="date" required>
             </label>
             <label>CEP
-              <input id="profileCep" type="text" inputmode="numeric" autocomplete="postal-code">
+              <input id="profileCep" type="text" inputmode="numeric" autocomplete="postal-code" required>
             </label>
             <label>Rua
-              <input id="profileRua" type="text" autocomplete="address-line1">
+              <input id="profileRua" type="text" autocomplete="address-line1" required>
             </label>
             <label>Numero
-              <input id="profileNumero" type="text" autocomplete="address-line2">
+              <input id="profileNumero" type="text" autocomplete="address-line2" required>
             </label>
             <label>Complemento (opcional)
               <input id="profileComplemento" type="text" autocomplete="address-line2">
             </label>
             <label>Bairro
-              <input id="profileBairro" type="text" autocomplete="address-level3">
+              <input id="profileBairro" type="text" autocomplete="address-level3" required>
             </label>
             <label>Cidade
-              <input id="profileCidade" type="text" autocomplete="address-level2">
+              <input id="profileCidade" type="text" autocomplete="address-level2" required>
             </label>
             <label>Estado (UF)
-              <input id="profileEstado" type="text" maxlength="2" autocomplete="address-level1">
+              <input id="profileEstado" type="text" maxlength="2" autocomplete="address-level1" required>
             </label>
-              </div>
-            </details>
+            </div>
             <button class="primary" id="saveProfile" type="submit">Continuar para compras</button>
           </form>
         </section>
@@ -403,18 +400,14 @@ export function createRenderer({ state, telegram, handlers }) {
     toastTimer = window.setTimeout(() => els.toast.classList.remove('show'), 2400);
   }
 
-  function clienteTemCadastroMinimo() {
+  function clienteTemCadastroCompleto() {
     const cliente = state.cliente || {};
     if (cliente.cadastroCompleto === true) return true;
-    const etapa = String(cliente.etapa || '').trim().toLowerCase();
-    if (['ok', 'identificado', 'completo'].includes(etapa)) {
-      if (String(cliente.nome || '').trim() || String(cliente.telegramNome || '').trim()) return true;
-    }
-    return Boolean(String(cliente.nome || cliente.telegramNome || '').trim() && String(cliente.telefone || cliente.phone || '').trim());
+    return false;
   }
 
   function clientePrecisaCadastro() {
-    return !state.authOk || !clienteTemCadastroMinimo();
+    return !state.authOk || !clienteTemCadastroCompleto();
   }
 
   function paginaAtualSegura() {
@@ -439,7 +432,7 @@ export function createRenderer({ state, telegram, handlers }) {
 
   function preencherFormularioCadastro() {
     const cliente = state.cliente || {};
-    if (els.profileName) els.profileName.value = cliente.nome || '';
+    if (els.profileName) els.profileName.value = cliente.nome || cliente.telegramNome || '';
     if (els.profileCpf) els.profileCpf.value = cliente.cpf || '';
     if (els.profileBirthDate) els.profileBirthDate.value = cliente.dataNascimento || '';
     if (els.profilePhone) els.profilePhone.value = cliente.telefone || '';

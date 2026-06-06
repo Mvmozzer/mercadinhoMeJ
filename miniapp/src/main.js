@@ -116,6 +116,10 @@ async function saveProfile() {
     }).catch(() => null);
     renderer.preencherFormularioCadastro();
     renderer.renderJourney();
+    if (state.cliente?.cadastroCompleto !== true) {
+      renderer.showToast('Complete CPF, nascimento e endereco para liberar as compras.');
+      return;
+    }
     renderer.navigateTo('home');
     renderer.showToast('Cadastro salvo. Agora voce ja pode comprar.');
   } catch (error) {
