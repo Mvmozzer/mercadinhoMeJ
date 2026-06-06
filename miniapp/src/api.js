@@ -126,6 +126,7 @@ export async function loadBootstrap(state) {
     saldoReais: Number(data.programa?.saldoReais || data.programa?.valorPontosReais || 0),
     codigoIndicacao: data.programa?.codigoIndicacao || ''
   };
+  state.cliente = data.cliente || state.cliente;
   state.orders = Array.isArray(data.pedidosAtivos) ? data.pedidosAtivos : state.orders;
   state.updateIntervalMs = Number(data.tempoAtualizacao || state.updateIntervalMs || 5000);
   state.lastUpdated = Date.now();

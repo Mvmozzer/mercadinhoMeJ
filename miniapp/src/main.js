@@ -97,7 +97,7 @@ async function saveProfile() {
     state.savingProfile = false;
     if (renderer.els.saveProfile) {
       renderer.els.saveProfile.disabled = false;
-      renderer.els.saveProfile.textContent = 'Salvar cadastro no Mini App';
+      renderer.els.saveProfile.textContent = 'Continuar para compras';
     }
     renderer.render();
   }

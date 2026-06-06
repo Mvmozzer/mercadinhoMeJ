@@ -403,8 +403,18 @@ export function createRenderer({ state, telegram, handlers }) {
     toastTimer = window.setTimeout(() => els.toast.classList.remove('show'), 2400);
   }
 
+  function clienteTemCadastroMinimo() {
+    const cliente = state.cliente || {};
+    if (cliente.cadastroCompleto === true) return true;
+    const etapa = String(cliente.etapa || '').trim().toLowerCase();
+    if (['ok', 'identificado', 'completo'].includes(etapa)) {
+      if (String(cliente.nome || '').trim() || String(cliente.telegramNome || '').trim()) return true;
+    }
+    return Boolean(String(cliente.nome || cliente.telegramNome || '').trim() && String(cliente.telefone || cliente.phone || '').trim());
+  }
+
   function clientePrecisaCadastro() {
-    return !state.authOk || !String(state.cliente?.nome || '').trim() || !String(state.cliente?.telefone || '').trim();
+    return !state.authOk || !clienteTemCadastroMinimo();
   }
 
   function paginaAtualSegura() {
