@@ -7,8 +7,6 @@ import {
   loadBootstrap,
   loadMoreProducts as loadMoreProductsApi,
   loadProducts as loadProductsApi,
-  preencherEnderecoPorCep,
-  salvarCadastroMiniApp,
   sincronizarStatusLoja as sincronizarStatusLojaApi
 } from './api.js';
 import { pruneCart, restoreCart, cartItems } from './cart.js';
@@ -19,7 +17,7 @@ import { loadOrder, loadOrders as loadOrdersApi, pollOrderStatus } from './order
 import { copyPix, refreshPixStatus, uploadReceipt } from './pix.js';
 import { createRenderer } from './render.js';
 import { createInitialState } from './state.js';
-import { getUser, isActive, setMainButtonLoading, setupTelegram } from './telegram.js';
+import { fallbackSendData, getUser, isActive, setMainButtonLoading, setupTelegram } from './telegram.js';
 import { loadTracking, pollLocation, stopTrackingWhenDelivered } from './tracking.js';
 
 const state = createInitialState();
@@ -104,59 +102,16 @@ async function sincronizarStatusLoja() {
   renderer.render();
 }
 
-async function saveProfile() {
-  if (state.savingProfile) return;
-  if (!state.authOk) {
-    renderer.showToast('Conectando com a loja...');
-    await carregarRuntimeConfigPages(state);
-    await authenticate();
-    if (!state.authOk) {
-      const motivo = state.authError || 'Nao consegui autenticar sua sessao.';
-      const mensagem = /initData|Telegram/i.test(motivo)
-        ? 'Abra a loja pelo Telegram. Para teste fora do Telegram, ative TELEGRAM_WEBAPP_DEV_AUTH=true e reinicie o node index.js.'
-        : motivo;
-      renderer.showToast(mensagem);
-      return;
-    }
-  }
-  state.savingProfile = true;
-  if (renderer.els.saveProfile) {
-    renderer.els.saveProfile.disabled = true;
-    renderer.els.saveProfile.textContent = 'Salvando...';
-  }
-  try {
-    await salvarCadastroMiniApp(state, renderer.els);
-    await bridgeSendAction(state, 'cadastro/update', {
-      nome: renderer.els.profileName?.value || '',
-      cpf: renderer.els.profileCpf?.value || '',
-      dataNascimento: renderer.els.profileBirthDate?.value || '',
-      telefone: renderer.els.profilePhone?.value || '',
-      cep: renderer.els.profileCep?.value || '',
-      rua: renderer.els.profileRua?.value || '',
-      numero: renderer.els.profileNumero?.value || '',
-      complemento: renderer.els.profileComplemento?.value || '',
-      bairro: renderer.els.profileBairro?.value || '',
-      cidade: renderer.els.profileCidade?.value || '',
-      estado: renderer.els.profileEstado?.value || ''
-    }).catch(() => null);
-    renderer.preencherFormularioCadastro({ force: true });
-    renderer.renderJourney();
-    if (state.cliente?.cadastroCompleto !== true) {
-      renderer.showToast('Complete CPF, nascimento e endereco para liberar as compras.');
-      return;
-    }
-    renderer.navigateTo('home');
-    renderer.showToast('Cadastro salvo. Agora voce ja pode comprar.');
-  } catch (error) {
-    renderer.showToast(error.message || 'Nao foi possivel salvar seu cadastro');
-  } finally {
-    state.savingProfile = false;
-    if (renderer.els.saveProfile) {
-      renderer.els.saveProfile.disabled = false;
-      renderer.els.saveProfile.textContent = 'Continuar para compras';
-    }
-    renderer.render();
-  }
+function openTelegramRegistration() {
+  const payload = {
+    type: 'mercadinho_cadastro',
+    source: 'telegram_mini_app_html',
+    origem: 'telegram_miniapp',
+    client_event_id: `cadastro_${Date.now()}`
+  };
+  const sent = fallbackSendData(telegram.webApp, payload);
+  if (sent) return;
+  renderer.showToast('Abra o chat do Mercadinho no Telegram e envie /cadastro.');
 }
 
 async function sendCartToTelegram() {
@@ -341,7 +296,6 @@ async function authenticate() {
     if (renderer.els.authStatus) {
       renderer.els.authStatus.textContent = data.modoDev ? 'Modo dev' : 'Mini App conectado';
     }
-    renderer.preencherFormularioCadastro();
     renderer.render();
     await bootstrapMiniApp();
     await Promise.all([loadOrders(), loadLoyaltyState()]);
@@ -362,7 +316,7 @@ async function authenticate() {
 async function init() {
   handlers.reloadCatalog = reloadCatalog;
   handlers.loadMoreProducts = loadMoreProducts;
-  handlers.saveProfile = saveProfile;
+  handlers.openTelegramRegistration = openTelegramRegistration;
   handlers.sendCart = sendCartToTelegram;
   handlers.previewCheckout = previewCheckout;
   handlers.loadOrders = loadOrders;
@@ -373,7 +327,6 @@ async function init() {
   handlers.sendReceipt = sendReceipt;
   handlers.shareReferral = shareReferral;
   handlers.syncCartAction = (action, payload) => bridgeSendAction(state, action, payload).catch(() => null);
-  handlers.fillAddressByCep = () => preencherEnderecoPorCep(renderer.els);
 
   await carregarRuntimeConfigPages(state);
   restoreCart(state);

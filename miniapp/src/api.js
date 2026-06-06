@@ -273,42 +273,6 @@ export async function loadBootstrap(state) {
   return data;
 }
 
-export function perfilCadastroPayload(els = {}) {
-  return {
-    nome: String(els.profileName?.value || '').trim(),
-    cpf: String(els.profileCpf?.value || '').trim(),
-    dataNascimento: String(els.profileBirthDate?.value || '').trim(),
-    telefone: String(els.profilePhone?.value || '').trim(),
-    cep: String(els.profileCep?.value || '').trim(),
-    rua: String(els.profileRua?.value || '').trim(),
-    numero: String(els.profileNumero?.value || '').trim(),
-    complemento: String(els.profileComplemento?.value || '').trim(),
-    bairro: String(els.profileBairro?.value || '').trim(),
-    cidade: String(els.profileCidade?.value || '').trim(),
-    estado: String(els.profileEstado?.value || '').trim()
-  };
-}
-
-export async function salvarCadastroMiniApp(state, els = {}) {
-  const payload = perfilCadastroPayload(els);
-  let data;
-  try {
-    data = await apiFetch(state, '/api/miniapp/profile', {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
-  } catch (error) {
-    data = await bridgeSendAction(state, 'cadastro/update', payload).catch(() => {
-      throw error;
-    });
-  }
-  state.cliente = data.cliente || state.cliente;
-  if (state.cliente) {
-    state.cliente.etapa = state.cliente.etapa || 'identificado';
-  }
-  return data;
-}
-
 export async function loadOrders(state) {
   if (!state.authOk) return [];
   try {
@@ -473,18 +437,4 @@ export async function getOrderLocation(state, pedidoId) {
   const data = await apiFetch(state, `/api/miniapp/pedidos/${encodeURIComponent(pedidoId)}/location`);
   state.location = data;
   return data;
-}
-
-export async function preencherEnderecoPorCep(els = {}) {
-  const cep = String(els.profileCep?.value || '').replace(/\D/g, '');
-  if (cep.length !== 8) return;
-  try {
-    const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-    const data = await response.json();
-    if (!response.ok || data.erro) return;
-    if (els.profileRua) els.profileRua.value = data.logradouro || els.profileRua.value;
-    if (els.profileBairro) els.profileBairro.value = data.bairro || els.profileBairro.value;
-    if (els.profileCidade) els.profileCidade.value = data.localidade || els.profileCidade.value;
-    if (els.profileEstado) els.profileEstado.value = data.uf || els.profileEstado.value;
-  } catch (_) {}
 }

@@ -99,48 +99,14 @@ function shellMarkup() {
 
         <section class="registration-panel miniapp-page" id="registrationPanel" data-page="identify" hidden>
           <div class="section-head">
-            <h2>Primeiro acesso</h2>
-            <span id="registrationChannelLabel">Cadastro no Mini App</span>
+            <h2>Cadastro pelo Telegram</h2>
+            <span id="registrationChannelLabel">Atendimento no chat</span>
           </div>
-          <p id="registrationIntro">Seu Telegram ja foi reconhecido. Complete seus dados uma vez para liberar compras, Pix e entrega no Mini App.</p>
-          <form class="registration-form" id="registrationForm">
-            <label>Nome completo
-              <input id="profileName" type="text" autocomplete="name" required>
-            </label>
-            <label>Telefone com DDD
-              <input id="profilePhone" type="tel" inputmode="tel" autocomplete="tel" required>
-            </label>
-            <div class="registration-form optional-profile-grid">
-            <label>CPF
-              <input id="profileCpf" type="text" inputmode="numeric" autocomplete="off" required>
-            </label>
-            <label>Data de nascimento
-              <input id="profileBirthDate" type="date" required>
-            </label>
-            <label>CEP
-              <input id="profileCep" type="text" inputmode="numeric" autocomplete="postal-code" required>
-            </label>
-            <label>Rua
-              <input id="profileRua" type="text" autocomplete="address-line1" required>
-            </label>
-            <label>Numero
-              <input id="profileNumero" type="text" autocomplete="address-line2" required>
-            </label>
-            <label>Complemento (opcional)
-              <input id="profileComplemento" type="text" autocomplete="address-line2">
-            </label>
-            <label>Bairro
-              <input id="profileBairro" type="text" autocomplete="address-level3" required>
-            </label>
-            <label>Cidade
-              <input id="profileCidade" type="text" autocomplete="address-level2" required>
-            </label>
-            <label>Estado (UF)
-              <input id="profileEstado" type="text" maxlength="2" autocomplete="address-level1" required>
-            </label>
-            </div>
-            <button class="primary" id="saveProfile" type="submit">Continuar para compras</button>
-          </form>
+          <p id="registrationIntro">Para proteger seus dados e voltar ao fluxo que ja estava funcionando, o cadastro voltou para o chat do Telegram.</p>
+          <div class="registration-form">
+            <button class="primary" id="openTelegramRegistration" type="button">Cadastrar no Telegram</button>
+            <button class="ghost" id="continueBrowsingProducts" type="button">Continuar vendo produtos</button>
+          </div>
         </section>
 
         <section class="vini-ai-outdoor" id="viniAiOutdoor" aria-label="Alertas do Vini" hidden>
@@ -348,10 +314,8 @@ function shellMarkup() {
 function collectElements() {
   const ids = [
     'tabs', 'channelLabel', 'journeyTitle', 'journeyStatus', 'journeySteps',
-    'registrationPanel', 'registrationChannelLabel', 'registrationIntro', 'registrationForm',
-    'profileName', 'profileCpf', 'profileBirthDate', 'profilePhone', 'profileCep',
-    'profileRua', 'profileNumero', 'profileComplemento', 'profileBairro', 'profileCidade',
-    'profileEstado', 'saveProfile', 'marketHome', 'marketHero', 'searchPanel', 'categoryRail',
+    'registrationPanel', 'registrationChannelLabel', 'registrationIntro',
+    'openTelegramRegistration', 'continueBrowsingProducts', 'marketHome', 'marketHero', 'searchPanel', 'categoryRail',
     'promoBanners', 'loyaltyInviteCard', 'pointsBalanceLabel', 'couponCode',
     'copyInviteCode', 'usePointsIntent', 'marketFilters', 'buyAgainSection',
     'bestSellersSection', 'todayOffersSection', 'comboSection', 'lowStockSection',
@@ -413,7 +377,13 @@ export function createRenderer({ state, telegram, handlers }) {
   }
 
   function paginaAtualSegura() {
-    if (clientePrecisaCadastro()) return 'identify';
+    if (clientePrecisaCadastro()) {
+      if (['identify', 'cart', 'delivery', 'payment'].includes(state.currentPage)) return 'identify';
+      const paginasDeConsulta = new Set(['home', 'categories', 'products', 'product', 'orders', 'tracking', 'loyalty', 'profile']);
+      if (state.registrationPromptDismissed && paginasDeConsulta.has(state.currentPage)) return state.currentPage;
+      return 'identify';
+    }
+    if (state.currentPage === 'identify') return 'home';
     const paginas = new Set(['home', 'categories', 'products', 'product', 'cart', 'delivery', 'payment', 'orders', 'tracking', 'loyalty', 'profile']);
     return paginas.has(state.currentPage) ? state.currentPage : 'home';
   }
@@ -432,25 +402,8 @@ export function createRenderer({ state, telegram, handlers }) {
     window.scrollTo?.({ top: 0, behavior: 'smooth' });
   }
 
-  function preencherFormularioCadastro(options = {}) {
-    if (state.profileDirty && options.force !== true) return;
-    const cliente = state.cliente || {};
-    if (els.profileName) els.profileName.value = cliente.nome || cliente.telegramNome || '';
-    if (els.profileCpf) els.profileCpf.value = cliente.cpf || '';
-    if (els.profileBirthDate) els.profileBirthDate.value = cliente.dataNascimento || '';
-    if (els.profilePhone) els.profilePhone.value = cliente.telefone || '';
-    if (els.profileCep) els.profileCep.value = cliente.cep || '';
-    if (els.profileRua) els.profileRua.value = cliente.rua || '';
-    if (els.profileNumero) els.profileNumero.value = cliente.numero || '';
-    if (els.profileComplemento) els.profileComplemento.value = cliente.complemento || '';
-    if (els.profileBairro) els.profileBairro.value = cliente.bairro || '';
-    if (els.profileCidade) els.profileCidade.value = cliente.cidade || '';
-    if (els.profileEstado) els.profileEstado.value = cliente.estado || '';
-    state.profileDirty = false;
-  }
-
   function etapaJornadaAtual() {
-    if (clientePrecisaCadastro()) return 'cadastro';
+    if (clientePrecisaCadastro() && state.currentPage === 'identify') return 'cadastro';
     if (state.currentPage === 'cart') return 'carrinho';
     if (state.currentPage === 'delivery') return 'entrega';
     if (state.currentPage === 'payment') return state.pix?.copiaCola ? 'pix' : 'pagamento';
@@ -1288,6 +1241,13 @@ export function createRenderer({ state, telegram, handlers }) {
       showToast('Adicione ao menos um produto');
       return;
     }
+    if (clientePrecisaCadastro()) {
+      state.registrationPromptDismissed = false;
+      state.currentPage = 'identify';
+      showToast('Finalize seu cadastro pelo Telegram para comprar.');
+      render();
+      return;
+    }
     state.currentPage = 'cart';
     state.checkoutStep = 'cart';
     setCartOpen(true);
@@ -1337,7 +1297,7 @@ export function createRenderer({ state, telegram, handlers }) {
       state.query = event.target.value;
       state.marketFilter = '';
       state.marketSort = '';
-      if (!clientePrecisaCadastro()) state.currentPage = state.query.trim() ? 'products' : 'home';
+      state.currentPage = state.query.trim() ? 'products' : 'home';
       scheduleCatalogReload();
     });
     els.clearSearch?.addEventListener('click', () => {
@@ -1411,18 +1371,11 @@ export function createRenderer({ state, telegram, handlers }) {
       render();
       showToast('Carrinho limpo');
     });
-    els.registrationForm?.addEventListener('submit', event => {
-      event.preventDefault();
-      handlers.saveProfile?.();
+    els.openTelegramRegistration?.addEventListener('click', () => handlers.openTelegramRegistration?.());
+    els.continueBrowsingProducts?.addEventListener('click', () => {
+      state.registrationPromptDismissed = true;
+      navigateTo(state.query.trim() ? 'products' : 'home');
     });
-    els.registrationForm?.addEventListener('input', () => {
-      state.profileDirty = true;
-    });
-    els.saveProfile?.addEventListener('click', event => {
-      event.preventDefault();
-      handlers.saveProfile?.();
-    });
-    els.profileCep?.addEventListener('blur', () => handlers.fillAddressByCep?.());
     els.continueToDelivery?.addEventListener('click', async () => {
       const page = paginaAtualSegura();
       if (page === 'cart') {
@@ -1480,7 +1433,6 @@ export function createRenderer({ state, telegram, handlers }) {
     els,
     render,
     showToast,
-    preencherFormularioCadastro,
     renderJourney,
     renderOrders,
     renderStatusLoja,

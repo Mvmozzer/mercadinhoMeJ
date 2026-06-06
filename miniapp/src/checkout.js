@@ -77,14 +77,14 @@ export function payloadCarrinhoMiniApp(state, els = {}) {
 
 export function entregaCheckoutMiniApp(els = {}) {
   return {
-    cep: String(els.checkoutCep?.value || els.profileCep?.value || '').trim(),
-    rua: String(els.checkoutRua?.value || els.profileRua?.value || '').trim(),
-    numero: String(els.checkoutNumero?.value || els.profileNumero?.value || '').trim(),
-    complemento: String(els.checkoutComplemento?.value || els.profileComplemento?.value || '').trim(),
-    bairro: String(els.checkoutBairro?.value || els.profileBairro?.value || '').trim(),
-    cidade: String(els.checkoutCidade?.value || els.profileCidade?.value || '').trim(),
-    estado: String(els.checkoutEstado?.value || els.profileEstado?.value || '').trim().toUpperCase(),
-    telefone: String(els.checkoutPhone?.value || els.profilePhone?.value || '').trim()
+    cep: String(els.checkoutCep?.value || '').trim(),
+    rua: String(els.checkoutRua?.value || '').trim(),
+    numero: String(els.checkoutNumero?.value || '').trim(),
+    complemento: String(els.checkoutComplemento?.value || '').trim(),
+    bairro: String(els.checkoutBairro?.value || '').trim(),
+    cidade: String(els.checkoutCidade?.value || '').trim(),
+    estado: String(els.checkoutEstado?.value || '').trim().toUpperCase(),
+    telefone: String(els.checkoutPhone?.value || '').trim()
   };
 }
 

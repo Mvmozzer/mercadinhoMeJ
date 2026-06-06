@@ -81,6 +81,7 @@ export function createInitialState() {
     updateIntervalMs: 5000,
     lastUpdated: 0,
     cliente: null,
+    registrationPromptDismissed: false,
     savingProfile: false,
     sending: false,
     pollTimer: null,
