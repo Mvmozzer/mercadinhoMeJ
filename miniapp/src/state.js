@@ -66,6 +66,22 @@ export function createInitialState() {
           tom: 'offer'
         }]
       },
+      logoUrl: 'assets/logo-mj-mercadinho.png',
+      destaques: {
+        ativo: true,
+        itens: [
+          { id: 'ofertas', titulo: 'Ofertas da semana', subtitulo: 'Descontos selecionados pela loja', cta: 'Ver ofertas', emoji: '🏷️', tom: 'offer', imagem: '', acao: 'ofertas', ativo: true, ordem: 1 },
+          { id: 'combos', titulo: 'Combos economicos', subtitulo: 'Leve mais pagando menos', cta: 'Ver combos', emoji: '🛒', tom: 'combo', imagem: '', acao: 'combos', ativo: true, ordem: 2 },
+          { id: 'pontos', titulo: 'Acumule pontos', subtitulo: 'Comprou, ganhou desconto futuro', cta: 'Meus pontos', emoji: '⭐', tom: 'points', imagem: '', acao: 'loyalty', ativo: true, ordem: 3 },
+          { id: 'indicacao', titulo: 'Indique e ganhe', subtitulo: 'Chame amigos e ganhe recompensas', cta: 'Indicar', emoji: '🎁', tom: 'invite', imagem: '', acao: 'loyalty', ativo: true, ordem: 4 }
+        ]
+      },
+      fidelidade: {
+        ativo: true,
+        titulo: 'Programa Fidelidade',
+        imagemCapa: '',
+        botao: 'Trocar pontos no carrinho'
+      },
       categorias: { destaque: true, limite: 8, ordem: [] },
       maisVendidos: true,
       carrinhoFixo: true,
@@ -75,6 +91,8 @@ export function createInitialState() {
       layoutHome: 'delivery',
       buscaFiltros: true
     },
+    restoredPedidoId: '',
+    restoredUiOwner: '',
     bootstrap: null,
     tracking: null,
     location: null,

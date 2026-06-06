@@ -37,39 +37,28 @@ function shellMarkup() {
     <div class="app">
       <header class="delivery-app-header" id="marketHero">
         <div class="delivery-hero-top">
-          <img class="delivery-logo" src="assets/logo-mj-mercadinho.png" alt="Mercadinho M&J">
+          <img class="delivery-logo" id="deliveryLogo" src="assets/logo-mj-mercadinho.png" alt="Mercadinho M&J">
           <div class="delivery-brand">
             <h1>Mercadinho M&J</h1>
             <div class="delivery-status-line">
               <span class="status-dot"></span>
               <span class="status-open" id="storeStatus">Aberto agora</span>
-              <span class="status-separator">.</span>
-              <span>Fecha as 21:00</span>
               <span id="channelLabel" hidden>Compra no Mini App</span>
             </div>
           </div>
           <div class="delivery-actions">
-            <button class="hero-action-button" id="cartButton" type="button" aria-label="Abrir carrinho">
-              <span aria-hidden="true">C</span>
+            <button class="hero-action-button cart-action" id="cartButton" type="button" aria-label="Abrir carrinho">
+              <span aria-hidden="true">&#128722;</span>
             </button>
-            <button class="hero-action-button" type="button" aria-label="Perfil">
-              <span aria-hidden="true">P</span>
+            <button class="hero-action-button profile-action" id="profileButton" type="button" aria-label="Abrir perfil">
+              <span aria-hidden="true">&#128100;</span>
             </button>
           </div>
         </div>
 
-        <div class="delivery-meta-row">
-          <span class="meta-icon" aria-hidden="true">E</span>
-          <strong>Entrega em 30-45 min</strong>
-          <span class="meta-divider"></span>
-          <span class="meta-icon" aria-hidden="true">L</span>
-          <strong>Rua das Flores, 123</strong>
-          <span aria-hidden="true">v</span>
-        </div>
-
-        <div class="delivery-mode-switch" aria-label="Modalidade visual">
-          <button class="active" type="button"><span aria-hidden="true">E</span>Entrega</button>
-          <button type="button"><span aria-hidden="true">R</span>Retirada</button>
+        <div class="customer-header" id="customerHeader">
+          <strong id="customerGreeting">Ola!</strong>
+          <span id="customerAddressLine">Informe seu endereco para entrega</span>
         </div>
       </header>
 
@@ -77,11 +66,11 @@ function shellMarkup() {
         <section class="store-search-panel" id="searchPanel" aria-label="Busca">
           <div class="search-row">
             <div class="search-wrap">
-              <span aria-hidden="true">B</span>
+              <span aria-hidden="true">&#128269;</span>
               <input id="search" type="search" placeholder="O que voce precisa hoje?" autocomplete="off">
             </div>
             <button class="scan-button" id="clearSearch" type="button" aria-label="Limpar busca">
-              <span aria-hidden="true">X</span>
+              <span aria-hidden="true">&times;</span>
             </button>
           </div>
         </section>
@@ -288,7 +277,7 @@ function shellMarkup() {
 
     <footer class="bottom-bar" id="stickyCartBar" hidden>
       <div class="bottom-main">
-        <div class="bottom-cart-icon" aria-hidden="true">C</div>
+        <div class="bottom-cart-icon" aria-hidden="true">&#128722;</div>
         <div class="bottom-total">
           <strong id="bottomCount">Carrinho vazio</strong>
           <span>Total: <b id="total">R$ 0,00</b></span>
@@ -315,7 +304,8 @@ function collectElements() {
   const ids = [
     'tabs', 'channelLabel', 'journeyTitle', 'journeyStatus', 'journeySteps',
     'registrationPanel', 'registrationChannelLabel', 'registrationIntro',
-    'openTelegramRegistration', 'continueBrowsingProducts', 'marketHome', 'marketHero', 'searchPanel', 'categoryRail',
+    'openTelegramRegistration', 'continueBrowsingProducts', 'marketHome', 'marketHero', 'deliveryLogo',
+    'customerGreeting', 'customerAddressLine', 'profileButton', 'searchPanel', 'categoryRail',
     'promoBanners', 'loyaltyInviteCard', 'pointsBalanceLabel', 'couponCode',
     'copyInviteCode', 'usePointsIntent', 'marketFilters', 'buyAgainSection',
     'bestSellersSection', 'todayOffersSection', 'comboSection', 'lowStockSection',
@@ -348,6 +338,36 @@ function designBanner(state) {
   return Array.isArray(design.banners?.itens) && design.banners.itens.length
     ? design.banners.itens[0]
     : null;
+}
+
+function designHighlights(state) {
+  const design = designConfig(state);
+  const defaults = [
+    { id: 'ofertas', tone: 'offer', title: 'Ofertas da semana', body: 'Descontos selecionados pela loja', visual: '%', cta: 'Ver ofertas', action: 'ofertas', image: '' },
+    { id: 'combos', tone: 'combo', title: 'Combos economicos', body: 'Mais produtos, mais economia!', visual: '+', cta: 'Ver combos', action: 'combos', image: '' },
+    { id: 'pontos', tone: 'points', title: 'Acumule pontos', body: 'Comprou, ganhou desconto futuro', visual: '*', cta: 'Meus pontos', action: 'loyalty', image: '' },
+    { id: 'indicacao', tone: 'invite', title: 'Indique e ganhe', body: 'Chame amigos e ganhe recompensas!', visual: 'I', cta: 'Quero indicar', action: 'loyalty', image: '' }
+  ];
+  const configured = Array.isArray(design.destaques?.itens) ? design.destaques.itens : [];
+  const byId = new Map(configured.map(item => [String(item.id || '').trim(), item]));
+  return defaults
+    .map((fallback, index) => {
+      const item = byId.get(fallback.id) || configured[index] || {};
+      return {
+        id: String(item.id || fallback.id),
+        tone: String(item.tom || item.tone || fallback.tone),
+        title: String(item.titulo || item.title || fallback.title),
+        body: String(item.subtitulo || item.body || fallback.body),
+        visual: String(item.emoji || item.visual || fallback.visual),
+        cta: String(item.cta || fallback.cta),
+        action: String(item.acao || item.action || fallback.action),
+        image: String(item.imagem || item.imageUrl || item.image || fallback.image),
+        active: item.ativo !== false,
+        order: Number(item.ordem || index + 1)
+      };
+    })
+    .filter(item => item.active)
+    .sort((a, b) => a.order - b.order);
 }
 
 export function createRenderer({ state, telegram, handlers }) {
@@ -446,6 +466,51 @@ export function createRenderer({ state, telegram, handlers }) {
     }
   }
 
+  function firstName(value = '') {
+    return String(value || '').trim().split(/\s+/).filter(Boolean)[0] || '';
+  }
+
+  function customerName() {
+    const cliente = state.cliente || {};
+    const telegramUser = state.telegramUser || {};
+    return firstName(cliente.nome || cliente.telegramNome || telegramUser.first_name || '');
+  }
+
+  function customerAddress() {
+    const cliente = state.cliente || {};
+    const rua = String(cliente.rua || '').trim();
+    if (!rua) return '';
+    const partes = [
+      [rua, cliente.numero].filter(Boolean).join(', '),
+      cliente.bairro
+    ].filter(Boolean);
+    return partes.join(' - ');
+  }
+
+  function logoUrlMiniApp() {
+    const design = designConfig(state);
+    return String(
+      design.logoUrl ||
+      design.theme?.logoUrl ||
+      design.tema?.logoUrl ||
+      state.bootstrap?.loja?.logo ||
+      'assets/logo-mj-mercadinho.png'
+    ).trim() || 'assets/logo-mj-mercadinho.png';
+  }
+
+  function renderCustomerHeader() {
+    if (els.deliveryLogo) {
+      els.deliveryLogo.src = logoUrlMiniApp();
+    }
+    if (els.customerGreeting) {
+      const nome = customerName();
+      els.customerGreeting.textContent = nome ? `Ola, ${nome}` : 'Ola!';
+    }
+    if (els.customerAddressLine) {
+      els.customerAddressLine.textContent = customerAddress() || 'Informe seu endereco para entrega';
+    }
+  }
+
   function renderOrders() {
     if (!els.ordersPanel || !els.ordersList) return;
     if (!state.orders.length) {
@@ -496,10 +561,13 @@ export function createRenderer({ state, telegram, handlers }) {
         <label class="pix-copy">Pix copia e cola
           <textarea readonly>${escapeHtml(pix.copiaCola)}</textarea>
         </label>
+        <label class="receipt-upload">Enviar comprovante Pix
+          <input type="file" data-send-receipt-file accept="image/png,image/jpeg,image/webp,application/pdf">
+        </label>
         <div class="checkout-actions">
           <button class="primary" type="button" data-copy-pix>Copiar Pix</button>
           <button class="ghost" type="button" data-refresh-pix>Atualizar pagamento</button>
-          <button class="ghost" type="button" data-send-receipt>Ja paguei / enviar comprovante</button>
+          <button class="ghost" type="button" data-send-receipt>Ja paguei / enviar observacao</button>
         </div>
         <small>A loja vai conferir seu pagamento antes de preparar o pedido.</small>
       </div>
@@ -515,13 +583,25 @@ export function createRenderer({ state, telegram, handlers }) {
     }
     if (els.loyaltyBalance) els.loyaltyBalance.textContent = `${Number(loyalty.saldoPontos || loyalty.pontosDisponiveis || 0)} pontos`;
     const historico = Array.isArray(loyalty.historico) ? loyalty.historico.slice(0, 5) : [];
+    const fidelidade = designConfig(state).fidelidade || {};
+    const imagemCapa = String(fidelidade.imagemCapa || fidelidade.imageUrl || '').trim();
     els.loyaltyContent.innerHTML = `
+      <div class="loyalty-hero">
+        ${imagemCapa ? `<img src="${escapeHtml(imagemCapa)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span aria-hidden="true">⭐</span>'}
+        <div>
+          <strong>${escapeHtml(fidelidade.titulo || 'Programa Fidelidade')}</strong>
+          <small>Use seus pontos como desconto quando as regras da loja permitirem.</small>
+        </div>
+      </div>
       <div class="loyalty-summary">
         <strong>${Number(loyalty.saldoPontos || loyalty.pontosDisponiveis || 0)} pontos</strong>
         <span>${escapeHtml(money(loyalty.saldoReais || loyalty.valorPontosReais || 0))} em saldo equivalente</span>
         <small>Codigo: ${escapeHtml(loyalty.codigoIndicacao || 'indisponivel')}</small>
       </div>
-      <button class="ghost" type="button" data-share-referral>Compartilhar codigo</button>
+      <div class="checkout-actions">
+        <button class="ghost" type="button" data-share-referral>Compartilhar codigo</button>
+        <button class="primary" type="button" data-nav-page="cart">${escapeHtml(fidelidade.botao || 'Trocar pontos no carrinho')}</button>
+      </div>
       <div class="points-box">
         <strong>Regras do clube</strong>
         <small>Minimo: ${Number(loyalty.regras?.minimoPontos || loyalty.minPontosResgate || 0)} pontos. Maximo no pedido: ${Number(loyalty.regras?.percentualMaximoPedido || loyalty.percentualMaximoPedido || 75)}%.</small>
@@ -608,9 +688,10 @@ export function createRenderer({ state, telegram, handlers }) {
       pausada: 'Pedidos pausados',
       fechada: 'Fechado para pedidos'
     };
-    els.storeStatus.textContent = textos[state.loja.status] || textos.aberta;
+    const status = state.loja.status || 'aberta';
+    els.storeStatus.textContent = textos[status] || textos.aberta;
     els.storeStatus.classList.remove('ok', 'warn', 'closed');
-    els.storeStatus.classList.add(state.loja.aceitaPedidos ? 'ok' : (state.loja.status === 'pausada' ? 'warn' : 'closed'));
+    els.storeStatus.classList.add(status === 'fechada' ? 'closed' : (status === 'pausada' ? 'warn' : 'ok'));
     els.storeStatus.title = state.loja.mensagem || '';
   }
 
@@ -732,25 +813,27 @@ export function createRenderer({ state, telegram, handlers }) {
       return;
     }
     els.promoBanners.hidden = false;
-    const points = cartItems(state).length ? `${cartItems(state).length} itens` : 'Meus pontos';
     const principal = designBanner(state);
-    const banners = [
-      principal ? {
-        tone: principal.tom || 'offer',
-        title: principal.titulo || 'Ofertas do dia',
-        body: principal.subtitulo || 'Descontos imperdiveis!',
-        visual: principal.emoji || '%',
-        cta: principal.cta || 'Ver ofertas'
-      } : { tone: 'offer', title: 'Ofertas do dia', body: 'Descontos imperdiveis!', visual: '%', cta: 'Ver ofertas' },
-      { tone: 'combo', title: 'Combos economicos', body: 'Mais produtos, mais economia!', visual: '+', cta: 'Ver combos' },
-      { tone: 'points', title: 'Acumule pontos', body: 'Comprou, ganhou!', visual: '*', cta: points },
-      { tone: 'invite', title: 'Indique e ganhe', body: 'Chame amigos e ganhe descontos!', visual: 'I', cta: 'Quero indicar' }
-    ].filter((_, index) => index === 0 || design.modo === 'avancado');
-    els.promoBanners.innerHTML = banners.map(item => `
-      <article class="promo-card" data-tone="${escapeHtml(item.tone)}">
+    const banners = designHighlights(state);
+    if (principal && banners[0]) {
+      banners[0] = {
+        ...banners[0],
+        tone: principal.tom || banners[0].tone,
+        title: principal.titulo || banners[0].title,
+        body: principal.subtitulo || banners[0].body,
+        visual: principal.emoji || banners[0].visual,
+        cta: principal.cta || banners[0].cta,
+        image: principal.imagem || principal.imageUrl || banners[0].image
+      };
+    }
+    const visible = design.modo === 'avancado' ? banners : banners.slice(0, 1);
+    els.promoBanners.innerHTML = visible.map(item => `
+      <article class="promo-card" data-tone="${escapeHtml(item.tone)}" data-promo-action="${escapeHtml(item.action)}">
         <strong>${escapeHtml(item.title)}</strong>
         <small>${escapeHtml(item.body)}</small>
-        <span class="promo-visual" aria-hidden="true">${escapeHtml(item.visual)}</span>
+        ${item.image
+          ? `<img class="promo-image-3d" src="${escapeHtml(item.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
+          : `<span class="promo-visual" aria-hidden="true">${escapeHtml(item.visual)}</span>`}
         <span class="promo-cta">${escapeHtml(item.cta)}</span>
       </article>
     `).join('');
@@ -1272,6 +1355,7 @@ export function createRenderer({ state, telegram, handlers }) {
     const tema = ['verde_fresco', 'vermelho_energia', 'escuro_premium'].includes(design.tema) ? design.tema : 'verde_fresco';
     document.body.dataset.miniappTheme = tema;
     document.body.dataset.miniappMode = design.modo || 'simples';
+    renderCustomerHeader();
     renderStatusLoja();
     renderTabs();
     renderHome();
@@ -1285,6 +1369,7 @@ export function createRenderer({ state, telegram, handlers }) {
     if (state.productSheetId) renderProductSheet();
     renderCategoriesPage();
     renderPageVisibility();
+    handlers.persistUiState?.();
   }
 
   const scheduleCatalogReload = debounce(() => {
@@ -1310,6 +1395,7 @@ export function createRenderer({ state, telegram, handlers }) {
       else render();
     });
     els.cartButton?.addEventListener('click', iniciarCheckout);
+    els.profileButton?.addEventListener('click', () => navigateTo('profile'));
     els.reviewCart?.addEventListener('click', iniciarCheckout);
     els.marketFilters?.addEventListener('click', event => {
       const filterButton = event.target.closest('[data-market-filter]');
@@ -1326,6 +1412,26 @@ export function createRenderer({ state, telegram, handlers }) {
         state.marketSort = sortButton.dataset.marketSort || '';
         render();
       }
+    });
+    els.promoBanners?.addEventListener('click', event => {
+      const card = event.target.closest('[data-promo-action]');
+      if (!card) return;
+      const action = String(card.dataset.promoAction || '').trim();
+      if (action === 'loyalty' || action === 'indicacao' || action === 'pontos') {
+        navigateTo('loyalty');
+        return;
+      }
+      if (action === 'combos') {
+        state.marketFilter = 'combo';
+        state.section = '';
+        state.query = '';
+        navigateTo('products');
+        return;
+      }
+      state.marketFilter = 'promo';
+      state.section = '';
+      state.query = '';
+      navigateTo('products');
     });
     els.couponCode?.addEventListener('input', event => {
       syncCouponFromInput(state, event.target.value);
@@ -1418,8 +1524,17 @@ export function createRenderer({ state, telegram, handlers }) {
       if (event.target.closest('[data-refresh-pix]')) handlers.refreshPix?.();
       if (event.target.closest('[data-send-receipt]')) handlers.sendReceipt?.();
     });
+    els.pixContent?.addEventListener('change', event => {
+      const input = event.target.closest('[data-send-receipt-file]');
+      if (!input) return;
+      const file = input.files?.[0] || null;
+      if (file) handlers.sendReceipt?.(file);
+      input.value = '';
+    });
     els.loyaltyContent?.addEventListener('click', event => {
       if (event.target.closest('[data-share-referral]')) handlers.shareReferral?.();
+      const btn = event.target.closest('[data-nav-page]');
+      if (btn) navigateTo(btn.dataset.navPage || 'home');
     });
     window.addEventListener('beforeunload', () => {
       if (state.pollTimer) window.clearInterval(state.pollTimer);

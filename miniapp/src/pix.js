@@ -28,6 +28,12 @@ export async function refreshPixStatus(state, pedidoId) {
 }
 
 export async function uploadReceipt(state, pedidoId, payload = {}) {
+  if (payload instanceof FormData) {
+    return apiFetch(state, `/api/miniapp/pedidos/${encodeURIComponent(pedidoId)}/comprovante`, {
+      method: 'POST',
+      body: payload
+    });
+  }
   return apiFetch(state, `/api/miniapp/pedidos/${encodeURIComponent(pedidoId)}/comprovante`, {
     method: 'POST',
     body: JSON.stringify(payload)

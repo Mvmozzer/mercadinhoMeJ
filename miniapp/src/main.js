@@ -17,6 +17,7 @@ import { loadOrder, loadOrders as loadOrdersApi, pollOrderStatus } from './order
 import { copyPix, refreshPixStatus, uploadReceipt } from './pix.js';
 import { createRenderer } from './render.js';
 import { createInitialState } from './state.js';
+import { persistMiniAppUiState, restoreMiniAppUiState, validateRestoredMiniAppUiOwner } from './storage.js';
 import { fallbackSendData, getUser, isActive, setMainButtonLoading, setupTelegram } from './telegram.js';
 import { loadTracking, pollLocation, stopTrackingWhenDelivered } from './tracking.js';
 
@@ -94,6 +95,19 @@ async function loadLoyaltyState() {
   if (!state.authOk) return;
   await loadLoyalty(state).catch(() => null);
   renderer.render();
+}
+
+async function resumeRestoredFlow() {
+  if (!state.restoredPedidoId) return;
+  try {
+    const pedido = await loadOrder(state, state.restoredPedidoId);
+    if (!pedido?.id) return;
+    await pollOrderStatus(state, pedido.id).catch(() => null);
+    if (state.currentPage === 'tracking') await loadTracking(state, pedido.id).catch(() => null);
+    if (state.currentPage === 'payment') await refreshPixStatus(state, pedido.id).catch(() => null);
+  } catch (_) {
+    state.restoredPedidoId = '';
+  }
 }
 
 async function sincronizarStatusLoja() {
@@ -232,13 +246,37 @@ async function refreshPix() {
   }
 }
 
-async function sendReceipt() {
+function receiptFileError(file) {
+  if (!file) return '';
+  const maxBytes = 5 * 1024 * 1024;
+  const allowedTypes = new Set(['image/png', 'image/jpeg', 'image/webp', 'application/pdf']);
+  const allowedExtensions = /\.(png|jpe?g|webp|pdf)$/i;
+  if (file.size > maxBytes) return 'Comprovante muito grande. Envie arquivo de ate 5 MB.';
+  if (!allowedTypes.has(String(file.type || '').toLowerCase())) return 'Formato invalido. Use PNG, JPG, WEBP ou PDF.';
+  if (!allowedExtensions.test(file.name || '')) return 'Extensao invalida. Use PNG, JPG, WEBP ou PDF.';
+  return '';
+}
+
+async function sendReceipt(file = null) {
   const pedidoId = state.pedidoAtual?.id;
   if (!pedidoId) return;
-  const texto = window.prompt('Informe uma observacao sobre o pagamento ou comprovante:');
-  if (!texto) return;
+  let payload = null;
+  if (typeof File !== 'undefined' && file instanceof File) {
+    const erroArquivo = receiptFileError(file);
+    if (erroArquivo) {
+      renderer.showToast(erroArquivo);
+      return;
+    }
+    payload = new FormData();
+    payload.append('comprovante', file, file.name || 'comprovante');
+  } else {
+    const texto = window.prompt('Informe uma observacao sobre o pagamento ou comprovante:');
+    if (!texto) return;
+    payload = { texto };
+  }
   try {
-    await uploadReceipt(state, pedidoId, { texto });
+    await uploadReceipt(state, pedidoId, payload);
+    await pollOrderStatus(state, pedidoId).catch(() => null);
     renderer.showToast('Comprovante registrado para conferencia.');
   } catch (error) {
     renderer.showToast(error.message || 'Nao foi possivel enviar comprovante.');
@@ -296,9 +334,12 @@ async function authenticate() {
     if (renderer.els.authStatus) {
       renderer.els.authStatus.textContent = data.modoDev ? 'Modo dev' : 'Mini App conectado';
     }
+    validateRestoredMiniAppUiOwner(state);
     renderer.render();
     await bootstrapMiniApp();
+    validateRestoredMiniAppUiOwner(state);
     await Promise.all([loadOrders(), loadLoyaltyState()]);
+    await resumeRestoredFlow();
     window.MJMiniAppBridge?.startStream?.();
     window.MJMiniAppBridge?.startPolling?.(state.updateIntervalMs || 5000);
     startPolling();
@@ -326,10 +367,12 @@ async function init() {
   handlers.copyPix = copyCurrentPix;
   handlers.sendReceipt = sendReceipt;
   handlers.shareReferral = shareReferral;
+  handlers.persistUiState = () => persistMiniAppUiState(state);
   handlers.syncCartAction = (action, payload) => bridgeSendAction(state, action, payload).catch(() => null);
 
   await carregarRuntimeConfigPages(state);
   restoreCart(state);
+  restoreMiniAppUiState(state);
   renderer.render();
   installMiniAppDesignRuntime();
 

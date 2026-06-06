@@ -106,6 +106,7 @@ export async function apiFetch(state, path, options = {}) {
   exigirApiBaseConfigurada(state);
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), Number(options.timeoutMs || 15000));
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
   let response;
   try {
     response = await fetch(`${apiBase(state)}${path}`, {
@@ -113,7 +114,7 @@ export async function apiFetch(state, path, options = {}) {
       credentials: 'include',
       signal: options.signal || controller.signal,
       headers: {
-        'Content-Type': 'application/json',
+        ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
         ...(state.miniappToken ? { Authorization: `Bearer ${state.miniappToken}` } : {}),
         ...(state.telegramInitData ? { 'X-Telegram-Init-Data': state.telegramInitData } : {}),
         ...(options.headers || {})
