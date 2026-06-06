@@ -79,7 +79,15 @@ async function sincronizarStatusLoja() {
 }
 
 async function saveProfile() {
-  if (!state.authOk || state.savingProfile) return;
+  if (state.savingProfile) return;
+  if (!state.authOk) {
+    renderer.showToast('Conectando com a loja...');
+    await authenticate();
+    if (!state.authOk) {
+      renderer.showToast('Nao consegui conectar. Rode node index.js e reabra a Mini App.');
+      return;
+    }
+  }
   state.savingProfile = true;
   if (renderer.els.saveProfile) {
     renderer.els.saveProfile.disabled = true;

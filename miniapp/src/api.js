@@ -53,17 +53,28 @@ export async function apiFetch(state, path, options = {}) {
   exigirApiBaseConfigurada(state);
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), Number(options.timeoutMs || 15000));
-  const response = await fetch(`${apiBase(state)}${path}`, {
-    ...options,
-    credentials: 'include',
-    signal: options.signal || controller.signal,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(state.miniappToken ? { Authorization: `Bearer ${state.miniappToken}` } : {}),
-      ...(state.telegramInitData ? { 'X-Telegram-Init-Data': state.telegramInitData } : {}),
-      ...(options.headers || {})
-    }
-  }).finally(() => window.clearTimeout(timeout));
+  let response;
+  try {
+    response = await fetch(`${apiBase(state)}${path}`, {
+      ...options,
+      credentials: 'include',
+      signal: options.signal || controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(state.miniappToken ? { Authorization: `Bearer ${state.miniappToken}` } : {}),
+        ...(state.telegramInitData ? { 'X-Telegram-Init-Data': state.telegramInitData } : {}),
+        ...(options.headers || {})
+      }
+    });
+  } catch (error) {
+    const friendly = new Error(error?.name === 'AbortError'
+      ? 'Servidor demorou para responder. Verifique se o node index.js esta rodando.'
+      : 'Nao consegui conectar ao servidor da loja. Verifique se o node index.js esta rodando.');
+    friendly.status = 0;
+    throw friendly;
+  } finally {
+    window.clearTimeout(timeout);
+  }
   const data = await response.json().catch(() => ({}));
   if (!response.ok || data.ok === false) {
     const error = new Error(data.erro || data.error || `Falha HTTP ${response.status}`);
@@ -155,6 +166,9 @@ export async function salvarCadastroMiniApp(state, els = {}) {
     body: JSON.stringify(perfilCadastroPayload(els))
   });
   state.cliente = data.cliente || state.cliente;
+  if (state.cliente) {
+    state.cliente.etapa = state.cliente.etapa || 'identificado';
+  }
   return data;
 }
 
