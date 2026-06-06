@@ -1,4 +1,5 @@
 import {
+  bridgeSendAction,
   checkoutCreate,
   checkoutPreview,
   getOrderTracking
@@ -165,6 +166,23 @@ export async function finalizarCheckoutMiniApp(state, els, telegram, callbacks =
     callbacks.showToast?.('Pedido criado. O Pix esta pronto no Mini App.');
     return { ok: true, mode: 'api', data };
   } catch (error) {
+    try {
+      const data = await bridgeSendAction(state, 'checkout/finalize', payload);
+      if (data.pedido?.id) {
+        state.pedidoAtual = data.pedido;
+        state.pix = data.pix || null;
+      }
+      clearCart(state, () => limparClientOrderIdPendente(state));
+      state.couponCode = '';
+      state.usePointsIntent = false;
+      if (els.cartNotes) els.cartNotes.value = '';
+      persistCart(state);
+      callbacks.render?.();
+      callbacks.showToast?.('Pedido criado pela ponte da loja. O Pix esta pronto no Mini App.');
+      return { ok: true, mode: 'bridge', data };
+    } catch (_) {
+      // Mantem o fallback legado abaixo apenas para compatibilidade.
+    }
     payload.type = 'mercadinho_order';
     payload.fallback_cart = payloadCarrinhoMiniApp(state, els);
     fallbackSendData(telegram?.webApp, payload);

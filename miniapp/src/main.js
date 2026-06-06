@@ -1,5 +1,6 @@
 import {
   authenticateMiniApp,
+  bridgeSendAction,
   carregarRuntimeConfigPages,
   loadBootstrap,
   loadMoreProducts as loadMoreProductsApi,
@@ -100,6 +101,19 @@ async function saveProfile() {
   }
   try {
     await salvarCadastroMiniApp(state, renderer.els);
+    await bridgeSendAction(state, 'cadastro/update', {
+      nome: renderer.els.profileName?.value || '',
+      cpf: renderer.els.profileCpf?.value || '',
+      dataNascimento: renderer.els.profileBirthDate?.value || '',
+      telefone: renderer.els.profilePhone?.value || '',
+      cep: renderer.els.profileCep?.value || '',
+      rua: renderer.els.profileRua?.value || '',
+      numero: renderer.els.profileNumero?.value || '',
+      complemento: renderer.els.profileComplemento?.value || '',
+      bairro: renderer.els.profileBairro?.value || '',
+      cidade: renderer.els.profileCidade?.value || '',
+      estado: renderer.els.profileEstado?.value || ''
+    }).catch(() => null);
     renderer.preencherFormularioCadastro();
     renderer.renderJourney();
     renderer.navigateTo('home');
@@ -134,7 +148,7 @@ async function sendCartToTelegram() {
       render: renderer.render,
       showToast: renderer.showToast
     });
-    if (result.mode === 'api') {
+    if (result.mode === 'api' || result.mode === 'bridge') {
       await Promise.all([
         loadOrders(),
         loadLoyaltyState(),
@@ -264,6 +278,8 @@ async function authenticate() {
     renderer.render();
     await bootstrapMiniApp();
     await Promise.all([loadOrders(), loadLoyaltyState()]);
+    window.MJMiniAppBridge?.startStream?.();
+    window.MJMiniAppBridge?.startPolling?.(state.updateIntervalMs || 5000);
     startPolling();
     return data;
   } catch (error) {
@@ -289,6 +305,7 @@ async function init() {
   handlers.copyPix = copyCurrentPix;
   handlers.sendReceipt = sendReceipt;
   handlers.shareReferral = shareReferral;
+  handlers.syncCartAction = (action, payload) => bridgeSendAction(state, action, payload).catch(() => null);
   handlers.fillAddressByCep = () => preencherEnderecoPorCep(renderer.els);
 
   await carregarRuntimeConfigPages(state);

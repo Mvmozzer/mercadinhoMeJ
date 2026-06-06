@@ -84,6 +84,58 @@ export async function apiFetch(state, path, options = {}) {
   return data;
 }
 
+export async function initMiniAppBridge(state, webApp) {
+  const bridge = window.MJMiniAppBridge;
+  if (!bridge || typeof bridge.init !== 'function') return null;
+  const data = await bridge.init({
+    apiBase: apiBase(state),
+    initData: webApp?.initData || state.telegramInitData || '',
+    devChatId: 'dev_telegram_1',
+    onSnapshot: snapshot => {
+      if (!snapshot || typeof snapshot !== 'object') return;
+      state.bridgeSnapshot = snapshot;
+      if (snapshot.cliente) state.cliente = snapshot.cliente;
+      if (snapshot.loja) {
+        state.loja = {
+          status: snapshot.loja.status || state.loja.status,
+          mensagem: snapshot.loja.mensagemStatus || state.loja.mensagem,
+          aceitaPedidos: snapshot.loja.aceitaPedidos !== false
+        };
+      }
+      if (Array.isArray(snapshot.pedidos)) state.orders = snapshot.pedidos;
+      state.lastUpdated = Date.now();
+    },
+    onEvents: eventos => {
+      state.bridgeEvents = eventos;
+      state.lastUpdated = Date.now();
+    }
+  });
+  state.bridgeOk = true;
+  state.authOk = true;
+  state.authMode = data.modoDev ? 'bridge-dev' : 'bridge';
+  state.miniappToken = data.sessionToken || data.token || state.miniappToken || '';
+  if (state.miniappToken) writeText(MINIAPP_TOKEN_KEY, state.miniappToken);
+  state.cliente = data.snapshot?.cliente || state.cliente;
+  return data;
+}
+
+export async function bridgeSendAction(state, action, payload = {}) {
+  const bridge = window.MJMiniAppBridge;
+  if (!bridge || typeof bridge.sendAction !== 'function') throw new Error('Ponte da Mini App indisponivel.');
+  const data = await bridge.sendAction(action, payload);
+  if (data.snapshot?.cliente) state.cliente = data.snapshot.cliente;
+  if (Array.isArray(data.snapshot?.pedidos)) state.orders = data.snapshot.pedidos;
+  if (data.snapshot?.loja) {
+    state.loja = {
+      status: data.snapshot.loja.status || state.loja.status,
+      mensagem: data.snapshot.loja.mensagemStatus || state.loja.mensagem,
+      aceitaPedidos: data.snapshot.loja.aceitaPedidos !== false
+    };
+  }
+  state.lastUpdated = Date.now();
+  return data;
+}
+
 export function normalizarStatusLojaPayload(payload = {}) {
   const loja = payload?.catalogo?.loja || payload?.loja || payload || {};
   const status = ['aberta', 'pausada', 'fechada'].includes(loja.status) ? loja.status : 'aberta';
@@ -102,13 +154,20 @@ export function atualizarStatusLoja(state, payload = {}) {
 export async function authenticateMiniApp(state, webApp) {
   const initData = webApp?.initData || '';
   state.telegramInitData = initData;
-  const data = await apiFetch(state, '/api/telegram/auth', {
-    method: 'POST',
-    body: JSON.stringify({
-      initData,
-      devUser: !initData ? { id: 'dev_telegram_1', first_name: 'Cliente', last_name: 'Dev' } : undefined
-    })
-  });
+  let data;
+  try {
+    data = await apiFetch(state, '/api/telegram/auth', {
+      method: 'POST',
+      body: JSON.stringify({
+        initData,
+        devUser: !initData ? { id: 'dev_telegram_1', first_name: 'Cliente', last_name: 'Dev' } : undefined
+      })
+    });
+  } catch (error) {
+    const bridgeData = await initMiniAppBridge(state, webApp).catch(() => null);
+    if (bridgeData) return bridgeData;
+    throw error;
+  }
   state.authOk = true;
   state.authMode = data.modoDev ? 'dev' : 'telegram';
   state.miniappToken = data.token || '';
@@ -116,6 +175,7 @@ export async function authenticateMiniApp(state, webApp) {
   state.cliente = data.cliente || state.cliente || null;
   const me = await apiFetch(state, '/api/miniapp/me').catch(() => null);
   state.cliente = me?.cliente || state.cliente;
+  await initMiniAppBridge(state, webApp).catch(() => null);
   return data;
 }
 
@@ -161,10 +221,18 @@ export function perfilCadastroPayload(els = {}) {
 }
 
 export async function salvarCadastroMiniApp(state, els = {}) {
-  const data = await apiFetch(state, '/api/miniapp/profile', {
-    method: 'POST',
-    body: JSON.stringify(perfilCadastroPayload(els))
-  });
+  const payload = perfilCadastroPayload(els);
+  let data;
+  try {
+    data = await apiFetch(state, '/api/miniapp/profile', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  } catch (error) {
+    data = await bridgeSendAction(state, 'cadastro/update', payload).catch(() => {
+      throw error;
+    });
+  }
   state.cliente = data.cliente || state.cliente;
   if (state.cliente) {
     state.cliente.etapa = state.cliente.etapa || 'identificado';

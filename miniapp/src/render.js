@@ -813,6 +813,12 @@ export function createRenderer({ state, telegram, handlers }) {
       showToast('Produto adicionado ao carrinho');
       renderViniAIAlert();
     }
+    if (result.ok) {
+      handlers.syncCartAction?.(result.next > 0 ? 'cart/update' : 'cart/remove', {
+        produto_id: id,
+        quantidade: result.next
+      });
+    }
     render();
   }
 
@@ -821,6 +827,12 @@ export function createRenderer({ state, telegram, handlers }) {
     if (result.added) {
       showToast('Produto adicionado ao carrinho');
       renderViniAIAlert();
+    }
+    if (result.ok) {
+      handlers.syncCartAction?.(result.next > 0 ? 'cart/update' : 'cart/remove', {
+        produto_id: id,
+        quantidade: result.next
+      });
     }
     render();
   }
@@ -1397,6 +1409,7 @@ export function createRenderer({ state, telegram, handlers }) {
     els.clearCartDrawer?.addEventListener('click', () => {
       if (!state.cart.size) return;
       clearCart(state, () => limparClientOrderIdPendente(state));
+      handlers.syncCartAction?.('cart/clear', {});
       if (els.cartNotes) els.cartNotes.value = '';
       render();
       showToast('Carrinho limpo');
