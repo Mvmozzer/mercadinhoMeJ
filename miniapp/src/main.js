@@ -212,6 +212,8 @@ async function showPix(pedidoId) {
   try {
     const pedido = await loadOrder(state, pedidoId);
     if (pedido?.id) await refreshPixStatus(state, pedido.id);
+    if (pedido?.id) await pollOrderStatus(state, pedido.id).catch(() => null);
+    if (await navigateAfterPaymentConfirmation(pedido?.id)) return;
     renderer.navigateTo('payment');
     renderer.render();
   } catch (error) {
@@ -230,12 +232,44 @@ async function showTracking(pedidoId) {
   }
 }
 
+function isPaymentConfirmed() {
+  const paymentStatus = String(
+    state.orderStatus?.pagamento?.status ||
+    state.pedidoAtual?.statusPagamento ||
+    state.pix?.status ||
+    ''
+  ).toLowerCase();
+  const orderStatus = String(
+    state.orderStatus?.status ||
+    state.pedidoAtual?.status ||
+    ''
+  ).toLowerCase();
+  return paymentStatus === 'pago' || [
+    'pago',
+    'preparando',
+    'pronto',
+    'aguardando_entregador',
+    'saiu_para_entrega',
+    'entregue'
+  ].includes(orderStatus);
+}
+
+async function navigateAfterPaymentConfirmation(pedidoId) {
+  if (!pedidoId || !isPaymentConfirmed()) return false;
+  await loadTracking(state, pedidoId).catch(() => null);
+  renderer.navigateTo('tracking');
+  renderer.render();
+  renderer.showToast('Pagamento aprovado. Acompanhe seu pedido.');
+  return true;
+}
+
 async function refreshPix() {
   const pedidoId = state.pedidoAtual?.id;
   if (!pedidoId) return;
   try {
     await refreshPixStatus(state, pedidoId);
     await pollOrderStatus(state, pedidoId).catch(() => null);
+    if (await navigateAfterPaymentConfirmation(pedidoId)) return;
     renderer.render();
     renderer.showToast('Pagamento atualizado');
   } catch (error) {
@@ -285,6 +319,10 @@ async function pollMiniApp() {
   ]);
   if (state.pedidoAtual?.id && !stopTrackingWhenDelivered(state)) {
     await loadTracking(state, state.pedidoAtual.id).catch(() => null);
+  }
+  if (state.currentPage === 'payment' && state.pedidoAtual?.id) {
+    await navigateAfterPaymentConfirmation(state.pedidoAtual.id);
+    return;
   }
   renderer.render();
 }

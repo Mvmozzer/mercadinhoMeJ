@@ -19,9 +19,9 @@ export function apiBase(state) {
   return String(state.apiBaseUrl || '').replace(/\/+$/, '');
 }
 
-export async function carregarRuntimeConfigPages(state) {
+export async function carregarRuntimeConfigPages(state, options = {}) {
   const url = new URL(window.location.href);
-  if (!runningOnStaticHost() || url.searchParams.get('apiBase')) return;
+  if (!runningOnStaticHost() || (!options.force && url.searchParams.get('apiBase'))) return;
   try {
     let config = null;
     const candidates = ['./runtime-config.json', '../runtime-config.json'];
@@ -48,6 +48,19 @@ export async function carregarRuntimeConfigPages(state) {
   } catch (_) {
     // GitHub Pages can still render the static catalog while runtime-config.json is being published.
   }
+}
+
+async function retryApiFetchWithFreshRuntimeConfig(state, path, options = {}) {
+  if (!runningOnStaticHost() || options.__runtimeConfigRetry) return null;
+  const previousBase = apiBase(state);
+  await carregarRuntimeConfigPages(state, { force: true });
+  const nextBase = apiBase(state);
+  if (!nextBase || nextBase === previousBase) return null;
+  return apiFetch(state, path, {
+    ...options,
+    signal: undefined,
+    __runtimeConfigRetry: true
+  });
 }
 
 export function apiBaseConfigurada(state) {
@@ -107,6 +120,8 @@ export async function apiFetch(state, path, options = {}) {
       }
     });
   } catch (error) {
+    const retry = await retryApiFetchWithFreshRuntimeConfig(state, path, options).catch(() => null);
+    if (retry) return retry;
     const friendly = new Error(error?.name === 'AbortError'
       ? 'Servidor demorou para responder. Verifique se o node index.js esta rodando.'
       : 'Nao consegui conectar ao servidor da loja. Verifique se o node index.js esta rodando.');
