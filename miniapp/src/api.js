@@ -62,12 +62,15 @@ export function exigirApiBaseConfigurada(state) {
 function devUserFromTelegram(webApp) {
   const user = webApp?.initDataUnsafe?.user || {};
   let queryUserId = '';
+  let isLocal = false;
   try {
     const params = new URL(window.location.href).searchParams;
     queryUserId = String(params.get('devChatId') || params.get('devTelegramId') || '').trim();
+    isLocal = ['localhost', '127.0.0.1', '::1', ''].includes(window.location.hostname);
   } catch (_) {
     queryUserId = '';
   }
+  if (!queryUserId && !isLocal) return null;
   return {
     id: String(queryUserId || user.id || 'dev_telegram_1'),
     first_name: String(user.first_name || 'Cliente'),
@@ -75,6 +78,15 @@ function devUserFromTelegram(webApp) {
     username: String(user.username || 'cliente_dev'),
     language_code: String(user.language_code || 'pt-BR')
   };
+}
+
+function reopenStateFromUrl() {
+  try {
+    const params = new URL(window.location.href).searchParams;
+    return String(params.get('mj_state') || params.get('reopenState') || '').trim();
+  } catch (_) {
+    return '';
+  }
 }
 
 export async function apiFetch(state, path, options = {}) {
@@ -115,11 +127,14 @@ export async function apiFetch(state, path, options = {}) {
 export async function initMiniAppBridge(state, webApp) {
   const bridge = window.MJMiniAppBridge;
   if (!bridge || typeof bridge.init !== 'function') return null;
+  const devUser = devUserFromTelegram(webApp);
+  const reopenState = reopenStateFromUrl();
   const data = await bridge.init({
     apiBase: apiBase(state),
     initData: webApp?.initData || state.telegramInitData || '',
-    devChatId: devUserFromTelegram(webApp).id,
-    devUser: devUserFromTelegram(webApp),
+    reopenState,
+    devChatId: devUser?.id,
+    devUser,
     onSnapshot: snapshot => {
       if (!snapshot || typeof snapshot !== 'object') return;
       state.bridgeSnapshot = snapshot;
@@ -189,6 +204,8 @@ export function atualizarStatusLoja(state, payload = {}) {
 
 export async function authenticateMiniApp(state, webApp) {
   const initData = webApp?.initData || '';
+  const reopenState = reopenStateFromUrl();
+  const devUser = !initData && !reopenState ? devUserFromTelegram(webApp) : null;
   state.telegramInitData = initData;
   let data;
   try {
@@ -196,7 +213,8 @@ export async function authenticateMiniApp(state, webApp) {
       method: 'POST',
       body: JSON.stringify({
         initData,
-        devUser: !initData ? devUserFromTelegram(webApp) : undefined
+        reopenState: !initData ? reopenState : undefined,
+        devUser: !initData && !reopenState ? devUser : undefined
       })
     });
   } catch (error) {

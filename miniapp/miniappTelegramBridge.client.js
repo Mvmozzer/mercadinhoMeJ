@@ -56,6 +56,7 @@
     const state = {
       apiBase: apiBaseFromLocation(),
       initData: '',
+      reopenState: '',
       sessionToken: window.localStorage.getItem(TOKEN_KEY) || '',
       since: Number(window.localStorage.getItem(SINCE_KEY) || 0) || 0,
       pollingTimer: null,
@@ -74,7 +75,10 @@
         method: 'POST',
         body: JSON.stringify({
           initData: state.initData,
-          devUser: options?.devUser || (!state.initData ? { id: options?.devChatId || 'dev_telegram_1', first_name: 'Cliente', last_name: 'Dev' } : undefined)
+          reopenState: !state.initData ? (options?.reopenState || state.reopenState || '') : undefined,
+          devUser: options?.devUser || (!state.initData && !options?.reopenState && options?.devChatId
+            ? { id: options.devChatId, first_name: 'Cliente', last_name: 'Dev' }
+            : undefined)
         })
       });
       state.sessionToken = data.sessionToken || data.token || state.sessionToken;
