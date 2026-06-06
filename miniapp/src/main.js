@@ -82,9 +82,14 @@ async function saveProfile() {
   if (state.savingProfile) return;
   if (!state.authOk) {
     renderer.showToast('Conectando com a loja...');
+    await carregarRuntimeConfigPages(state);
     await authenticate();
     if (!state.authOk) {
-      renderer.showToast('Nao consegui conectar. Rode node index.js e reabra a Mini App.');
+      const motivo = state.authError || 'Nao consegui autenticar sua sessao.';
+      const mensagem = /initData|Telegram/i.test(motivo)
+        ? 'Abra a loja pelo Telegram. Para teste fora do Telegram, ative TELEGRAM_WEBAPP_DEV_AUTH=true e reinicie o node index.js.'
+        : motivo;
+      renderer.showToast(mensagem);
       return;
     }
   }
@@ -249,6 +254,7 @@ function startPolling() {
 
 async function authenticate() {
   try {
+    state.authError = '';
     state.telegramUser = getUser(telegram.webApp);
     const data = await authenticateMiniApp(state, telegram.webApp);
     if (renderer.els.authStatus) {
@@ -259,11 +265,14 @@ async function authenticate() {
     await bootstrapMiniApp();
     await Promise.all([loadOrders(), loadLoyaltyState()]);
     startPolling();
-  } catch (_) {
+    return data;
+  } catch (error) {
     state.authOk = false;
     state.authMode = 'offline';
+    state.authError = error?.message || 'Sessao da Mini App indisponivel.';
     if (renderer.els.authStatus) renderer.els.authStatus.textContent = 'Sessao indisponivel';
     renderer.render();
+    return null;
   }
 }
 

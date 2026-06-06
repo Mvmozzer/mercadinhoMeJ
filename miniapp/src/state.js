@@ -24,6 +24,7 @@ export function createInitialState() {
     pendingClientOrderId: readText(PENDING_ORDER_KEY, ''),
     authOk: false,
     authMode: 'pending',
+    authError: '',
     catalogLoading: true,
     catalogSource: 'loading',
     catalogPage: {
