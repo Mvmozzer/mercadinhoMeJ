@@ -11,9 +11,12 @@ export function apiBase(state) {
   const url = new URL(window.location.href);
   const fromQuery = url.searchParams.get('apiBase');
   if (fromQuery) {
-    const clean = normalizePublicApiBase(fromQuery);
+    const clean = normalizePublicApiBase(fromQuery, {
+      allowTemporary: window.__ALLOW_TEMP_TUNNEL_API__ === true || url.searchParams.get('allowTempApi') === '1'
+    });
     if (!clean || baseTemporariaBloqueada(clean)) {
       state.apiBaseUrl = '';
+      state.allowTemporaryApiBase = false;
       removeKey(API_BASE_KEY);
       return '';
     }
@@ -21,10 +24,12 @@ export function apiBase(state) {
     writeText(API_BASE_KEY, clean);
     return clean;
   }
-  const saved = normalizePublicApiBase(state.apiBaseUrl || '');
-  if (saved && !baseTemporariaBloqueada(saved)) return saved;
+  const allowTemporary = state.allowTemporaryApiBase === true;
+  const saved = normalizePublicApiBase(state.apiBaseUrl || '', { allowTemporary });
+  if (saved && (allowTemporary || !baseTemporariaBloqueada(saved))) return saved;
   if (state.apiBaseUrl) {
     state.apiBaseUrl = '';
+    state.allowTemporaryApiBase = false;
     removeKey(API_BASE_KEY);
   }
   return '';
@@ -48,12 +53,15 @@ export async function carregarRuntimeConfigPages(state, options = {}) {
     }
     if (!config) throw new Error('runtime config indisponivel');
     if (!Object.prototype.hasOwnProperty.call(config || {}, 'apiBaseUrl')) return;
-    const clean = normalizePublicApiBase(config.apiBaseUrl);
-    if (clean && !baseTemporariaBloqueada(clean)) {
+    const allowTemporary = config.allowTemporaryApiBase === true || config.temporaryApiBase === true;
+    const clean = normalizePublicApiBase(config.apiBaseUrl, { allowTemporary });
+    if (clean && (allowTemporary || !baseTemporariaBloqueada(clean))) {
+      state.allowTemporaryApiBase = allowTemporary;
       state.apiBaseUrl = clean;
       writeText(API_BASE_KEY, clean);
     } else {
       state.apiBaseUrl = '';
+      state.allowTemporaryApiBase = false;
       removeKey(API_BASE_KEY);
     }
   } catch (_) {
@@ -96,7 +104,7 @@ export function apiDiagnosticMessage(error, state, path, response = null, data =
   if (!base && runningOnStaticHost()) {
     return 'URL publica do servidor da loja ausente. Vou tentar continuar pelo Telegram.';
   }
-  if (base && baseTemporariaBloqueada(base)) {
+  if (base && state.allowTemporaryApiBase !== true && baseTemporariaBloqueada(base)) {
     return 'A URL publica configurada e temporaria ou expirada. Vou tentar continuar pelo Telegram.';
   }
   if (error?.name === 'AbortError') return `Timeout ao chamar ${path}. A loja nao respondeu dentro do limite.`;

@@ -20,6 +20,7 @@ export function createInitialState() {
     telegramUser: null,
     telegramInitData: '',
     apiBaseUrl: readText(API_BASE_KEY, ''),
+    allowTemporaryApiBase: false,
     miniappToken: readText(MINIAPP_TOKEN_KEY, ''),
     pendingClientOrderId: readText(PENDING_ORDER_KEY, ''),
     authOk: false,

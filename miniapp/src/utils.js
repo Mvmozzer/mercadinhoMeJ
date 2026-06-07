@@ -98,13 +98,14 @@ export function isTemporaryPublicApiBase(value) {
   }
 }
 
-export function normalizePublicApiBase(value) {
+export function normalizePublicApiBase(value, options = {}) {
   const text = String(value || '').trim();
   if (!text) return '';
   try {
     const url = new URL(text);
     if (runningOnStaticHost() && url.protocol !== 'https:') return '';
-    const allowTemporary = window.__ALLOW_TEMP_TUNNEL_API__ === true ||
+    const allowTemporary = options.allowTemporary === true ||
+      window.__ALLOW_TEMP_TUNNEL_API__ === true ||
       new URL(window.location.href).searchParams.get('allowTempApi') === '1';
     if (!allowTemporary && runningOnStaticHost() && isTemporaryPublicApiBase(url.toString())) return '';
     url.hash = '';
