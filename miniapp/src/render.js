@@ -26,7 +26,13 @@ import {
   productsBySection,
   sectionItems
 } from './catalog.js';
-import { limparClientOrderIdPendente } from './checkout.js';
+import {
+  effectiveDeliveryAddressMiniApp,
+  enderecoEntregaCompleto,
+  limparClientOrderIdPendente,
+  prefillCheckoutAddressFromCustomer,
+  resumoEnderecoEntrega
+} from './checkout.js';
 import { debounce, escapeHtml, money, normalizeText } from './utils.js';
 import { updateMainButton } from './telegram.js';
 import { timelineSteps } from './orders.js';
@@ -135,6 +141,14 @@ function shellMarkup() {
           <div id="ordersList"></div>
         </section>
 
+        <section class="pix-panel miniapp-page" id="pixPanel" data-page="payment" hidden>
+          <div class="section-head">
+            <h2>Pix do pedido</h2>
+            <span id="pixStatus">Aguardando pagamento</span>
+          </div>
+          <div id="pixContent"></div>
+        </section>
+
         <section class="loyalty-panel miniapp-page" id="loyaltyPanel" data-page="loyalty" hidden>
           <div class="section-head">
             <h2>Meus pontos</h2>
@@ -175,11 +189,10 @@ function shellMarkup() {
     <aside class="cart-drawer miniapp-page cart-page" id="cartDrawer" data-page="cart" aria-label="Carrinho" hidden>
       <div class="cart-head">
         <div class="cart-head-copy">
-          <h2>Seu carrinho</h2>
           <h2>SEU PEDIDO</h2>
-          <small id="cartHeadHint">Revise os produtos. Entrega, retirada e Pix continuam no Telegram.</small>
+          <small id="cartHeadHint">Revise os produtos. A loja recalcula tudo e gera o Pix no Mini App.</small>
         </div>
-        <button class="ghost" id="closeCart" type="button">Editar</button>
+        <button class="ghost" id="closeCart" type="button">Continuar comprando</button>
       </div>
       <div class="cart-list" id="cartList"></div>
       <div class="cart-foot">
@@ -194,8 +207,8 @@ function shellMarkup() {
             <strong id="drawerSubtotal">R$ 0,00</strong>
           </div>
           <div class="cart-breakdown-row">
-            <span>Entrega e Pix</span>
-            <strong id="drawerDelivery">No Telegram</strong>
+            <span>Entrega</span>
+            <strong id="drawerDelivery">A calcular</strong>
           </div>
           <div class="cart-breakdown-row total">
             <span>Total no carrinho</span>
@@ -207,8 +220,8 @@ function shellMarkup() {
           <small id="cartNotesHint">Alguma observacao para a loja? Ex: trocar sabor, remover item, ponto de referencia.</small>
         </label>
         <div class="checkout-stage" id="cartStepPanel">
-          <small id="checkoutHint">Ao finalizar, o bot vai continuar com entrega, retirada, Pix e comprovante no Telegram.</small>
-          <button class="primary" id="continueToDelivery" type="button" aria-label="FINALIZAR PELO TELEGRAM" disabled>FINALIZAR PELO TELEGRAM</button>
+          <small id="checkoutHint">Ao pagar, o backend valida estoque, pontos, entrega e cria o Pix seguro.</small>
+          <button class="primary" id="continueToDelivery" type="button" aria-label="PAGAR" disabled>PAGAR</button>
         </div>
         <button class="danger" id="clearCartDrawer" type="button" disabled>Limpar carrinho</button>
       </div>
@@ -256,7 +269,7 @@ function collectElements() {
     'promoBanners', 'loyaltyInviteCard', 'pointsBalanceLabel', 'couponCode',
     'copyInviteCode', 'usePointsIntent', 'marketFilters', 'buyAgainSection',
     'bestSellersSection', 'todayOffersSection', 'comboSection', 'lowStockSection',
-    'loyaltyPanel', 'loyaltyBalance',
+    'pixPanel', 'pixStatus', 'pixContent', 'loyaltyPanel', 'loyaltyBalance',
     'loyaltyContent', 'profilePanel', 'profileStatus', 'profileContent',
     'trackingPanel', 'trackingStatus', 'trackingContent',
     'trackingMap', 'products', 'search', 'clearSearch', 'cartButton', 'cartDrawer', 'closeCart',
@@ -337,7 +350,7 @@ export function createRenderer({ state, telegram, handlers }) {
   }
 
   function paginaAtualSegura() {
-    const paginas = new Set(['home', 'categories', 'products', 'product', 'cart', 'orders', 'tracking', 'loyalty', 'profile']);
+    const paginas = new Set(['home', 'categories', 'products', 'product', 'cart', 'payment', 'orders', 'tracking', 'loyalty', 'profile']);
     return paginas.has(state.currentPage) ? state.currentPage : 'home';
   }
 
@@ -358,6 +371,7 @@ export function createRenderer({ state, telegram, handlers }) {
 
   function etapaJornadaAtual() {
     if (state.currentPage === 'cart') return 'carrinho';
+    if (state.currentPage === 'payment') return 'pagamento';
     if (state.currentPage === 'tracking') return 'acompanhar';
     if (state.currentPage === 'orders') return 'confirmado';
     return 'catalogo';
@@ -368,7 +382,7 @@ export function createRenderer({ state, telegram, handlers }) {
     const etapas = [
       ['catalogo', 'Produtos'],
       ['carrinho', 'Carrinho'],
-      ['telegram', 'Telegram'],
+      ['pagamento', 'Pagamento'],
       ['confirmado', 'Confirmado'],
       ['acompanhar', 'Acompanhar']
     ];
@@ -383,7 +397,7 @@ export function createRenderer({ state, telegram, handlers }) {
       const labels = {
         catalogo: 'Escolha produtos',
         carrinho: 'Seu carrinho esta pronto',
-        telegram: 'Finalize no Telegram',
+        pagamento: 'Pix no Mini App',
         confirmado: 'Pedido confirmado',
         acompanhar: 'Acompanhe seu pedido'
       };
@@ -460,7 +474,45 @@ export function createRenderer({ state, telegram, handlers }) {
   }
 
   function renderPixPanel() {
-    return null;
+    if (!els.pixPanel || !els.pixContent) return;
+    const pix = state.pix || state.pedidoAtual?.pix || null;
+    const pedido = state.pedidoAtual || {};
+    const pagamentoStatus = state.orderStatus?.pagamento?.status || pedido.statusPagamento || pix?.status || 'Aguardando pagamento';
+    if (els.pixStatus) els.pixStatus.textContent = pagamentoStatus;
+    if (!pix?.copiaCola) {
+      els.pixContent.innerHTML = '<div class="empty">Revise seu pedido e toque em PAGAR para gerar o Pix dentro do Mini App.</div>';
+      return;
+    }
+    els.pixContent.innerHTML = `
+      <div class="pix-card">
+        <div class="summary-line">
+          <span>Pedido</span>
+          <strong>#${escapeHtml(pedido.id || '')}</strong>
+        </div>
+        <div class="summary-line">
+          <span>Valor</span>
+          <strong>${escapeHtml(money(pix.valor || pedido.total || 0))}</strong>
+        </div>
+        <div class="summary-line">
+          <span>Recebedor</span>
+          <strong>${escapeHtml(pix.recebedor || 'Mercadinho M&J')}</strong>
+        </div>
+        ${pix.txid ? `<div class="summary-line"><span>TXID</span><strong>${escapeHtml(pix.txid)}</strong></div>` : ''}
+        ${pix.qrCodeDataUrl ? `<img class="pix-qr" src="${escapeHtml(pix.qrCodeDataUrl)}" alt="QR Code do Pix">` : ''}
+        <label class="pix-copy">Pix copia e cola
+          <textarea readonly>${escapeHtml(pix.copiaCola)}</textarea>
+        </label>
+        <label class="receipt-upload">Enviar comprovante Pix
+          <input type="file" data-send-receipt-file accept="image/png,image/jpeg,image/webp,application/pdf">
+        </label>
+        <div class="checkout-actions">
+          <button class="primary" type="button" data-copy-pix>Copiar Pix</button>
+          <button class="ghost" type="button" data-refresh-pix>Atualizar pagamento</button>
+          <button class="ghost" type="button" data-send-receipt>Ja paguei / enviar comprovante</button>
+        </div>
+        <small>A loja confere o pagamento antes de preparar o pedido.</small>
+      </div>
+    `;
   }
 
   function renderLoyaltyPanel() {
@@ -598,7 +650,7 @@ export function createRenderer({ state, telegram, handlers }) {
     if (els.marketFilters) els.marketFilters.hidden = !['categories', 'products'].includes(page);
     if (els.marketHero) els.marketHero.hidden = false;
     if (els.bottomNav) {
-      els.bottomNav.hidden = ['cart', 'product'].includes(page);
+      els.bottomNav.hidden = ['cart', 'product', 'payment'].includes(page);
       els.bottomNav.querySelectorAll('[data-nav-page]').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.navPage === page || (btn.dataset.navPage === 'home' && page === 'products'));
       });
@@ -1052,6 +1104,19 @@ export function createRenderer({ state, telegram, handlers }) {
   }
 
   function renderDeliveryAddressPanel() {
+    const entrega = String(state.checkout.deliveryMode || 'retirada') === 'entrega';
+    if (entrega) prefillCheckoutAddressFromCustomer(state, els);
+    const endereco = entrega ? effectiveDeliveryAddressMiniApp(state, els) : {};
+    const completo = enderecoEntregaCompleto(endereco);
+    if (els.deliveryAddressSummary) {
+      els.deliveryAddressSummary.hidden = !entrega;
+      els.deliveryAddressSummary.classList.toggle('incomplete', entrega && !completo);
+    }
+    if (els.deliveryAddressText) {
+      els.deliveryAddressText.textContent = entrega
+        ? resumoEnderecoEntrega(endereco)
+        : 'Retirada no local selecionada.';
+    }
     if (els.checkoutFormPanel) els.checkoutFormPanel.hidden = true;
   }
 
@@ -1059,15 +1124,15 @@ export function createRenderer({ state, telegram, handlers }) {
     const page = paginaAtualSegura();
     const etapaCarrinho = page === 'cart';
     if (els.cartStepPanel) els.cartStepPanel.hidden = !etapaCarrinho;
-    if (els.checkoutStepLabel) els.checkoutStepLabel.textContent = 'Carrinho pronto para o Telegram';
+    if (els.checkoutStepLabel) els.checkoutStepLabel.textContent = 'Pedido pronto para pagamento';
     if (els.continueToDelivery) {
       els.continueToDelivery.disabled = cartCount(state) < 1 || state.sending || !state.loja.aceitaPedidos;
-      const texto = state.sending ? 'Enviando...' : 'FINALIZAR PELO TELEGRAM';
+      const texto = state.sending ? 'Gerando Pix...' : `PAGAR ${money(cartTotal(state))}`;
       els.continueToDelivery.textContent = texto;
       els.continueToDelivery.setAttribute('aria-label', texto);
     }
     if (els.checkoutHint) {
-      els.checkoutHint.textContent = 'O Telegram vai continuar com entrega, retirada, Pix, comprovante e acompanhamento.';
+      els.checkoutHint.textContent = 'O backend recalcula produtos, estoque, pontos, entrega e gera o Pix seguro.';
     }
     renderDeliveryAddressPanel();
     renderJourney();
@@ -1082,26 +1147,32 @@ export function createRenderer({ state, telegram, handlers }) {
     if (els.bottomCount) els.bottomCount.textContent = count ? `${label} no carrinho` : 'Carrinho vazio';
     if (els.total) els.total.textContent = money(total);
     if (els.bottomFreeDeliveryHint) {
-      els.bottomFreeDeliveryHint.textContent = 'Entrega, pontos e Pix entram no Telegram';
+      els.bottomFreeDeliveryHint.textContent = 'Pix e status continuam dentro do Mini App';
     }
     if (els.drawerTotal) els.drawerTotal.textContent = money(total);
     if (els.drawerSubtotal) els.drawerSubtotal.textContent = money(total);
-    if (els.drawerDelivery) els.drawerDelivery.textContent = 'No Telegram';
+    if (els.drawerDelivery) els.drawerDelivery.textContent = state.checkout?.preview
+      ? money(state.checkout.preview.frete || 0)
+      : 'A calcular';
     if (els.drawerGrandTotal) els.drawerGrandTotal.textContent = money(total);
-    if (state.checkout?.preview && els.drawerGrandTotal) els.drawerGrandTotal.textContent = money(total);
+    if (state.checkout?.preview && els.drawerGrandTotal) els.drawerGrandTotal.textContent = money(state.checkout.preview.total || total);
     if (els.checkoutPreviewBox) {
-      els.checkoutPreviewBox.innerHTML = 'O Telegram recalcula entrega, descontos, pontos e Pix antes de confirmar.';
+      const preview = state.checkout?.preview;
+      els.checkoutPreviewBox.innerHTML = preview
+        ? `Subtotal ${money(preview.subtotal)} | Frete ${money(preview.frete)} | Pontos -${money(preview.descontoPontos)} | Total ${money(preview.total)}`
+        : 'O backend vai recalcular produtos, estoque, frete, pontos e Pix.';
     }
     if (els.stickyCartBar) {
-      const paginaSemBarra = ['cart', 'product'].includes(paginaAtualSegura());
+      const paginaSemBarra = ['cart', 'payment', 'product'].includes(paginaAtualSegura());
       els.stickyCartBar.hidden = count < 1 || paginaSemBarra || designConfig(state).carrinhoFixo === false;
     }
     if (els.freeDeliveryHint) {
-      els.freeDeliveryHint.textContent = 'O valor final de entrega, descontos e Pix sera confirmado no Telegram.';
+      els.freeDeliveryHint.textContent = 'O valor final, entrega, descontos e pontos serao recalculados antes do Pix.';
     }
     if (els.clearCartDrawer) els.clearCartDrawer.disabled = count < 1 || state.sending;
     updateMainButton(telegram.webApp, {
       count,
+      totalText: money(total),
       sending: state.sending,
       currentPage: paginaAtualSegura(),
       enabled: state.loja.aceitaPedidos,
@@ -1346,7 +1417,7 @@ export function createRenderer({ state, telegram, handlers }) {
       showToast('Carrinho limpo');
     });
     els.continueToDelivery?.addEventListener('click', async () => {
-      trackMiniAppEvent('checkout_telegram_handoff_start', { itemCount: cartCount(state) });
+      trackMiniAppEvent('checkout_payment_start', { itemCount: cartCount(state) });
       handlers.sendCart?.();
     });
     els.bottomNav?.addEventListener('click', event => {
@@ -1359,10 +1430,27 @@ export function createRenderer({ state, telegram, handlers }) {
       navigateTo(btn.dataset.navPage || 'home');
     });
     els.ordersList?.addEventListener('click', event => {
+      const pixButton = event.target.closest('[data-order-pix]');
       const trackingButton = event.target.closest('[data-order-track]');
+      if (pixButton) {
+        handlers.showPix?.(pixButton.dataset.orderPix);
+        return;
+      }
       if (trackingButton) {
         handlers.showTracking?.(trackingButton.dataset.orderTrack);
       }
+    });
+    els.pixContent?.addEventListener('click', event => {
+      if (event.target.closest('[data-copy-pix]')) handlers.copyPix?.();
+      if (event.target.closest('[data-refresh-pix]')) handlers.refreshPix?.();
+      if (event.target.closest('[data-send-receipt]')) handlers.sendReceipt?.();
+    });
+    els.pixContent?.addEventListener('change', event => {
+      const input = event.target.closest('[data-send-receipt-file]');
+      if (!input) return;
+      const file = input.files?.[0] || null;
+      if (file) handlers.sendReceipt?.(file);
+      input.value = '';
     });
     els.loyaltyContent?.addEventListener('click', event => {
       if (event.target.closest('[data-share-referral]')) handlers.shareReferral?.();

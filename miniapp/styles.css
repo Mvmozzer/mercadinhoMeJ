@@ -256,14 +256,14 @@
 
     .delivery-hero-top {
       display: grid;
-      grid-template-columns: 52px minmax(0, 1fr) auto;
+      grid-template-columns: 46px minmax(0, 1fr) auto;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
 
     .delivery-logo {
-      width: 52px;
-      height: 52px;
+      width: 46px;
+      height: 46px;
       border-radius: 14px;
       object-fit: cover;
       background: #fff;
@@ -296,10 +296,9 @@
     .delivery-brand h1 {
       margin: 0;
       color: #fff;
-      font-size: 22px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      font-size: 20px;
+      white-space: normal;
+      overflow-wrap: anywhere;
       line-height: 1.05;
       font-weight: 900;
     }
@@ -342,15 +341,15 @@
 
     .delivery-actions {
       display: flex;
-      gap: 10px;
+      gap: 8px;
     }
 
     .hero-action-button {
       display: grid;
       place-items: center;
-      width: 46px;
-      height: 46px;
-      min-height: 46px;
+      width: 42px;
+      height: 42px;
+      min-height: 42px;
       padding: 0;
       border-radius: 50%;
       background: rgba(255, 255, 255, .12);

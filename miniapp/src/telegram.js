@@ -97,14 +97,34 @@ export function setMainButtonLoading(webApp, loading = false) {
   else webApp.MainButton.hideProgress?.();
 }
 
-export function updateMainButton(webApp, { count, sending, currentPage, enabled }) {
+export function updateMainButton(webApp, { count, totalText = '', sending, currentPage, enabled, hasPix }) {
   if (!webApp?.MainButton) return;
-  const podeEnviarCarrinho = currentPage === 'cart' && count > 0 && enabled;
-  if (podeEnviarCarrinho) {
-    const text = sending ? 'Enviando...' : 'FINALIZAR PELO TELEGRAM';
+  if (!enabled || count < 1) {
+    webApp.MainButton.hide?.();
+    return;
+  }
+  if (currentPage === 'home' && !hasPix) {
+    webApp.MainButton.setText('VER PEDIDO');
+    webApp.MainButton.show?.();
+    return;
+  }
+  if (currentPage === 'cart') {
+    const suffix = totalText ? ` ${totalText}` : '';
+    const text = sending ? 'Gerando Pix...' : `PAGAR${suffix}`;
     webApp.MainButton.setText(text);
     webApp.MainButton.show?.();
-  } else {
+    return;
+  }
+  if (hasPix && sending && currentPage === 'cart') {
+    webApp.MainButton.setText('Gerando Pix...');
+    webApp.MainButton.show?.();
+    return;
+  }
+  webApp.MainButton.hide?.();
+}
+
+export function hideMainButton(webApp) {
+  if (webApp?.MainButton) {
     webApp.MainButton.hide?.();
   }
 }
