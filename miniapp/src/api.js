@@ -345,7 +345,18 @@ export function normalizarStatusLojaPayload(payload = {}) {
   };
 }
 
-export function atualizarStatusLoja(state, payload = {}) {
+function statusPayloadEstatico(payload = {}, options = {}) {
+  const source = String(
+    options.source ||
+    payload.source ||
+    payload.catalogo?.source ||
+    ''
+  ).trim().toLowerCase();
+  return ['static', 'static-catalog', 'pages-static', 'legacy'].includes(source);
+}
+
+export function atualizarStatusLoja(state, payload = {}, options = {}) {
+  if (statusPayloadEstatico(payload, options)) return state.loja;
   state.loja = normalizarStatusLojaPayload(payload);
   return state.loja;
 }
@@ -486,7 +497,7 @@ export async function loadProducts(state) {
       const res = await fetch('./catalogo.json', { cache: 'no-store' });
       if (!res.ok) throw new Error('catalogo indisponivel');
       const payload = await res.json();
-      atualizarStatusLoja(state, payload);
+      atualizarStatusLoja(state, payload, { source: 'static' });
       state.miniappDesign = payload.catalogo?.design || payload.design || state.miniappDesign;
       state.products = normalizeCatalogPayload(payload);
       cacheProducts(state, state.products);
