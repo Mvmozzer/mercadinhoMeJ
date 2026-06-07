@@ -78,7 +78,7 @@ export function runningOnStaticHost() {
 }
 
 export function isTemporaryPublicApiBase(value) {
-  const text = String(value || '').trim();
+  const text = normalizeUrlProtocol(value);
   if (!text) return false;
   try {
     const host = new URL(text).hostname.toLowerCase();
@@ -98,8 +98,13 @@ export function isTemporaryPublicApiBase(value) {
   }
 }
 
+export function normalizeUrlProtocol(value) {
+  return String(value || '').trim()
+    .replace(/^(https?):\/?(?=[a-z0-9.-])([a-z0-9.-]+(?::\d+)?(?:[/?#].*)?)$/i, '$1://$2');
+}
+
 export function normalizePublicApiBase(value, options = {}) {
-  const text = String(value || '').trim();
+  const text = normalizeUrlProtocol(value);
   if (!text) return '';
   try {
     const url = new URL(text);

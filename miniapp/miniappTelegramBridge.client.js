@@ -2,8 +2,13 @@
   const TOKEN_KEY = 'mj_miniapp_bridge_token';
   const SINCE_KEY = 'mj_miniapp_bridge_since';
 
+  function normalizeUrlProtocol(value) {
+    return String(value || '').trim()
+      .replace(/^(https?):\/?(?=[a-z0-9.-])([a-z0-9.-]+(?::\d+)?(?:[/?#].*)?)$/i, '$1://$2');
+  }
+
   function cleanBase(value) {
-    return String(value || '').trim().replace(/\/+$/, '');
+    return normalizeUrlProtocol(value).replace(/\/+$/, '');
   }
 
   function apiBaseFromLocation() {
