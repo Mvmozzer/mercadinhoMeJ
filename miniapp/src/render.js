@@ -26,13 +26,7 @@ import {
   productsBySection,
   sectionItems
 } from './catalog.js';
-import {
-  effectiveDeliveryAddressMiniApp,
-  enderecoEntregaCompleto,
-  limparClientOrderIdPendente,
-  prefillCheckoutAddressFromCustomer,
-  resumoEnderecoEntrega
-} from './checkout.js';
+import { limparClientOrderIdPendente } from './checkout.js';
 import { debounce, escapeHtml, money, normalizeText } from './utils.js';
 import { updateMainButton } from './telegram.js';
 import { timelineSteps } from './orders.js';
@@ -141,14 +135,6 @@ function shellMarkup() {
           <div id="ordersList"></div>
         </section>
 
-        <section class="pix-panel miniapp-page" id="pixPanel" data-page="payment" hidden>
-          <div class="section-head">
-            <h2>Pix do pedido</h2>
-            <span id="pixStatus">Aguardando</span>
-          </div>
-          <div id="pixContent"></div>
-        </section>
-
         <section class="loyalty-panel miniapp-page" id="loyaltyPanel" data-page="loyalty" hidden>
           <div class="section-head">
             <h2>Meus pontos</h2>
@@ -190,9 +176,10 @@ function shellMarkup() {
       <div class="cart-head">
         <div class="cart-head-copy">
           <h2>Seu carrinho</h2>
-          <small id="cartHeadHint">Seu carrinho esta pronto. Agora vamos gerar o Pix dentro do Mini App.</small>
+          <h2>SEU PEDIDO</h2>
+          <small id="cartHeadHint">Revise os produtos. Entrega, retirada e Pix continuam no Telegram.</small>
         </div>
-        <button class="ghost" id="closeCart" type="button">Continuar comprando</button>
+        <button class="ghost" id="closeCart" type="button">Editar</button>
       </div>
       <div class="cart-list" id="cartList"></div>
       <div class="cart-foot">
@@ -208,65 +195,20 @@ function shellMarkup() {
           </div>
           <div class="cart-breakdown-row">
             <span>Entrega e Pix</span>
-            <strong id="drawerDelivery">No Mini App</strong>
+            <strong id="drawerDelivery">No Telegram</strong>
           </div>
           <div class="cart-breakdown-row total">
             <span>Total no carrinho</span>
             <strong id="drawerGrandTotal">R$ 0,00</strong>
           </div>
         </div>
-        <div class="cart-perks" id="cartPerksPanel">
-          <strong>Beneficios para validar no backend</strong>
-          <div class="coupon-row">
-            <input id="cartCouponCode" type="text" inputmode="text" autocomplete="off" maxlength="40" placeholder="Cupom ou codigo de indicacao">
-          </div>
-          <label class="toggle-line">
-            <input id="cartUsePointsIntent" type="checkbox">
-            Tentar usar meus pontos no fechamento
-          </label>
-          <label>Usar pontos neste pedido
-            <input id="checkoutPoints" type="number" min="0" step="1" inputmode="numeric" placeholder="0">
-          </label>
-          <div class="cart-progress" id="freeDeliveryHint">O valor final, entrega, descontos e pontos serao recalculados com seguranca antes do Pix.</div>
-          <div class="checkout-preview" id="checkoutPreviewBox">O backend vai recalcular produtos, estoque, frete, pontos e Pix.</div>
-        </div>
         <label class="cart-notes" id="cartNotesPanel">Observacoes do pedido
-          <textarea id="cartNotes" maxlength="500" placeholder="Ex: separar troco, evitar substituicoes ou detalhe importante"></textarea>
-          <small id="cartNotesHint">O Pix sera gerado com o valor recalculado pela loja. A loja confirma o pagamento antes de preparar.</small>
+          <textarea id="cartNotes" maxlength="500" placeholder="Adicionar observacao..."></textarea>
+          <small id="cartNotesHint">Alguma observacao para a loja? Ex: trocar sabor, remover item, ponto de referencia.</small>
         </label>
-        <div class="checkout-form-panel miniapp-page checkout-subpage" id="checkoutFormPanel" data-page="delivery">
-          <label>Modalidade
-            <select id="deliveryMode">
-              <option value="retirada">Retirada no local</option>
-              <option value="entrega">Entrega</option>
-            </select>
-          </label>
-          <div class="delivery-address-summary" id="deliveryAddressSummary" hidden>
-            <div>
-              <strong id="deliveryAddressTitle">Endereco cadastrado</strong>
-              <span id="deliveryAddressText">Escolha entrega para usar seu endereco.</span>
-              <small id="deliveryAddressCep"></small>
-            </div>
-            <button class="ghost" id="editDeliveryAddress" type="button">Alterar endereco de entrega</button>
-          </div>
-          <div class="checkout-address-grid" id="checkoutAddressGrid">
-            <label>CEP <input id="checkoutCep" type="text" inputmode="numeric" autocomplete="postal-code"></label>
-            <label>Rua <input id="checkoutRua" type="text" autocomplete="address-line1"></label>
-            <label>Numero <input id="checkoutNumero" type="text" autocomplete="address-line2"></label>
-            <label>Complemento <input id="checkoutComplemento" type="text" autocomplete="address-line2"></label>
-            <label>Bairro <input id="checkoutBairro" type="text" autocomplete="address-level3"></label>
-            <label>Cidade <input id="checkoutCidade" type="text" autocomplete="address-level2"></label>
-            <label>Estado <input id="checkoutEstado" type="text" maxlength="2" autocomplete="address-level1"></label>
-            <label>Telefone <input id="checkoutPhone" type="tel" inputmode="tel" autocomplete="tel"></label>
-          </div>
-          <label class="toggle-line delivery-save-line" id="saveDeliveryAddressLine" hidden>
-            <input id="saveDeliveryAddressToProfile" type="checkbox">
-            Salvar este endereco no meu cadastro
-          </label>
-        </div>
         <div class="checkout-stage" id="cartStepPanel">
-          <small id="checkoutHint">Falta pouco: escolha entrega ou retirada, revise os pontos e gere o Pix.</small>
-          <button class="primary" id="continueToDelivery" type="button" aria-label="Continuar" disabled>Continuar</button>
+          <small id="checkoutHint">Ao finalizar, o bot vai continuar com entrega, retirada, Pix e comprovante no Telegram.</small>
+          <button class="primary" id="continueToDelivery" type="button" aria-label="FINALIZAR PELO TELEGRAM" disabled>FINALIZAR PELO TELEGRAM</button>
         </div>
         <button class="danger" id="clearCartDrawer" type="button" disabled>Limpar carrinho</button>
       </div>
@@ -289,7 +231,7 @@ function shellMarkup() {
           <span>Total: <b id="total">R$ 0,00</b></span>
           <small id="bottomFreeDeliveryHint">Falta R$ 0,00 para frete gratis</small>
         </div>
-        <button class="gold" id="reviewCart" type="button">Ver carrinho</button>
+        <button class="gold" id="reviewCart" type="button">VER PEDIDO</button>
       </div>
     </footer>
 
@@ -314,7 +256,7 @@ function collectElements() {
     'promoBanners', 'loyaltyInviteCard', 'pointsBalanceLabel', 'couponCode',
     'copyInviteCode', 'usePointsIntent', 'marketFilters', 'buyAgainSection',
     'bestSellersSection', 'todayOffersSection', 'comboSection', 'lowStockSection',
-    'pixPanel', 'pixStatus', 'pixContent', 'loyaltyPanel', 'loyaltyBalance',
+    'loyaltyPanel', 'loyaltyBalance',
     'loyaltyContent', 'profilePanel', 'profileStatus', 'profileContent',
     'trackingPanel', 'trackingStatus', 'trackingContent',
     'trackingMap', 'products', 'search', 'clearSearch', 'cartButton', 'cartDrawer', 'closeCart',
@@ -322,9 +264,7 @@ function collectElements() {
     'drawerTotal', 'drawerSubtotal', 'drawerDelivery', 'drawerGrandTotal',
     'cartCouponCode', 'cartUsePointsIntent', 'freeDeliveryHint', 'cartNotes', 'cartPerksPanel', 'cartNotesPanel',
     'cartHeadHint', 'cartNotesHint', 'checkoutStepLabel', 'cartStepPanel',
-    'checkoutHint', 'checkoutFormPanel', 'deliveryMode', 'deliveryAddressSummary',
-    'deliveryAddressTitle', 'deliveryAddressText', 'deliveryAddressCep', 'editDeliveryAddress',
-    'checkoutAddressGrid', 'saveDeliveryAddressLine', 'saveDeliveryAddressToProfile',
+    'checkoutHint', 'checkoutFormPanel', 'deliveryMode',
     'checkoutCep', 'checkoutRua', 'checkoutNumero', 'checkoutComplemento',
     'checkoutBairro', 'checkoutCidade', 'checkoutEstado', 'checkoutPhone',
     'checkoutPoints', 'checkoutPreviewBox', 'continueToDelivery', 'clearCartDrawer', 'reviewCart',
@@ -397,7 +337,7 @@ export function createRenderer({ state, telegram, handlers }) {
   }
 
   function paginaAtualSegura() {
-    const paginas = new Set(['home', 'categories', 'products', 'product', 'cart', 'delivery', 'payment', 'orders', 'tracking', 'loyalty', 'profile']);
+    const paginas = new Set(['home', 'categories', 'products', 'product', 'cart', 'orders', 'tracking', 'loyalty', 'profile']);
     return paginas.has(state.currentPage) ? state.currentPage : 'home';
   }
 
@@ -418,8 +358,6 @@ export function createRenderer({ state, telegram, handlers }) {
 
   function etapaJornadaAtual() {
     if (state.currentPage === 'cart') return 'carrinho';
-    if (state.currentPage === 'delivery') return 'entrega';
-    if (state.currentPage === 'payment') return state.pix?.copiaCola ? 'pix' : 'pagamento';
     if (state.currentPage === 'tracking') return 'acompanhar';
     if (state.currentPage === 'orders') return 'confirmado';
     return 'catalogo';
@@ -430,9 +368,7 @@ export function createRenderer({ state, telegram, handlers }) {
     const etapas = [
       ['catalogo', 'Produtos'],
       ['carrinho', 'Carrinho'],
-      ['entrega', 'Entrega'],
-      ['pagamento', 'Pagamento'],
-      ['pix', 'Pix'],
+      ['telegram', 'Telegram'],
       ['confirmado', 'Confirmado'],
       ['acompanhar', 'Acompanhar']
     ];
@@ -447,13 +383,11 @@ export function createRenderer({ state, telegram, handlers }) {
       const labels = {
         catalogo: 'Escolha produtos',
         carrinho: 'Seu carrinho esta pronto',
-        entrega: 'Entrega ou retirada',
-        pagamento: 'Pagamento no Mini App',
-        pix: 'Pix no Mini App',
+        telegram: 'Finalize no Telegram',
         confirmado: 'Pedido confirmado',
         acompanhar: 'Acompanhe seu pedido'
       };
-      els.journeyStatus.textContent = labels[atual] || 'Compra no Mini App';
+      els.journeyStatus.textContent = labels[atual] || 'Catalogo e carrinho';
     }
   }
 
@@ -526,43 +460,7 @@ export function createRenderer({ state, telegram, handlers }) {
   }
 
   function renderPixPanel() {
-    if (!els.pixPanel || !els.pixContent) return;
-    const pix = state.pix || state.pedidoAtual?.pix || null;
-    if (!pix?.copiaCola) {
-      els.pixContent.innerHTML = '<div class="empty">Revise o pedido e gere o Pix para pagar dentro do Mini App.</div>';
-      return;
-    }
-    if (els.pixStatus) els.pixStatus.textContent = pix.status || state.pedidoAtual?.statusPagamento || 'Aguardando pagamento';
-    els.pixContent.innerHTML = `
-      <div class="pix-card">
-        <div class="summary-line">
-          <span>Pedido</span>
-          <strong>#${escapeHtml(state.pedidoAtual?.id || '')}</strong>
-        </div>
-        <div class="summary-line">
-          <span>Valor</span>
-          <strong>${escapeHtml(money(pix.valor || state.pedidoAtual?.total || 0))}</strong>
-        </div>
-        <div class="summary-line">
-          <span>Recebedor</span>
-          <strong>${escapeHtml(pix.recebedor || 'Mercadinho M&J')}</strong>
-        </div>
-        ${pix.txid ? `<div class="summary-line"><span>TXID</span><strong>${escapeHtml(pix.txid)}</strong></div>` : ''}
-        ${pix.qrCodeDataUrl ? `<img class="pix-qr" src="${escapeHtml(pix.qrCodeDataUrl)}" alt="QR Code do Pix">` : ''}
-        <label class="pix-copy">Pix copia e cola
-          <textarea readonly>${escapeHtml(pix.copiaCola)}</textarea>
-        </label>
-        <label class="receipt-upload">Enviar comprovante Pix
-          <input type="file" data-send-receipt-file accept="image/png,image/jpeg,image/webp,application/pdf">
-        </label>
-        <div class="checkout-actions">
-          <button class="primary" type="button" data-copy-pix>Copiar Pix</button>
-          <button class="ghost" type="button" data-refresh-pix>Atualizar pagamento</button>
-          <button class="ghost" type="button" data-send-receipt>Ja paguei / enviar observacao</button>
-        </div>
-        <small>A loja vai conferir seu pagamento antes de preparar o pedido.</small>
-      </div>
-    `;
+    return null;
   }
 
   function renderLoyaltyPanel() {
@@ -691,7 +589,7 @@ export function createRenderer({ state, telegram, handlers }) {
     state.currentPage = page;
     document.querySelectorAll('.miniapp-page').forEach(el => {
       const target = String(el.dataset.page || '');
-      const visible = target === page || (page === 'payment' && target === 'payment');
+      const visible = target === page;
       el.hidden = !visible;
       el.classList.toggle('active-page', visible);
     });
@@ -700,18 +598,18 @@ export function createRenderer({ state, telegram, handlers }) {
     if (els.marketFilters) els.marketFilters.hidden = !['categories', 'products'].includes(page);
     if (els.marketHero) els.marketHero.hidden = false;
     if (els.bottomNav) {
-      els.bottomNav.hidden = ['cart', 'delivery', 'payment', 'product'].includes(page);
+      els.bottomNav.hidden = ['cart', 'product'].includes(page);
       els.bottomNav.querySelectorAll('[data-nav-page]').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.navPage === page || (btn.dataset.navPage === 'home' && page === 'products'));
       });
     }
-    const cartFlow = ['cart', 'delivery', 'payment'].includes(page) && !state.pix?.copiaCola;
+    const cartFlow = page === 'cart';
     if (els.cartDrawer) els.cartDrawer.hidden = !cartFlow;
     els.cartDrawer?.classList.toggle('open', cartFlow);
     els.cartDrawer?.classList.toggle('as-page', cartFlow);
-    if (els.checkoutFormPanel) els.checkoutFormPanel.hidden = page !== 'delivery';
-    if (els.cartPerksPanel) els.cartPerksPanel.hidden = page !== 'payment';
-    if (els.cartNotesPanel) els.cartNotesPanel.hidden = page !== 'payment';
+    if (els.checkoutFormPanel) els.checkoutFormPanel.hidden = true;
+    if (els.cartPerksPanel) els.cartPerksPanel.hidden = true;
+    if (els.cartNotesPanel) els.cartNotesPanel.hidden = page !== 'cart';
     if (els.productSheetBackdrop) els.productSheetBackdrop.hidden = true;
     els.productSheet?.classList.toggle('open', page === 'product');
     els.productSheet?.classList.toggle('as-page', page === 'product');
@@ -993,7 +891,7 @@ export function createRenderer({ state, telegram, handlers }) {
     const qty = cartQty(state, item.id);
     const card = document.createElement('article');
     const semEstoque = Number(item.stock || 0) <= 0;
-    card.className = `product ${semEstoque ? 'unavailable' : ''}`;
+    card.className = `product durger-card ${qty > 0 ? 'selected' : ''} ${semEstoque ? 'unavailable' : ''}`;
     card.dataset.productId = item.id;
     const media = item.image
       ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}" loading="lazy" referrerpolicy="no-referrer">`
@@ -1004,19 +902,23 @@ export function createRenderer({ state, telegram, handlers }) {
       : isWeightedProduct(item)
         ? `${formatMeasure(item.stock, item.unidadeVenda || item.unit)} disp.`
         : `${item.stock} disp.`;
-    const details = [item.brand, detalhesPeso, estoqueTexto].filter(Boolean).join(' | ');
+    const details = [item.brand, detalhesPeso || item.unit, estoqueTexto].filter(Boolean).join(' | ');
     const price = item.promotion
       ? `<div class="price"><del>${money(item.normalPrice)}</del><strong>${priceLabel(item)}</strong></div>`
       : `<div class="price"><strong>${priceLabel(item)}</strong></div>`;
     const opcoesPeso = isWeightedProduct(item)
       ? `<div class="weight-options">${measureOptions(item).map(value => `<button type="button" data-action="set-weight" data-weight="${value}">${formatMeasure(value, item.unidadeVenda)}</button>`).join('')}</div>`
       : '';
+    const badge = qty > 0
+      ? `<span class="durger-badge" aria-label="${escapeHtml(String(qty))} no carrinho">${isWeightedProduct(item) ? escapeHtml(formatMeasure(qty, item.unidadeVenda)) : escapeHtml(String(qty))}</span>`
+      : '<span class="durger-badge" aria-hidden="true"></span>';
     const control = semEstoque
       ? '<span class="stock-empty">Indisponivel</span>'
       : qty > 0
-        ? `<div class="qty"><button type="button" data-action="minus" aria-label="Diminuir quantidade">-</button><span>${isWeightedProduct(item) ? formatMeasure(qty, item.unidadeVenda) : qty}</span><button type="button" data-action="plus" aria-label="Adicionar ao carrinho">+</button></div>`
-        : `<button class="primary add-single" type="button" data-action="plus" aria-label="Adicionar ao carrinho">Adicionar</button>`;
+        ? `<div class="qty durger-qty"><button type="button" data-action="minus" aria-label="Diminuir quantidade">-</button><span>${isWeightedProduct(item) ? formatMeasure(qty, item.unidadeVenda) : qty}</span><button type="button" data-action="plus" aria-label="Adicionar ao carrinho">+</button></div>`
+        : `<button class="primary add-single durger-add" type="button" data-action="plus" aria-label="Adicionar ao carrinho">ADICIONAR</button>`;
     card.innerHTML = `
+      ${badge}
       <div class="product-media">${media}</div>
       <div class="product-body">
         <div class="product-title">
@@ -1053,9 +955,7 @@ export function createRenderer({ state, telegram, handlers }) {
   function renderProducts() {
     if (!els.products) return;
     els.products.innerHTML = '';
-    const homeOnly = state.currentPage !== 'products' && !state.query.trim() && !state.section && !state.marketFilter && !state.marketSort;
-    els.products.hidden = homeOnly;
-    if (homeOnly) return;
+    const homeOnly = false;
     els.products.hidden = false;
     const products = filteredProducts(state);
     if (state.catalogLoading) {
@@ -1072,7 +972,7 @@ export function createRenderer({ state, telegram, handlers }) {
     }
     productsBySection(state).forEach(group => {
       const section = document.createElement('section');
-      section.className = 'section-block';
+      section.className = 'section-block durger-catalog';
       section.innerHTML = `
         <div class="section-head">
           <h2>${escapeHtml(group.label)}</h2>
@@ -1152,64 +1052,22 @@ export function createRenderer({ state, telegram, handlers }) {
   }
 
   function renderDeliveryAddressPanel() {
-    const entrega = String(state.checkout.deliveryMode || 'retirada') === 'entrega';
-    if (entrega) prefillCheckoutAddressFromCustomer(state, els);
-    const endereco = entrega ? effectiveDeliveryAddressMiniApp(state, els) : {};
-    const completo = enderecoEntregaCompleto(endereco);
-    const editando = state.checkout.deliveryAddressEditing === true || !completo;
-    if (els.deliveryAddressSummary) {
-      els.deliveryAddressSummary.hidden = !entrega;
-      els.deliveryAddressSummary.classList.toggle('incomplete', entrega && !completo);
-    }
-    if (els.deliveryAddressTitle) {
-      els.deliveryAddressTitle.textContent = completo ? 'Endereco cadastrado' : 'Complete o endereco de entrega';
-    }
-    if (els.deliveryAddressText) {
-      els.deliveryAddressText.textContent = entrega
-        ? resumoEnderecoEntrega(endereco)
-        : 'Retirada no local selecionada.';
-    }
-    if (els.deliveryAddressCep) {
-      els.deliveryAddressCep.textContent = entrega && endereco.cep ? `CEP ${String(endereco.cep).replace(/\D/g, '')}` : '';
-    }
-    if (els.checkoutAddressGrid) {
-      els.checkoutAddressGrid.hidden = !entrega || !editando;
-    }
-    if (els.saveDeliveryAddressLine) {
-      els.saveDeliveryAddressLine.hidden = !entrega || !editando;
-    }
-    if (els.saveDeliveryAddressToProfile) {
-      els.saveDeliveryAddressToProfile.checked = state.checkout.saveAddressToProfile === true;
-    }
+    if (els.checkoutFormPanel) els.checkoutFormPanel.hidden = true;
   }
 
   function renderCheckoutStep() {
     const page = paginaAtualSegura();
-    const etapaCarrinho = ['cart', 'delivery', 'payment'].includes(page);
+    const etapaCarrinho = page === 'cart';
     if (els.cartStepPanel) els.cartStepPanel.hidden = !etapaCarrinho;
-    const labels = {
-      cart: 'Carrinho separado',
-      delivery: 'Entrega ou retirada',
-      payment: 'Pagamento direto no Mini App'
-    };
-    if (els.checkoutStepLabel) els.checkoutStepLabel.textContent = labels[page] || 'Carrinho pronto para gerar Pix';
+    if (els.checkoutStepLabel) els.checkoutStepLabel.textContent = 'Carrinho pronto para o Telegram';
     if (els.continueToDelivery) {
       els.continueToDelivery.disabled = cartCount(state) < 1 || state.sending || !state.loja.aceitaPedidos;
-      const textos = {
-        cart: 'Continuar para entrega',
-        delivery: 'Continuar para pagamento',
-        payment: state.sending ? 'Gerando Pix...' : 'Gerar Pix e finalizar'
-      };
-      els.continueToDelivery.textContent = textos[page] || 'Continuar';
-      els.continueToDelivery.setAttribute('aria-label', textos[page] || 'Continuar');
+      const texto = state.sending ? 'Enviando...' : 'FINALIZAR PELO TELEGRAM';
+      els.continueToDelivery.textContent = texto;
+      els.continueToDelivery.setAttribute('aria-label', texto);
     }
     if (els.checkoutHint) {
-      const hints = {
-        cart: 'Revise os itens antes de escolher entrega ou retirada.',
-        delivery: 'Escolha receber em casa ou retirar no local. Endereco so e obrigatorio para entrega.',
-        payment: 'O backend recalcula total, frete, pontos e gera o Pix seguro.'
-      };
-      els.checkoutHint.textContent = hints[page] || '';
+      els.checkoutHint.textContent = 'O Telegram vai continuar com entrega, retirada, Pix, comprovante e acompanhamento.';
     }
     renderDeliveryAddressPanel();
     renderJourney();
@@ -1224,30 +1082,22 @@ export function createRenderer({ state, telegram, handlers }) {
     if (els.bottomCount) els.bottomCount.textContent = count ? `${label} no carrinho` : 'Carrinho vazio';
     if (els.total) els.total.textContent = money(total);
     if (els.bottomFreeDeliveryHint) {
-      const missing = Math.max(0, 60 - total);
-      els.bottomFreeDeliveryHint.textContent = missing > 0
-        ? `Falta ${money(missing)} para frete gratis`
-        : 'Frete gratis pode ser validado no Telegram';
+      els.bottomFreeDeliveryHint.textContent = 'Entrega, pontos e Pix entram no Telegram';
     }
     if (els.drawerTotal) els.drawerTotal.textContent = money(total);
     if (els.drawerSubtotal) els.drawerSubtotal.textContent = money(total);
-    if (els.drawerDelivery) els.drawerDelivery.textContent = state.checkout?.preview
-      ? money(state.checkout.preview.frete || 0)
-      : 'A calcular';
+    if (els.drawerDelivery) els.drawerDelivery.textContent = 'No Telegram';
     if (els.drawerGrandTotal) els.drawerGrandTotal.textContent = money(total);
-    if (state.checkout?.preview && els.drawerGrandTotal) els.drawerGrandTotal.textContent = money(state.checkout.preview.total || total);
+    if (state.checkout?.preview && els.drawerGrandTotal) els.drawerGrandTotal.textContent = money(total);
     if (els.checkoutPreviewBox) {
-      const preview = state.checkout?.preview;
-      els.checkoutPreviewBox.innerHTML = preview
-        ? `Subtotal ${money(preview.subtotal)} | Frete ${money(preview.frete)} | Pontos -${money(preview.descontoPontos)} | Total ${money(preview.total)}`
-        : 'O backend vai recalcular produtos, estoque, frete, pontos e Pix.';
+      els.checkoutPreviewBox.innerHTML = 'O Telegram recalcula entrega, descontos, pontos e Pix antes de confirmar.';
     }
     if (els.stickyCartBar) {
-      const paginaSemBarra = ['cart', 'delivery', 'payment', 'product'].includes(paginaAtualSegura());
+      const paginaSemBarra = ['cart', 'product'].includes(paginaAtualSegura());
       els.stickyCartBar.hidden = count < 1 || paginaSemBarra || designConfig(state).carrinhoFixo === false;
     }
     if (els.freeDeliveryHint) {
-      els.freeDeliveryHint.textContent = 'O valor final, entrega, descontos, cupom e pontos serao recalculados com seguranca antes do Pix.';
+      els.freeDeliveryHint.textContent = 'O valor final de entrega, descontos e Pix sera confirmado no Telegram.';
     }
     if (els.clearCartDrawer) els.clearCartDrawer.disabled = count < 1 || state.sending;
     updateMainButton(telegram.webApp, {
@@ -1342,7 +1192,7 @@ export function createRenderer({ state, telegram, handlers }) {
   function setCartOpen(open) {
     state.cartOpen = open;
     if (open) state.currentPage = 'cart';
-    if (!open && ['cart', 'delivery', 'payment'].includes(state.currentPage)) state.currentPage = 'home';
+    if (!open && state.currentPage === 'cart') state.currentPage = 'home';
     renderCart();
     renderCheckoutStep();
     renderPageVisibility();
@@ -1473,50 +1323,6 @@ export function createRenderer({ state, telegram, handlers }) {
       syncUsePointsIntent(state, event.target.checked);
       renderLoyaltyCard();
     });
-    els.deliveryMode?.addEventListener('change', event => {
-      state.checkout.deliveryMode = event.target.value === 'entrega' ? 'entrega' : 'retirada';
-      state.checkout.deliveryAddressEditing = state.checkout.deliveryMode === 'entrega' && !enderecoEntregaCompleto(state.checkout.deliveryAddress || {});
-      trackMiniAppEvent('checkout_address_change', {
-        mode: state.checkout.deliveryMode,
-        editing: state.checkout.deliveryAddressEditing === true
-      });
-      render();
-    });
-    els.editDeliveryAddress?.addEventListener('click', () => {
-      state.checkout.deliveryAddressEditing = true;
-      trackMiniAppEvent('checkout_address_change', { editing: true, mode: state.checkout.deliveryMode });
-      renderDeliveryAddressPanel();
-    });
-    [
-      els.checkoutCep,
-      els.checkoutRua,
-      els.checkoutNumero,
-      els.checkoutComplemento,
-      els.checkoutBairro,
-      els.checkoutCidade,
-      els.checkoutEstado,
-      els.checkoutPhone
-    ].filter(Boolean).forEach(input => {
-      input.addEventListener('input', () => {
-        state.checkout.deliveryAddressDirty = true;
-        state.checkout.deliveryAddressEditing = true;
-        state.checkout.deliveryAddress = effectiveDeliveryAddressMiniApp(state, els);
-        renderDeliveryAddressPanel();
-      });
-      input.addEventListener('change', () => {
-        trackMiniAppEvent('checkout_address_change', {
-          mode: state.checkout.deliveryMode,
-          complete: enderecoEntregaCompleto(state.checkout.deliveryAddress || {})
-        });
-      });
-    });
-    els.saveDeliveryAddressToProfile?.addEventListener('change', event => {
-      state.checkout.saveAddressToProfile = event.target.checked === true;
-      trackMiniAppEvent('checkout_address_change', { saveToProfile: state.checkout.saveAddressToProfile === true });
-    });
-    els.checkoutPoints?.addEventListener('input', event => {
-      state.checkout.pointsToUse = Math.max(0, Math.floor(Number(event.target.value || 0) || 0));
-    });
     els.copyInviteCode?.addEventListener('click', async () => {
       const code = String(state.cliente?.codigoIndicacao || state.cliente?.codigo_indicacao || '').trim();
       const text = code || 'Abra o Mercadinho M&J pelo Telegram e informe meu codigo de indicacao.';
@@ -1540,23 +1346,7 @@ export function createRenderer({ state, telegram, handlers }) {
       showToast('Carrinho limpo');
     });
     els.continueToDelivery?.addEventListener('click', async () => {
-      const page = paginaAtualSegura();
-      if (page === 'cart') {
-        trackMiniAppEvent('checkout_continue', { from: 'cart', to: 'delivery', itemCount: cartCount(state) });
-        navigateTo('delivery');
-        return;
-      }
-      if (page === 'delivery') {
-        try {
-          trackMiniAppEvent('checkout_continue', { from: 'delivery', to: 'payment', mode: state.checkout.deliveryMode });
-          await handlers.previewCheckout?.();
-          navigateTo('payment');
-        } catch (_) {
-          // A mensagem amigavel e exibida pelo handler.
-        }
-        return;
-      }
-      trackMiniAppEvent('checkout_payment_start', { itemCount: cartCount(state), mode: state.checkout.deliveryMode });
+      trackMiniAppEvent('checkout_telegram_handoff_start', { itemCount: cartCount(state) });
       handlers.sendCart?.();
     });
     els.bottomNav?.addEventListener('click', event => {
@@ -1569,27 +1359,10 @@ export function createRenderer({ state, telegram, handlers }) {
       navigateTo(btn.dataset.navPage || 'home');
     });
     els.ordersList?.addEventListener('click', event => {
-      const pixButton = event.target.closest('[data-order-pix]');
       const trackingButton = event.target.closest('[data-order-track]');
-      if (pixButton) {
-        handlers.showPix?.(pixButton.dataset.orderPix);
-        return;
-      }
       if (trackingButton) {
         handlers.showTracking?.(trackingButton.dataset.orderTrack);
       }
-    });
-    els.pixContent?.addEventListener('click', event => {
-      if (event.target.closest('[data-copy-pix]')) handlers.copyPix?.();
-      if (event.target.closest('[data-refresh-pix]')) handlers.refreshPix?.();
-      if (event.target.closest('[data-send-receipt]')) handlers.sendReceipt?.();
-    });
-    els.pixContent?.addEventListener('change', event => {
-      const input = event.target.closest('[data-send-receipt-file]');
-      if (!input) return;
-      const file = input.files?.[0] || null;
-      if (file) handlers.sendReceipt?.(file);
-      input.value = '';
     });
     els.loyaltyContent?.addEventListener('click', event => {
       if (event.target.closest('[data-share-referral]')) handlers.shareReferral?.();

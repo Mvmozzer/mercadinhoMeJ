@@ -236,6 +236,7 @@ const MINIAPP_EVENTOS_PERMITIDOS = new Set([
   'checkout_continue',
   'checkout_address_change',
   'checkout_payment_start',
+  'checkout_telegram_handoff_start',
   'pix_receipt_upload_start',
   'product_open',
   'category_open',
@@ -484,6 +485,7 @@ export async function loadProducts(state) {
   state.catalogSource = 'loading';
   if (await loadProductsPage(state, { reset: true })) return;
   try {
+    exigirApiBaseConfigurada(state);
     const res = await fetch(`${apiBase(state)}/api/miniapp/catalogo`, { cache: 'no-store' });
     if (!res.ok) throw new Error('catalogo indisponivel');
     const payload = await res.json();
@@ -495,8 +497,12 @@ export async function loadProducts(state) {
     state.catalogSource = 'api';
   } catch (_) {
     try {
-      const res = await fetch('./catalogo.json', { cache: 'no-store' });
-      if (!res.ok) throw new Error('catalogo indisponivel');
+      let res = null;
+      for (const url of ['./catalogo.json', '../catalogo.json']) {
+        res = await fetch(url, { cache: 'no-store' });
+        if (res.ok) break;
+      }
+      if (!res || !res.ok) throw new Error('catalogo indisponivel');
       const payload = await res.json();
       atualizarStatusLoja(state, payload, { source: 'static' });
       state.miniappDesign = payload.catalogo?.design || payload.design || state.miniappDesign;
@@ -506,8 +512,12 @@ export async function loadProducts(state) {
       state.catalogSource = 'static';
     } catch (error) {
       try {
-        const res = await fetch('./produtos.json', { cache: 'no-store' });
-        if (!res.ok) throw new Error('catalogo indisponivel');
+        let res = null;
+        for (const url of ['./produtos.json', '../produtos.json']) {
+          res = await fetch(url, { cache: 'no-store' });
+          if (res.ok) break;
+        }
+        if (!res || !res.ok) throw new Error('catalogo indisponivel');
         state.products = normalizeCatalogPayload(await res.json());
         cacheProducts(state, state.products);
         state.catalogSections = catalogSectionsFromPayload(null, state.products);
@@ -555,6 +565,24 @@ export async function checkoutCreate(state, payload) {
   state.pedidoAtual = data.pedido || null;
   state.pix = data.pix || null;
   state.checkout.lastCreate = data;
+  state.lastUpdated = Date.now();
+  return data;
+}
+
+export async function syncMiniAppCart(state, payload) {
+  const data = await apiFetch(state, '/api/miniapp/carrinho/sync', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+  state.lastUpdated = Date.now();
+  return data;
+}
+
+export async function telegramHandoff(state, payload) {
+  const data = await apiFetch(state, '/api/miniapp/checkout/telegram-handoff', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
   state.lastUpdated = Date.now();
   return data;
 }

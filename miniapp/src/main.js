@@ -16,12 +16,10 @@ import { sectionItems } from './catalog.js';
 import {
   finalizarCheckoutMiniApp,
   limparClientOrderIdPendente,
-  loadCheckoutAddressFromApi,
   previewCheckoutMiniApp
 } from './checkout.js';
 import { loadLoyalty, shareReferralCode } from './loyalty.js';
 import { loadOrder, loadOrders as loadOrdersApi, pollOrderStatus } from './orders.js';
-import { copyPix, refreshPixStatus, uploadReceipt } from './pix.js';
 import { createRenderer } from './render.js';
 import { createInitialState } from './state.js';
 import { persistMiniAppUiState, restoreMiniAppUiState, validateRestoredMiniAppUiOwner } from './storage.js';
@@ -33,7 +31,7 @@ const handlers = {};
 let renderer = null;
 
 const telegram = setupTelegram(() => {
-  if (state.currentPage === 'payment' && !state.pix?.copiaCola) return sendCartToTelegram();
+  if (state.currentPage === 'cart') return sendCartToTelegram();
   return null;
 });
 
@@ -95,7 +93,6 @@ async function loadOrders() {
 async function bootstrapMiniApp() {
   if (!state.authOk) return;
   await loadBootstrap(state);
-  await loadCheckoutAddressFromApi(state, renderer.els).catch(() => null);
   renderer.render();
 }
 
@@ -112,7 +109,6 @@ async function resumeRestoredFlow() {
     if (!pedido?.id) return;
     await pollOrderStatus(state, pedido.id).catch(() => null);
     if (state.currentPage === 'tracking') await loadTracking(state, pedido.id).catch(() => null);
-    if (state.currentPage === 'payment') await refreshPixStatus(state, pedido.id).catch(() => null);
   } catch (_) {
     state.restoredPedidoId = '';
   }
@@ -142,23 +138,20 @@ async function sendCartToTelegram() {
       render: renderer.render,
       showToast: renderer.showToast
     });
-    if (result.mode === 'api' || result.mode === 'bridge') {
+    if (result.mode === 'api' || result.mode === 'bridge' || result.mode === 'fallback') {
       await Promise.all([
         loadOrders(),
-        loadLoyaltyState(),
-        state.pedidoAtual?.id ? loadTracking(state, state.pedidoAtual.id).catch(() => null) : Promise.resolve()
+        loadLoyaltyState()
       ]);
-      renderer.navigateTo('payment');
+      renderer.setCartOpen(false);
+      renderer.navigateTo('home');
     }
   } catch (error) {
-    renderer.showToast(error.message || 'Falha ao finalizar pedido.');
+    renderer.showToast(error.message || 'Nao consegui enviar seu carrinho para o Telegram.');
   } finally {
     state.sending = false;
     setMainButtonLoading(telegram.webApp, false);
-    if (!state.pix?.copiaCola) {
-      state.checkoutStep = 'catalog';
-      renderer.setCartOpen(false);
-    }
+    state.checkoutStep = 'catalog';
     renderer.render();
   }
 }
@@ -173,19 +166,6 @@ async function previewCheckout() {
   }
 }
 
-async function showPix(pedidoId) {
-  try {
-    const pedido = await loadOrder(state, pedidoId);
-    if (pedido?.id) await refreshPixStatus(state, pedido.id);
-    if (pedido?.id) await pollOrderStatus(state, pedido.id).catch(() => null);
-    if (await navigateAfterPaymentConfirmation(pedido?.id)) return;
-    renderer.navigateTo('payment');
-    renderer.render();
-  } catch (error) {
-    renderer.showToast(error.message || 'Nao foi possivel carregar o Pix.');
-  }
-}
-
 async function showTracking(pedidoId) {
   try {
     const pedido = await loadOrder(state, pedidoId);
@@ -194,101 +174,6 @@ async function showTracking(pedidoId) {
     renderer.render();
   } catch (error) {
     renderer.showToast(error.message || 'Nao foi possivel carregar acompanhamento.');
-  }
-}
-
-function isPaymentConfirmed() {
-  const paymentStatus = String(
-    state.orderStatus?.pagamento?.status ||
-    state.pedidoAtual?.statusPagamento ||
-    state.pix?.status ||
-    ''
-  ).toLowerCase();
-  const orderStatus = String(
-    state.orderStatus?.status ||
-    state.pedidoAtual?.status ||
-    ''
-  ).toLowerCase();
-  return paymentStatus === 'pago' || [
-    'pago',
-    'preparando',
-    'pronto',
-    'aguardando_entregador',
-    'saiu_para_entrega',
-    'entregue'
-  ].includes(orderStatus);
-}
-
-async function navigateAfterPaymentConfirmation(pedidoId) {
-  if (!pedidoId || !isPaymentConfirmed()) return false;
-  await loadTracking(state, pedidoId).catch(() => null);
-  renderer.navigateTo('tracking');
-  renderer.render();
-  renderer.showToast('Pagamento aprovado. Acompanhe seu pedido.');
-  return true;
-}
-
-async function refreshPix() {
-  const pedidoId = state.pedidoAtual?.id;
-  if (!pedidoId) return;
-  try {
-    await refreshPixStatus(state, pedidoId);
-    await pollOrderStatus(state, pedidoId).catch(() => null);
-    if (await navigateAfterPaymentConfirmation(pedidoId)) return;
-    renderer.render();
-    renderer.showToast('Pagamento atualizado');
-  } catch (error) {
-    renderer.showToast(error.message || 'Nao foi possivel atualizar Pix.');
-  }
-}
-
-function receiptFileError(file) {
-  if (!file) return '';
-  const maxBytes = 5 * 1024 * 1024;
-  const allowedTypes = new Set(['image/png', 'image/jpeg', 'image/webp', 'application/pdf']);
-  const allowedExtensions = /\.(png|jpe?g|webp|pdf)$/i;
-  if (file.size > maxBytes) return 'Comprovante muito grande. Envie arquivo de ate 5 MB.';
-  if (!allowedTypes.has(String(file.type || '').toLowerCase())) return 'Formato invalido. Use PNG, JPG, WEBP ou PDF.';
-  if (!allowedExtensions.test(file.name || '')) return 'Extensao invalida. Use PNG, JPG, WEBP ou PDF.';
-  return '';
-}
-
-async function sendReceipt(file = null) {
-  const pedidoId = state.pedidoAtual?.id;
-  if (!pedidoId) return;
-  let payload = null;
-  if (typeof File !== 'undefined' && file instanceof File) {
-    const erroArquivo = receiptFileError(file);
-    if (erroArquivo) {
-      renderer.showToast(erroArquivo);
-      return;
-    }
-    payload = new FormData();
-    payload.append('comprovante', file, file.name || 'comprovante');
-  } else {
-    const texto = window.prompt('Informe uma observacao sobre o pagamento ou comprovante:');
-    if (!texto) return;
-    payload = { texto };
-  }
-  try {
-    await sendMiniAppEvent(state, 'pix_receipt_upload_start', {
-      pedidoId: String(pedidoId),
-      hasFile: payload instanceof FormData
-    }).catch(() => null);
-    await uploadReceipt(state, pedidoId, payload);
-    await pollOrderStatus(state, pedidoId).catch(() => null);
-    renderer.showToast('Comprovante registrado para conferencia.');
-  } catch (error) {
-    renderer.showToast(error.message || 'Nao foi possivel enviar comprovante.');
-  }
-}
-
-async function copyCurrentPix() {
-  try {
-    await copyPix(state);
-    renderer.showToast('Pix copiado.');
-  } catch (error) {
-    renderer.showToast(error.message || 'Pix indisponivel.');
   }
 }
 
@@ -312,10 +197,6 @@ async function pollMiniApp() {
   ]);
   if (state.pedidoAtual?.id && !stopTrackingWhenDelivered(state)) {
     await loadTracking(state, state.pedidoAtual.id).catch(() => null);
-  }
-  if (state.currentPage === 'payment' && state.pedidoAtual?.id) {
-    await navigateAfterPaymentConfirmation(state.pedidoAtual.id);
-    return;
   }
   renderer.render();
 }
@@ -368,11 +249,7 @@ async function init() {
   handlers.sendCart = sendCartToTelegram;
   handlers.previewCheckout = previewCheckout;
   handlers.loadOrders = loadOrders;
-  handlers.showPix = showPix;
   handlers.showTracking = showTracking;
-  handlers.refreshPix = refreshPix;
-  handlers.copyPix = copyCurrentPix;
-  handlers.sendReceipt = sendReceipt;
   handlers.shareReferral = shareReferral;
   handlers.persistUiState = () => persistMiniAppUiState(state);
   handlers.syncCartAction = (action, payload) => bridgeSendAction(state, action, payload).catch(() => null);

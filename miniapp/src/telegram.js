@@ -97,11 +97,11 @@ export function setMainButtonLoading(webApp, loading = false) {
   else webApp.MainButton.hideProgress?.();
 }
 
-export function updateMainButton(webApp, { count, sending, currentPage, enabled, hasPix }) {
+export function updateMainButton(webApp, { count, sending, currentPage, enabled }) {
   if (!webApp?.MainButton) return;
-  const podeGerarPix = currentPage === 'payment' && count > 0 && enabled && !hasPix;
-  if (podeGerarPix) {
-    const text = sending ? 'Gerando Pix...' : 'Gerar Pix';
+  const podeEnviarCarrinho = currentPage === 'cart' && count > 0 && enabled;
+  if (podeEnviarCarrinho) {
+    const text = sending ? 'Enviando...' : 'FINALIZAR PELO TELEGRAM';
     webApp.MainButton.setText(text);
     webApp.MainButton.show?.();
   } else {
