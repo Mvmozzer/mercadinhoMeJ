@@ -1252,10 +1252,10 @@ export function createRenderer({ state, telegram, handlers }) {
     if (els.clearCartDrawer) els.clearCartDrawer.disabled = count < 1 || state.sending;
     updateMainButton(telegram.webApp, {
       count,
-      totalText: money(total),
       sending: state.sending,
-      checkoutStep: state.checkoutStep,
-      enabled: state.loja.aceitaPedidos
+      currentPage: paginaAtualSegura(),
+      enabled: state.loja.aceitaPedidos,
+      hasPix: Boolean(state.pix?.copiaCola)
     });
     renderCart();
     renderCheckoutStep();

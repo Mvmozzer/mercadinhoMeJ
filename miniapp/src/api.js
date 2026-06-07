@@ -269,13 +269,6 @@ export async function sendMiniAppEvent(state, tipo, payload = {}) {
       timeoutMs: 5000
     });
   } catch (error) {
-    const bridge = window.MJTelegramTunnel || window.MJMiniAppBridge;
-    if (bridge && typeof bridge.sendCommand === 'function') {
-      return bridge.sendCommand('event/track', body, { fallbackSendData: false }).catch(() => null);
-    }
-    if (window.MJMiniAppBridge && typeof window.MJMiniAppBridge.sendAction === 'function') {
-      return window.MJMiniAppBridge.sendAction('event/track', body).catch(() => null);
-    }
     return null;
   }
 }

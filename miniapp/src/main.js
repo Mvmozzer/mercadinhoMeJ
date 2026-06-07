@@ -33,8 +33,8 @@ const handlers = {};
 let renderer = null;
 
 const telegram = setupTelegram(() => {
-  if (state.checkoutStep === 'cart') return sendCartToTelegram();
-  return renderer?.iniciarCheckout();
+  if (state.currentPage === 'payment' && !state.pix?.copiaCola) return sendCartToTelegram();
+  return null;
 });
 
 renderer = createRenderer({ state, telegram, handlers });
