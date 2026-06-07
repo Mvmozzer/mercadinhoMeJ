@@ -245,6 +245,7 @@ export async function createOrderMiniApp(state, els = {}) {
   await validateDeliveryAddressMiniApp(state, els);
   const payload = payloadPedidoMiniApp(state, els);
   if (!payload.items.length) throw new Error('Adicione ao menos um produto');
+  state.checkout.lastItemCount = payload.items.reduce((sum, item) => sum + (Number(item.quantidade || item.quantity || item.qtd) || 1), 0);
   return checkoutCreate(state, payload);
 }
 
@@ -257,6 +258,7 @@ export async function finalizarCheckoutMiniApp(state, els, telegram, callbacks =
     callbacks.showToast?.('Adicione ao menos um produto');
     return { ok: false };
   }
+  state.checkout.lastItemCount = payload.items.reduce((sum, item) => sum + (Number(item.quantidade || item.quantity || item.qtd) || 1), 0);
   payload.promotional_points_preview = promotionalPointsPreview(state);
   try {
     await sendMiniAppEvent(state, 'checkout_payment_start', {

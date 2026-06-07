@@ -49,7 +49,8 @@ export function createInitialState() {
     checkout: {
       preview: null,
       lastCreate: null,
-      deliveryMode: 'retirada',
+      lastItemCount: 0,
+      deliveryMode: 'entrega',
       pointsToUse: 0,
       deliveryAddress: {},
       deliveryAddressSummary: '',

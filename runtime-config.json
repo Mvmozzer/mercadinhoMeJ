@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-06-07T14:37:17.191-03:00",
-  "webBuild": "2026.06.07.837",
-  "apiBaseUrl": "https://jersey-occasionally-comic-narrow.trycloudflare.com",
-  "allowTemporaryApiBase": true,
-  "apiBaseKind": "temporary_tunnel"
+  "updatedAt": "2026-06-07T17:16:45.579-03:00",
+  "webBuild": "2026.06.07.405",
+  "apiBaseUrl": "",
+  "allowTemporaryApiBase": false,
+  "apiBaseKind": ""
 }
