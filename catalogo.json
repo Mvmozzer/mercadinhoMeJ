@@ -2,8 +2,8 @@
   "ok": true,
   "catalogo": {
     "loja": {
-      "status": "fechada",
-      "mensagem": "A loja está fechada no momento. Assim que abrirmos você sera bem-vindo para pedir.",
+      "status": "pausada",
+      "mensagem": "A loja está pausada por alguns minutos. Tente novamente daqui a pouco.",
       "aceitaPedidos": false
     },
     "secoes": [
