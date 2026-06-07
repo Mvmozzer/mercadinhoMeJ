@@ -720,7 +720,7 @@ export function createRenderer({ state, telegram, handlers }) {
       const attr = item.section
         ? `data-section="${escapeHtml(item.section)}"`
         : `data-category-search="${escapeHtml(item.search)}"`;
-      return `<button class="quick-category ${active ? 'active' : ''}" type="button" ${attr}><span class="category-icon">${escapeHtml(item.icon)}</span>${escapeHtml(item.name)}</button>`;
+      return `<button class="quick-category category-card ${active ? 'active is-active' : ''}" type="button" ${attr}><span class="category-icon">${escapeHtml(item.icon)}</span><span>${escapeHtml(item.name)}</span>${active ? '<small aria-hidden="true"></small>' : ''}</button>`;
     }).join('');
     els.categoryRail.querySelectorAll('[data-section]').forEach(button => {
       button.addEventListener('click', () => {
@@ -770,8 +770,32 @@ export function createRenderer({ state, telegram, handlers }) {
       };
     }
     const visible = design.modo === 'avancado' ? banners : banners.slice(0, 1);
-    els.promoBanners.innerHTML = visible.map(item => `
-      <article class="promo-card" data-tone="${escapeHtml(item.tone)}" data-promo-action="${escapeHtml(item.action)}">
+    els.promoBanners.innerHTML = visible.map((item, index) => index === 0 ? `
+      <article class="promo-card hero-banner option3-hero-banner" data-tone="${escapeHtml(item.tone)}" data-promo-action="${escapeHtml(item.action)}">
+        <div class="hero-copy">
+          <span class="script-label">Fim de semana</span>
+          <h2>${escapeHtml(item.title || 'Ofertas da semana')}<span>${escapeHtml(item.body || 'Economia para sua casa')}</span></h2>
+          <p>As melhores ofertas aparecem aqui com dados publicados pelo painel.</p>
+          <span class="promo-cta hero-button">${escapeHtml(item.cta || 'Ver ofertas')}</span>
+        </div>
+        <div class="basket-scene" aria-hidden="true">
+          <div class="discount-badge"><span>ATE</span><strong>30%</strong><span>OFF</span></div>
+          <div class="burst burst-one"></div>
+          <div class="burst burst-two"></div>
+          <div class="basket-products">
+            <span class="grocery banana">🍌</span>
+            <span class="grocery lettuce">🥬</span>
+            <span class="grocery soda">🥤</span>
+            <span class="grocery milk">🥛</span>
+            <span class="grocery snacks">🧀</span>
+            <span class="grocery apple">🍎</span>
+          </div>
+          <div class="basket-body"></div>
+          <div class="basket-handle"></div>
+        </div>
+      </article>
+    ` : `
+      <article class="promo-card option3-mini-promo" data-tone="${escapeHtml(item.tone)}" data-promo-action="${escapeHtml(item.action)}">
         <strong>${escapeHtml(item.title)}</strong>
         <small>${escapeHtml(item.body)}</small>
         ${item.image
@@ -868,7 +892,7 @@ export function createRenderer({ state, telegram, handlers }) {
       strip.outerHTML = `<div class="market-empty">${escapeHtml(emptyText)}</div>`;
       return;
     }
-    items.forEach(item => strip.appendChild(compactProductCard(item, subtitle)));
+    items.forEach(item => strip.appendChild(compactProductCard(item)));
   }
 
   function renderLoyaltyCard() {

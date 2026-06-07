@@ -2513,3 +2513,644 @@
       --green-2: #17362a;
     }
 .app-loading { min-height: 100vh; display: grid; place-items: center; padding: 24px; color: var(--mj-muted); font-weight: 700; text-align: center; }
+
+/* Opcao 3 - visual laranja instalado sobre o Mini App real. */
+body[data-miniapp-theme="verde_fresco"],
+body[data-miniapp-theme="vermelho_energia"] {
+  --mj-primary: #ef3b0c;
+  --mj-primary-strong: #bd2207;
+  --mj-success: #ef3b0c;
+  --mj-warning: #ff9f1c;
+  --mj-bg: #fff2df;
+  --mj-card: #fffaf2;
+  --mj-text: #331308;
+  --mj-muted: #81533f;
+  --mj-border: rgba(122, 54, 17, .12);
+  --surface: #fffaf2;
+  --surface-2: #fff7ec;
+  --paper: #fff2df;
+  --ink: #331308;
+  --text: #331308;
+  --muted: #81533f;
+  --line: rgba(122, 54, 17, .12);
+  --brand: #ef3b0c;
+  --brand-dark: #bd2207;
+  --green: #ef3b0c;
+  --gold: #ffb45f;
+  --gold-2: #ffe4ba;
+  --shadow: 0 18px 48px rgba(104, 36, 5, .16);
+  --mj-shadow: 0 18px 48px rgba(104, 36, 5, .16);
+  --mj-radius: 24px;
+  --radius: 24px;
+  background: radial-gradient(circle at 50% 12%, rgba(255, 123, 26, .16), transparent 36%), #090909;
+  font-family: Inter, ui-rounded, "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+  color-scheme: light;
+}
+
+body[data-miniapp-theme="verde_fresco"] .app,
+body[data-miniapp-theme="vermelho_energia"] .app {
+  max-width: 430px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #ef3b0c 0 29%, #fff2df 29% 100%);
+  box-shadow: 0 36px 120px rgba(0, 0, 0, .48);
+}
+
+body[data-miniapp-theme="verde_fresco"] main,
+body[data-miniapp-theme="vermelho_energia"] main {
+  gap: 0;
+  padding: 0 0 calc(var(--footer-space) + 18px);
+  background: #fff2df;
+}
+
+body[data-miniapp-theme="verde_fresco"] .delivery-app-header,
+body[data-miniapp-theme="vermelho_energia"] .delivery-app-header {
+  gap: 16px;
+  padding: calc(18px + env(safe-area-inset-top)) 18px 18px;
+  border-radius: 0;
+  background: radial-gradient(circle at 86% 25%, rgba(255, 187, 74, .28), transparent 28%), linear-gradient(180deg, #f34a14 0%, #df2d08 100%);
+  box-shadow: none;
+}
+
+body[data-miniapp-theme="verde_fresco"] .delivery-hero-top,
+body[data-miniapp-theme="vermelho_energia"] .delivery-hero-top {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+}
+
+body[data-miniapp-theme="verde_fresco"] .delivery-logo,
+body[data-miniapp-theme="vermelho_energia"] .delivery-logo {
+  display: none;
+}
+
+body[data-miniapp-theme="verde_fresco"] .delivery-brand h1,
+body[data-miniapp-theme="vermelho_energia"] .delivery-brand h1 {
+  color: #fff;
+  font-size: 21px;
+  font-weight: 1000;
+  text-shadow: 0 3px 0 rgba(67, 12, 3, .18);
+}
+
+body[data-miniapp-theme="verde_fresco"] .delivery-status-line,
+body[data-miniapp-theme="vermelho_energia"] .delivery-status-line {
+  gap: 8px;
+  color: rgba(255, 255, 255, .82);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+body[data-miniapp-theme="verde_fresco"] .status-open,
+body[data-miniapp-theme="vermelho_energia"] .status-open {
+  color: #fff7ed;
+}
+
+body[data-miniapp-theme="verde_fresco"] .status-dot,
+body[data-miniapp-theme="vermelho_energia"] .status-dot {
+  background: #ffb23f;
+  box-shadow: 0 0 0 5px rgba(255, 178, 63, .18);
+}
+
+body[data-miniapp-theme="verde_fresco"] .hero-action-button,
+body[data-miniapp-theme="vermelho_energia"] .hero-action-button {
+  border: 1px solid rgba(255, 255, 255, .18);
+  background: rgba(150, 30, 0, .16);
+}
+
+body[data-miniapp-theme="verde_fresco"] .customer-header,
+body[data-miniapp-theme="vermelho_energia"] .customer-header {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+body[data-miniapp-theme="verde_fresco"] .customer-header::before,
+body[data-miniapp-theme="vermelho_energia"] .customer-header::before {
+  content: "⌖";
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  grid-row: span 2;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .16);
+  color: #fff;
+  font-weight: 1000;
+}
+
+body[data-miniapp-theme="verde_fresco"] .customer-header strong,
+body[data-miniapp-theme="vermelho_energia"] .customer-header strong {
+  color: rgba(255, 255, 255, .78);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+body[data-miniapp-theme="verde_fresco"] .customer-header span,
+body[data-miniapp-theme="vermelho_energia"] .customer-header span {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 1000;
+  line-height: 1.15;
+}
+
+body[data-miniapp-theme="verde_fresco"] .store-search-panel,
+body[data-miniapp-theme="vermelho_energia"] .store-search-panel {
+  padding: 16px 15px 0;
+  margin-top: 0;
+  background: #fff2df;
+}
+
+body[data-miniapp-theme="verde_fresco"] .store-search-panel input[type="search"],
+body[data-miniapp-theme="vermelho_energia"] .store-search-panel input[type="search"],
+body[data-miniapp-theme="verde_fresco"] .scan-button,
+body[data-miniapp-theme="vermelho_energia"] .scan-button {
+  min-height: 54px;
+  border: 1px solid rgba(122, 54, 17, .08);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, .88);
+  color: #331308;
+  box-shadow: 0 12px 28px rgba(92, 32, 5, .10);
+}
+
+body[data-miniapp-theme="verde_fresco"] .scan-button,
+body[data-miniapp-theme="vermelho_energia"] .scan-button {
+  color: #ef3b0c;
+}
+
+body[data-miniapp-theme="verde_fresco"] .quick-category-rail,
+body[data-miniapp-theme="vermelho_energia"] .quick-category-rail {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(74px, 1fr);
+  gap: 10px;
+  padding: 20px 15px 18px;
+  background: #fff2df;
+}
+
+body[data-miniapp-theme="verde_fresco"] .quick-category.category-card,
+body[data-miniapp-theme="vermelho_energia"] .quick-category.category-card {
+  position: relative;
+  display: grid;
+  grid-auto-flow: row;
+  min-width: 74px;
+  min-height: 84px;
+  justify-items: center;
+  align-content: center;
+  gap: 7px;
+  padding: 9px;
+  border: 1px solid rgba(122, 54, 17, .06);
+  border-radius: 23px;
+  background: rgba(255, 255, 255, .74);
+  color: #4b1b0d;
+  box-shadow: 0 10px 22px rgba(113, 45, 12, .09);
+}
+
+body[data-miniapp-theme="verde_fresco"] .quick-category.category-card.is-active,
+body[data-miniapp-theme="vermelho_energia"] .quick-category.category-card.is-active {
+  color: #fff;
+  border-color: transparent;
+  background: linear-gradient(180deg, #f45113, #ef3b0c);
+  box-shadow: 0 13px 24px rgba(238, 61, 11, .28);
+}
+
+body[data-miniapp-theme="verde_fresco"] .quick-category .category-icon,
+body[data-miniapp-theme="vermelho_energia"] .quick-category .category-icon {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  font-size: 25px;
+}
+
+body[data-miniapp-theme="verde_fresco"] .quick-category small,
+body[data-miniapp-theme="vermelho_energia"] .quick-category small {
+  position: absolute;
+  bottom: 9px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fff2df;
+}
+
+body[data-miniapp-theme="verde_fresco"] .promo-banners,
+body[data-miniapp-theme="vermelho_energia"] .promo-banners {
+  display: grid;
+  grid-auto-flow: row;
+  grid-auto-columns: unset;
+  gap: 12px;
+  padding: 0 15px 18px;
+  background: #fff2df;
+}
+
+body[data-miniapp-theme="verde_fresco"] .option3-hero-banner,
+body[data-miniapp-theme="vermelho_energia"] .option3-hero-banner {
+  position: relative;
+  display: block;
+  min-height: 236px;
+  overflow: hidden;
+  padding: 0;
+  border-radius: 34px;
+  background: radial-gradient(circle at 77% 22%, rgba(255, 185, 56, .36), transparent 20%), radial-gradient(circle at 75% 82%, rgba(0, 0, 0, .2), transparent 33%), linear-gradient(135deg, #8d170b 0%, #b51e09 47%, #f15a12 100%);
+  color: #fff;
+  box-shadow: 0 20px 40px rgba(98, 20, 4, .32);
+}
+
+body[data-miniapp-theme="verde_fresco"] .option3-hero-banner::before,
+body[data-miniapp-theme="vermelho_energia"] .option3-hero-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(45deg, rgba(255, 255, 255, .04) 25%, transparent 25%), linear-gradient(-45deg, rgba(255, 255, 255, .035) 25%, transparent 25%);
+  background-size: 18px 18px;
+  opacity: .35;
+}
+
+body[data-miniapp-theme="verde_fresco"] .hero-copy,
+body[data-miniapp-theme="vermelho_energia"] .hero-copy {
+  position: relative;
+  z-index: 2;
+  width: 58%;
+  padding: 24px 0 24px 22px;
+}
+
+body[data-miniapp-theme="verde_fresco"] .script-label,
+body[data-miniapp-theme="vermelho_energia"] .script-label {
+  display: block;
+  margin-bottom: 2px;
+  color: #ffe4ba;
+  font-family: "Segoe Script", "Comic Sans MS", cursive;
+  font-size: clamp(20px, 5.8vw, 27px);
+  line-height: .95;
+  text-shadow: 0 2px 0 rgba(67, 12, 3, .45);
+  transform: rotate(-4deg);
+  transform-origin: left center;
+}
+
+body[data-miniapp-theme="verde_fresco"] .hero-copy h2,
+body[data-miniapp-theme="vermelho_energia"] .hero-copy h2 {
+  margin: 0;
+  color: #fff5df;
+  font-size: clamp(31px, 9.2vw, 45px);
+  font-weight: 1000;
+  line-height: .88;
+  text-transform: uppercase;
+  text-shadow: 0 4px 0 rgba(91, 16, 3, .36);
+}
+
+body[data-miniapp-theme="verde_fresco"] .hero-copy h2 span,
+body[data-miniapp-theme="vermelho_energia"] .hero-copy h2 span {
+  display: block;
+  margin-top: 10px;
+  color: #ffb136;
+  font-size: .45em;
+  line-height: 1.05;
+  text-transform: none;
+}
+
+body[data-miniapp-theme="verde_fresco"] .hero-copy p,
+body[data-miniapp-theme="vermelho_energia"] .hero-copy p {
+  max-width: 185px;
+  margin: 15px 0 20px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+body[data-miniapp-theme="verde_fresco"] .hero-button,
+body[data-miniapp-theme="vermelho_energia"] .hero-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 46px;
+  padding: 0 18px;
+  color: #ef3b0c;
+  background: #fff7ed;
+  border-radius: 15px;
+  font-size: 14px;
+  font-weight: 1000;
+  box-shadow: 0 12px 20px rgba(67, 13, 0, .2);
+}
+
+body[data-miniapp-theme="verde_fresco"] .basket-scene,
+body[data-miniapp-theme="vermelho_energia"] .basket-scene {
+  position: absolute;
+  right: -28px;
+  bottom: -3px;
+  width: 56%;
+  height: 230px;
+}
+
+body[data-miniapp-theme="verde_fresco"] .discount-badge,
+body[data-miniapp-theme="vermelho_energia"] .discount-badge {
+  position: absolute;
+  top: 9px;
+  right: 26px;
+  z-index: 5;
+  display: grid;
+  width: 88px;
+  height: 88px;
+  place-items: center;
+  padding: 10px 0;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ffa22c 0%, #f36d12 100%);
+  color: #fff;
+  box-shadow: 0 14px 28px rgba(101, 16, 0, .32);
+}
+
+body[data-miniapp-theme="verde_fresco"] .discount-badge span,
+body[data-miniapp-theme="vermelho_energia"] .discount-badge span {
+  font-size: 13px;
+  font-weight: 1000;
+}
+
+body[data-miniapp-theme="verde_fresco"] .discount-badge strong,
+body[data-miniapp-theme="vermelho_energia"] .discount-badge strong {
+  margin-top: -3px;
+  font-size: 33px;
+  font-weight: 1000;
+  line-height: .85;
+}
+
+body[data-miniapp-theme="verde_fresco"] .burst,
+body[data-miniapp-theme="vermelho_energia"] .burst {
+  position: absolute;
+  z-index: 3;
+  width: 13px;
+  height: 38px;
+  border-radius: 99px;
+  background: #ffb53c;
+  transform-origin: center bottom;
+}
+
+body[data-miniapp-theme="verde_fresco"] .burst-one,
+body[data-miniapp-theme="vermelho_energia"] .burst-one { top: 32px; left: 58px; transform: rotate(-32deg); }
+body[data-miniapp-theme="verde_fresco"] .burst-two,
+body[data-miniapp-theme="vermelho_energia"] .burst-two { top: 22px; left: 90px; height: 33px; transform: rotate(38deg); }
+
+body[data-miniapp-theme="verde_fresco"] .basket-body,
+body[data-miniapp-theme="vermelho_energia"] .basket-body {
+  position: absolute;
+  right: 0;
+  bottom: 3px;
+  width: 205px;
+  height: 91px;
+  border-radius: 10px 10px 24px 24px;
+  background: repeating-linear-gradient(90deg, rgba(255, 197, 126, .24) 0 8px, transparent 8px 18px), linear-gradient(180deg, #ff6819 0%, #d72d05 100%);
+  box-shadow: inset 0 -16px 18px rgba(96, 20, 3, .24), 0 16px 32px rgba(78, 13, 1, .35);
+  transform: skewX(-4deg) rotate(-1deg);
+}
+
+body[data-miniapp-theme="verde_fresco"] .basket-handle,
+body[data-miniapp-theme="vermelho_energia"] .basket-handle {
+  position: absolute;
+  right: 14px;
+  bottom: 87px;
+  width: 176px;
+  height: 62px;
+  border: 12px solid rgba(255, 105, 25, .85);
+  border-bottom: 0;
+  border-radius: 88px 88px 0 0;
+  transform: rotate(-7deg);
+}
+
+body[data-miniapp-theme="verde_fresco"] .basket-products,
+body[data-miniapp-theme="vermelho_energia"] .basket-products {
+  position: absolute;
+  right: 8px;
+  bottom: 65px;
+  z-index: 2;
+  width: 210px;
+  height: 120px;
+}
+
+body[data-miniapp-theme="verde_fresco"] .grocery,
+body[data-miniapp-theme="vermelho_energia"] .grocery {
+  position: absolute;
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  font-size: 42px;
+  filter: drop-shadow(0 8px 10px rgba(58, 15, 2, .28));
+}
+
+body[data-miniapp-theme="verde_fresco"] .grocery.banana,
+body[data-miniapp-theme="vermelho_energia"] .grocery.banana { left: 0; bottom: 20px; font-size: 58px; transform: rotate(-22deg); }
+body[data-miniapp-theme="verde_fresco"] .grocery.lettuce,
+body[data-miniapp-theme="vermelho_energia"] .grocery.lettuce { left: 62px; bottom: 42px; font-size: 54px; }
+body[data-miniapp-theme="verde_fresco"] .grocery.soda,
+body[data-miniapp-theme="vermelho_energia"] .grocery.soda { left: 106px; bottom: 42px; font-size: 48px; transform: rotate(-16deg); }
+body[data-miniapp-theme="verde_fresco"] .grocery.milk,
+body[data-miniapp-theme="vermelho_energia"] .grocery.milk { left: 138px; bottom: 20px; font-size: 46px; }
+body[data-miniapp-theme="verde_fresco"] .grocery.snacks,
+body[data-miniapp-theme="vermelho_energia"] .grocery.snacks { left: 74px; bottom: 3px; font-size: 44px; transform: rotate(6deg); }
+body[data-miniapp-theme="verde_fresco"] .grocery.apple,
+body[data-miniapp-theme="vermelho_energia"] .grocery.apple { left: 28px; bottom: 2px; font-size: 42px; }
+
+body[data-miniapp-theme="verde_fresco"] .market-row,
+body[data-miniapp-theme="vermelho_energia"] .market-row,
+body[data-miniapp-theme="verde_fresco"] .loyalty-card,
+body[data-miniapp-theme="vermelho_energia"] .loyalty-card,
+body[data-miniapp-theme="verde_fresco"] .section-block,
+body[data-miniapp-theme="vermelho_energia"] .section-block {
+  padding: 0 16px 18px;
+  background: #fff2df;
+}
+
+body[data-miniapp-theme="verde_fresco"] .miniapp-design-home-slot,
+body[data-miniapp-theme="vermelho_energia"] .miniapp-design-home-slot {
+  display: none;
+}
+
+body[data-miniapp-theme="verde_fresco"] .section-head h2,
+body[data-miniapp-theme="vermelho_energia"] .section-head h2 {
+  color: #351407;
+  font-size: 21px;
+  font-weight: 1000;
+}
+
+body[data-miniapp-theme="verde_fresco"] .section-head span,
+body[data-miniapp-theme="vermelho_energia"] .section-head span {
+  color: #ef3b0c;
+  font-size: 13px;
+  font-weight: 1000;
+}
+
+body[data-miniapp-theme="verde_fresco"] .market-strip,
+body[data-miniapp-theme="vermelho_energia"] .market-strip {
+  grid-auto-columns: minmax(142px, 1fr);
+  gap: 12px;
+  margin-right: -16px;
+  padding-right: 16px;
+  scroll-snap-type: x mandatory;
+}
+
+body[data-miniapp-theme="verde_fresco"] .mini-product-card,
+body[data-miniapp-theme="vermelho_energia"] .mini-product-card {
+  scroll-snap-align: start;
+  min-height: 204px;
+  padding: 12px;
+  border: 1px solid rgba(104, 42, 10, .06);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, .76);
+  box-shadow: 0 12px 28px rgba(92, 32, 5, .12);
+}
+
+body[data-miniapp-theme="verde_fresco"] .mini-media,
+body[data-miniapp-theme="vermelho_energia"] .mini-media {
+  height: 92px;
+  aspect-ratio: auto;
+  border-radius: 19px;
+  background: radial-gradient(circle at 50% 38%, rgba(255, 176, 70, .26), transparent 44%), linear-gradient(180deg, rgba(255, 255, 255, .74), rgba(255, 245, 231, .82));
+  color: #ef3b0c;
+}
+
+body[data-miniapp-theme="verde_fresco"] .mini-product-card h3,
+body[data-miniapp-theme="vermelho_energia"] .mini-product-card h3 {
+  color: #321408;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+body[data-miniapp-theme="verde_fresco"] .mini-product-card small,
+body[data-miniapp-theme="vermelho_energia"] .mini-product-card small {
+  color: #4f382e;
+  font-size: 13px;
+}
+
+body[data-miniapp-theme="verde_fresco"] .mini-product-card .price strong,
+body[data-miniapp-theme="vermelho_energia"] .mini-product-card .price strong,
+body[data-miniapp-theme="verde_fresco"] .price strong,
+body[data-miniapp-theme="vermelho_energia"] .price strong {
+  color: #ef3b0c;
+  font-size: 18px;
+  font-weight: 1000;
+}
+
+body[data-miniapp-theme="verde_fresco"] .quick-add-button,
+body[data-miniapp-theme="vermelho_energia"] .quick-add-button,
+body[data-miniapp-theme="verde_fresco"] .mini-product-card .qty button,
+body[data-miniapp-theme="vermelho_energia"] .mini-product-card .qty button,
+body[data-miniapp-theme="verde_fresco"] button.primary,
+body[data-miniapp-theme="vermelho_energia"] button.primary,
+body[data-miniapp-theme="verde_fresco"] .durger-add,
+body[data-miniapp-theme="vermelho_energia"] .durger-add {
+  background: linear-gradient(180deg, #f45113, #ef3b0c);
+  color: #fff;
+  box-shadow: 0 10px 18px rgba(239, 59, 12, .24);
+}
+
+body[data-miniapp-theme="verde_fresco"] .product-grid,
+body[data-miniapp-theme="vermelho_energia"] .product-grid {
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(160px, 1fr);
+  grid-template-columns: none;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+body[data-miniapp-theme="verde_fresco"] .product-grid::-webkit-scrollbar,
+body[data-miniapp-theme="vermelho_energia"] .product-grid::-webkit-scrollbar {
+  display: none;
+}
+
+body[data-miniapp-theme="verde_fresco"] .product.durger-card,
+body[data-miniapp-theme="vermelho_energia"] .product.durger-card {
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  min-height: 246px;
+  padding: 12px;
+  border: 1px solid rgba(104, 42, 10, .06);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, .76);
+  box-shadow: 0 12px 28px rgba(92, 32, 5, .12);
+}
+
+body[data-miniapp-theme="verde_fresco"] .product-media,
+body[data-miniapp-theme="vermelho_energia"] .product-media {
+  width: 100%;
+  height: 102px;
+  border: 0;
+  border-radius: 19px;
+  background: radial-gradient(circle at 50% 38%, rgba(255, 176, 70, .26), transparent 44%), linear-gradient(180deg, rgba(255, 255, 255, .74), rgba(255, 245, 231, .82));
+  color: #ef3b0c;
+  font-size: 32px;
+}
+
+body[data-miniapp-theme="verde_fresco"] .product h3,
+body[data-miniapp-theme="vermelho_energia"] .product h3 {
+  color: #321408;
+  font-size: 15px;
+  font-weight: 950;
+}
+
+body[data-miniapp-theme="verde_fresco"] .price-row,
+body[data-miniapp-theme="vermelho_energia"] .price-row {
+  margin-top: auto;
+}
+
+body[data-miniapp-theme="verde_fresco"] .bottom-bar,
+body[data-miniapp-theme="vermelho_energia"] .bottom-bar {
+  width: min(calc(100% - 24px), 406px);
+  left: 50%;
+  right: auto;
+  bottom: calc(72px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  border: 0;
+  border-radius: 28px;
+  background: linear-gradient(180deg, #f45113, #ef3b0c);
+  color: #fff;
+  box-shadow: 0 20px 40px rgba(98, 20, 4, .28);
+}
+
+body[data-miniapp-theme="verde_fresco"] .bottom-bar .gold,
+body[data-miniapp-theme="vermelho_energia"] .bottom-bar .gold {
+  min-height: 42px;
+  border: 0;
+  background: #fff7ed;
+  color: #ef3b0c;
+  box-shadow: 0 10px 18px rgba(67, 13, 0, .18);
+}
+
+body[data-miniapp-theme="verde_fresco"] .miniapp-bottom-nav,
+body[data-miniapp-theme="vermelho_energia"] .miniapp-bottom-nav {
+  left: 50%;
+  right: auto;
+  bottom: 0;
+  width: min(100%, 430px);
+  transform: translateX(-50%);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 2px;
+  padding: 9px 10px calc(9px + env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(122, 54, 17, .08);
+  background: rgba(255, 249, 240, .96);
+  box-shadow: 0 -12px 28px rgba(104, 36, 5, .08);
+}
+
+body[data-miniapp-theme="verde_fresco"] .miniapp-bottom-nav button,
+body[data-miniapp-theme="vermelho_energia"] .miniapp-bottom-nav button {
+  min-width: 0;
+  min-height: 44px;
+  padding: 5px 2px;
+  border-radius: 14px;
+  background: transparent;
+  color: #81533f;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1.05;
+  white-space: nowrap;
+}
+
+body[data-miniapp-theme="verde_fresco"] .miniapp-bottom-nav button.active,
+body[data-miniapp-theme="vermelho_energia"] .miniapp-bottom-nav button.active {
+  background: #fff2df;
+  color: #ef3b0c;
+}
