@@ -26,6 +26,13 @@ export function createInitialState() {
     authOk: false,
     authMode: 'pending',
     authError: '',
+    debugMode: false,
+    buildVersion: '',
+    startupStartedAt: 0,
+    startupCompletedAt: 0,
+    startupFailed: false,
+    startupError: '',
+    startupAttempts: 0,
     catalogLoading: true,
     catalogSource: 'loading',
     catalogPage: {

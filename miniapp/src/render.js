@@ -40,37 +40,41 @@ import { fallbackGoogleMapsLink, mapStateFromTracking } from './map.js';
 
 function shellMarkup() {
   return `
-    <div class="app mj-reference-app">
-      <header class="mj-app-hero delivery-app-header" id="marketHero">
-        <div class="mj-safe-row">
-          <strong>9:41</strong>
-          <span class="mj-telegram-pill">TELEGRAM</span>
-          <span>100</span>
+    <div class="app mj-reference-app mj-clean-app">
+      <header class="mj-clean-store-header" id="marketHero">
+        <div class="mj-clean-topbar">
+          <button class="mj-clean-icon-button" type="button" data-nav-page="home" aria-label="Voltar">&lsaquo;</button>
+          <button class="mj-clean-icon-button" id="profileButton" type="button" data-nav-page="profile" aria-label="Minha conta">&#8942;</button>
         </div>
-        <div class="mj-hero-line">
-          <div>
-            <span class="mj-hero-eyebrow" id="homeAddressLabel">Entregar em</span>
-            <button class="mj-address-button" type="button" data-nav-page="profile">
-              <span id="customerAddressLine"></span>
+        <div class="mj-clean-store-line">
+          <div class="mj-clean-store-copy">
+            <h1 id="storeName">Mercadinho M&J</h1>
+            <p id="storeSubtitle">Aberto agora • Pedido mínimo configurado no painel</p>
+            <button class="mj-clean-rating" type="button" data-nav-page="profile">
+              <span>&starf;</span> 4,9 <small id="storeStatus">Aberto agora</small>
             </button>
-            <span id="customerGreeting" hidden>Olá!</span>
-            <span id="storeStatus" hidden>Aberto agora</span>
-            <span hidden>Meus pedidos</span>
-            <span hidden>Acompanhar entrega</span>
-            <span hidden>SEU PEDIDO</span>
           </div>
-          <button class="mj-bell" id="profileButton" type="button" aria-label="Minha conta">
-            <span aria-hidden="true">&#128276;</span>
-          </button>
+          <img id="storeLogo" class="mj-clean-store-logo" src="./assets/logo-mj-mercadinho.png" alt="Mercadinho M&J" loading="lazy">
         </div>
+        <button class="mj-clean-delivery-card" type="button" data-nav-page="delivery">
+          <span>
+            <strong>Entrega rápida</strong>
+            <small id="customerAddressLine">Receba em até 40 min</small>
+          </span>
+          <b id="homeAddressLabel">&rsaquo;</b>
+        </button>
+        <span id="customerGreeting" hidden>Olá!</span>
+        <span hidden>Meus pedidos</span>
+        <span hidden>Acompanhar entrega</span>
+        <span class="durger-badge" hidden>SEU PEDIDO</span>
       </header>
 
       <main>
-        <section class="store-search-panel" id="searchPanel" aria-label="Busca" hidden>
+        <section class="store-search-panel mj-clean-search-panel" id="searchPanel" aria-label="Busca" hidden>
           <div class="search-row">
             <div class="search-wrap">
               <span aria-hidden="true">&#128269;</span>
-              <input id="search" type="search" placeholder="Buscar produtos, marcas..." autocomplete="off">
+              <input id="search" type="search" placeholder="Buscar item ou marca" autocomplete="off">
             </div>
             <button class="scan-button" id="clearSearch" type="button" aria-label="Limpar busca">&times;</button>
           </div>
@@ -323,19 +327,18 @@ function shellMarkup() {
 
     <footer class="bottom-bar" id="stickyCartBar" hidden>
       <button class="bottom-main" id="reviewCart" type="button">
-        <span class="bottom-cart-icon" aria-hidden="true">&#128722;</span>
         <strong id="bottomCount">Carrinho vazio</strong>
         <span id="total">R$ 0,00</span>
-        <small id="bottomFreeDeliveryHint">Ver carrinho</small>
+        <small id="bottomFreeDeliveryHint">Ver sacola</small>
       </button>
     </footer>
 
     <nav class="miniapp-bottom-nav" id="bottomNav" aria-label="Navegação principal">
       <button type="button" data-nav-page="home"><span>&#8962;</span>Início</button>
-      <button type="button" data-nav-page="search"><span>&#128269;</span>Buscar</button>
-      <button type="button" data-nav-page="orders"><span>&#128717;</span>Pedidos</button>
-      <button type="button" data-nav-page="loyalty"><span>&#9776;</span>Listas</button>
-      <button type="button" data-nav-page="profile"><span>&#128100;</span>Conta</button>
+      <button type="button" data-nav-page="search"><span>&#128269;</span>Busca<small class="mj-sr-only">Buscar</small></button>
+      <button type="button" data-nav-page="loyalty"><span>%</span>Hits<small class="mj-sr-only">Listas</small></button>
+      <button type="button" data-nav-page="orders"><span>&#128462;</span>Pedidos</button>
+      <button type="button" data-nav-page="profile"><span>&#128100;</span>Perfil<small class="mj-sr-only">Conta</small></button>
     </nav>
 
     <select id="deliveryMode" hidden>
@@ -373,7 +376,7 @@ function basketSceneMarkup() {
 function collectElements() {
   const ids = [
     'tabs', 'channelLabel', 'journeyTitle', 'journeyStatus', 'journeySteps',
-    'marketHome', 'marketHero', 'deliveryLogo', 'homeAddressLabel',
+    'marketHome', 'marketHero', 'deliveryLogo', 'homeAddressLabel', 'storeName', 'storeSubtitle', 'storeLogo',
     'customerGreeting', 'customerAddressLine', 'profileButton', 'searchPanel', 'categoryRail',
     'promoBanners', 'loyaltyInviteCard', 'pointsBalanceLabel', 'couponCode',
     'copyInviteCode', 'usePointsIntent', 'marketFilters', 'buyAgainSection',
@@ -401,6 +404,14 @@ function collectElements() {
 
 function designConfig(state) {
   return state.miniappDesign || {};
+}
+
+function designLogo(state) {
+  return String(designConfig(state).logoUrl || state.bootstrap?.loja?.logo || './assets/logo-mj-mercadinho.png').trim();
+}
+
+function storeNameFromState(state) {
+  return String(state.bootstrap?.loja?.nome || 'Mercadinho M&J').trim();
 }
 
 function designBanner(state) {
@@ -508,7 +519,7 @@ export function createRenderer({ state, telegram, handlers }) {
   function customerAddress() {
     const cliente = state.cliente || {};
     const rua = String(cliente.rua || '').trim();
-  if (!rua) return ['Rua das Flores', '123'].join(', ');
+    if (!rua) return 'Receba em até 40 min';
     return [[rua, cliente.numero].filter(Boolean).join(', '), cliente.bairro].filter(Boolean).join(' - ');
   }
 
@@ -523,6 +534,14 @@ export function createRenderer({ state, telegram, handlers }) {
 
   function renderCustomerHeader() {
     const address = customerAddress();
+    const storeName = storeNameFromState(state);
+    const logo = designLogo(state);
+    if (els.storeName) els.storeName.textContent = storeName;
+    if (els.storeSubtitle) els.storeSubtitle.textContent = `${statusText()} • Entrega e retirada`;
+    if (els.storeLogo && logo) {
+      els.storeLogo.src = logo;
+      els.storeLogo.alt = storeName;
+    }
     if (els.customerGreeting) els.customerGreeting.textContent = customerName() ? `Olá, ${customerName()}` : 'Olá!';
     if (els.customerAddressLine) els.customerAddressLine.textContent = address;
     if (els.searchAddressLine) els.searchAddressLine.textContent = address;
@@ -540,7 +559,7 @@ export function createRenderer({ state, telegram, handlers }) {
 
   function renderStatusLoja() {
     if (els.homeAddressLabel) {
-      els.homeAddressLabel.textContent = `${statusText()} | Entrega e retirada`;
+      els.homeAddressLabel.textContent = 'Alterar';
       els.homeAddressLabel.classList.toggle('closed', state.loja.aceitaPedidos === false);
     }
     if (els.storeStatus) {
@@ -563,23 +582,31 @@ export function createRenderer({ state, telegram, handlers }) {
     return state.products.filter(item => Number(item.stock || 0) > 0).slice(0, limit);
   }
 
+  function discountPercent(item = {}) {
+    const normal = Number(item.normalPrice || 0);
+    const price = Number(item.price || 0);
+    if (!item.promotion || !normal || price >= normal) return '';
+    return `-${Math.round(((normal - price) / normal) * 100)}%`;
+  }
+
   function sectionShortcuts(limit = 6) {
+    const design = designConfig(state);
     const sections = sectionItems(state);
-    const fixed = [
-      { name: 'Ofertas', id: '', search: 'oferta', icon: '%' },
-      { name: 'Mercearia', query: 'mercearia', icon: 'M' },
-      { name: 'Bebidas', query: 'bebida', icon: 'B' },
-      { name: 'Hortifruti', query: 'hortifruti', icon: 'H' },
-      { name: 'Limpeza', query: 'limpeza', icon: 'L' }
-    ].map(item => {
-      if (!item.query) return item;
-      const found = sections.find(section => normalizeText(section.name).includes(normalizeText(item.query)));
-      return { name: item.name, id: found?.id || '', search: found ? '' : item.query, icon: item.icon };
-    });
-    const used = new Set(fixed.map(item => item.id).filter(Boolean));
-    const extra = sections.filter(section => !used.has(section.id)).slice(0, limit - fixed.length)
-      .map(section => ({ name: section.name, id: section.id, search: '', icon: iconForSection(section.name) }));
-    return fixed.concat(extra).slice(0, limit);
+    const configuredLimit = Math.max(4, Math.min(12, Number(design.categorias?.limite || limit) || limit));
+    const orderedIds = Array.isArray(design.categorias?.ordem) ? design.categorias.ordem : [];
+    const ordered = [
+      ...orderedIds.map(id => sections.find(section => String(section.id) === String(id))).filter(Boolean),
+      ...sections.filter(section => !orderedIds.includes(section.id))
+    ];
+    const offers = state.products.some(item => item.promotion)
+      ? [{ name: 'Ofertas do dia', id: '', search: 'oferta', icon: '%' }]
+      : [];
+    return offers.concat(ordered.map(section => ({
+      name: section.name,
+      id: section.id,
+      search: '',
+      icon: section.icon || iconForSection(section.name)
+    }))).slice(0, configuredLimit);
   }
 
   function renderCategoryRail() {
@@ -629,20 +656,19 @@ export function createRenderer({ state, telegram, handlers }) {
     const title = principal?.titulo || highlight.title || 'COMPLETO E ECONOMICO!';
     const subtitle = principal?.subtitulo || highlight.body || 'As melhores ofertas para sua casa';
     const cta = principal?.cta || highlight.cta || 'Ver ofertas';
+    const highlights = designHighlights(state).slice(0, 3);
     els.promoBanners.innerHTML = `
-      <article class="promo-card hero-banner option3-hero-banner" data-promo-action="${escapeHtml(highlight.action || 'ofertas')}">
-        <div class="hero-copy">
-          <span class="script-label">Fim de semana</span>
-          <h2>${escapeHtml(title)}</h2>
-          <p>${escapeHtml(subtitle)}</p>
-          <span class="promo-cta hero-button">${escapeHtml(cta)} <b>&rarr;</b></span>
-        </div>
-        <div class="basket-scene" aria-hidden="true">
-          <div class="discount-badge"><span>ATE</span><strong>30%</strong><span>OFF</span></div>
-          ${principal?.imagem || principal?.imageUrl || highlight.image ? `<img class="promo-image-3d" src="${escapeHtml(principal?.imagem || principal?.imageUrl || highlight.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}
-          ${basketSceneMarkup()}
-        </div>
-      </article>
+      <button class="promo-card mj-clean-coupon primary-coupon" type="button" data-promo-action="${escapeHtml(highlight.action || 'ofertas')}">
+        <span>${escapeHtml(principal?.emoji || '%')}</span>
+        <div><small>${escapeHtml(subtitle)}</small><strong>${escapeHtml(title)}</strong></div>
+        <b>${escapeHtml(cta)}</b>
+      </button>
+      ${highlights.map(item => `
+        <button class="promo-card mj-clean-coupon" type="button" data-promo-action="${escapeHtml(item.action || 'home')}">
+          <span>${item.image ? `<img class="promo-image-3d" src="${escapeHtml(item.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : escapeHtml(item.cta.slice(0, 1) || '%')}</span>
+          <div><small>${escapeHtml(item.body)}</small><strong>${escapeHtml(item.title)}</strong></div>
+        </button>
+      `).join('')}
     `;
     if (!collections.offers.length) return;
   }
@@ -708,14 +734,15 @@ export function createRenderer({ state, telegram, handlers }) {
     card.className = `mini-product-card ${isLowStock(item) ? 'low-stock' : ''} ${Number(item.stock || 0) <= 0 ? 'unavailable' : ''}`;
     card.dataset.productId = item.id;
     const subtitle = [item.brand, itemUnit(item)].filter(Boolean).join(' ');
+    const discount = discountPercent(item);
     card.innerHTML = `
       <div class="mini-media">${itemMedia(item)}</div>
-      ${item.promotion ? '<span class="market-badge">Oferta</span>' : (context ? `<span class="market-badge">${escapeHtml(context)}</span>` : '')}
-      <h3>${escapeHtml(item.name)}</h3>
-      <small>${escapeHtml(subtitle)}</small>
+      ${quantityControl(item, true)}
       <div class="mini-card-bottom">
-        <div class="price"><strong>${priceLabel(item)}</strong>${item.promotion ? `<del>${money(item.normalPrice)}</del>` : ''}</div>
-        ${quantityControl(item, true)}
+        <div class="price">${item.promotion ? `<del>${money(item.normalPrice)}</del>` : ''}<strong>${priceLabel(item)}</strong>${discount ? `<span class="discount-chip">${escapeHtml(discount)}</span>` : ''}</div>
+        ${context ? `<span class="market-badge">${escapeHtml(context)}</span>` : ''}
+        <h3>${escapeHtml(item.name)}</h3>
+        <small>${escapeHtml(subtitle)}</small>
       </div>
     `;
     attachProductCardEvents(card, item);
@@ -728,19 +755,18 @@ export function createRenderer({ state, telegram, handlers }) {
     card.className = `product durger-card ${cartQty(state, item.id) > 0 ? 'selected' : ''} ${semEstoque ? 'unavailable' : ''}`;
     card.dataset.productId = item.id;
     const detail = [itemUnit(item), item.brand].filter(Boolean).join(' | ');
+    const discount = discountPercent(item);
     card.innerHTML = `
       <div class="product-media">${itemMedia(item)}</div>
-      ${item.promotion ? '<span class="discount-circle">15%<small>OFF</small></span>' : ''}
-      <span class="durger-badge" aria-hidden="true">${cartQty(state, item.id) || ''}</span>
+      ${quantityControl(item, true)}
       <div class="product-body">
-        <h3>${escapeHtml(item.name)}</h3>
-        <small>${escapeHtml(detail)}</small>
+        <div class="price-row">
+          <div class="price">${item.promotion ? `<del>${money(item.normalPrice)}</del>` : ''}<strong>${priceLabel(item)}</strong>${discount ? `<span class="discount-chip">${escapeHtml(discount)}</span>` : ''}</div>
+        </div>
         ${isBestSeller(item) ? '<span class="market-badge">Mais pedido</span>' : ''}
         ${item.tarjas?.length ? `<div class="product-badges">${productBadges(item)}</div>` : ''}
-        <div class="price-row">
-          <div class="price"><strong>${priceLabel(item)}</strong>${item.promotion ? `<del>${money(item.normalPrice)}</del>` : ''}</div>
-          ${quantityControl(item, true)}
-        </div>
+        <h3>${escapeHtml(item.name)}</h3>
+        <small>${escapeHtml(detail)}</small>
       </div>
     `;
     attachProductCardEvents(card, item);
@@ -834,9 +860,9 @@ export function createRenderer({ state, telegram, handlers }) {
     renderLoyaltyCard();
     const collections = homeCollections(state, cartItems(state));
     renderPromoBanners(collections);
-    renderProductRail(els.buyAgainSection, 'Mais pedidos da semana', 'Ver todos', collections.bestSellers.length ? collections.bestSellers : firstProducts(8));
+    renderProductRail(els.todayOffersSection, 'Ofertas do dia', 'Ver mais', collections.offers.length ? collections.offers : firstProducts(8));
+    renderProductRail(els.buyAgainSection, 'Mais pedidos', 'Ver todos', collections.bestSellers.length ? collections.bestSellers : firstProducts(8));
     if (els.bestSellersSection) els.bestSellersSection.hidden = true;
-    renderDailyOffer(els.todayOffersSection, collections.offers.length ? collections.offers : firstProducts(4));
     if (els.comboSection) els.comboSection.hidden = true;
     if (els.lowStockSection) els.lowStockSection.hidden = true;
     if (els.loyaltyInviteCard) els.loyaltyInviteCard.hidden = designConfig(state).pontosIndicacao === false;
@@ -898,12 +924,14 @@ export function createRenderer({ state, telegram, handlers }) {
       row.dataset.productId = item.id;
       row.innerHTML = `
         <div class="search-thumb">${itemMedia(item)}</div>
-        <div>
+        <div class="search-result-copy">
           <h3>${escapeHtml(item.name)}</h3>
           <small>${escapeHtml(itemUnit(item))}</small>
           <strong>${priceLabel(item)}</strong>
         </div>
-        ${quantityControl(item, true)}
+        <div class="search-result-actions">
+          ${quantityControl(item, true)}
+        </div>
       `;
       attachProductCardEvents(row, item);
       list.appendChild(row);
@@ -916,23 +944,19 @@ export function createRenderer({ state, telegram, handlers }) {
     const page = paginaAtualSegura();
     if (page !== 'products') return;
     const sectionName = sectionItems(state).find(section => section.id === state.section)?.name || 'Mercearia';
+    const filterItems = [{ id: '', name: 'Tudo' }].concat(sectionItems(state).slice(0, 10));
     els.products.innerHTML = `
-      <div class="mj-page-hero compact category-hero">
-        <button class="mj-back" type="button" data-nav-page="home" aria-label="Voltar">&lt;</button>
-        <div><span>Categoria</span><h1>${escapeHtml(state.section ? sectionName : 'Produtos')}</h1></div>
-        <button class="mj-bell" type="button" data-nav-page="profile" aria-label="Minha conta">&#128276;</button>
-      </div>
-      <div class="category-search-inline">
-        <span>&#128269;</span>
-        <input type="search" placeholder="Buscar em ${escapeHtml(sectionName)}" value="${escapeHtml(state.query)}" data-inline-search>
+      <div class="mj-clean-category-top">
+        <button class="mj-back" type="button" data-nav-page="home" aria-label="Voltar">&lsaquo;</button>
+        <div class="category-search-inline">
+          <span>&#128269;</span>
+          <input type="search" placeholder="Buscar em ${escapeHtml(storeNameFromState(state))}" value="${escapeHtml(state.query)}" data-inline-search>
+        </div>
       </div>
       <div class="category-filter-row">
-        <button class="active" type="button" data-category-filter="">Todos</button>
-        <button type="button" data-category-filter="arroz">Arroz</button>
-        <button type="button" data-category-filter="feijao">Feijao</button>
-        <button type="button" data-category-filter="macarrao">Macarrao</button>
-        <button type="button" data-category-filter="oleo">Oleos</button>
+        ${filterItems.map(item => `<button class="${item.id === state.section ? 'active' : ''}" type="button" data-category-section="${escapeHtml(item.id)}">${escapeHtml(item.name)}</button>`).join('')}
       </div>
+      <section class="section-block durger-catalog"><div class="section-head"><h2>${escapeHtml(state.section ? sectionName : 'Ofertas')}</h2></div><div class="product-grid"></div></section>
     `;
     const products = filteredProducts(state);
     if (state.catalogLoading) {
@@ -943,14 +967,8 @@ export function createRenderer({ state, telegram, handlers }) {
       els.products.insertAdjacentHTML('beforeend', '<div class="empty">Nenhum produto encontrado.</div>');
       return;
     }
-    productsBySection(state).forEach(group => {
-      const section = document.createElement('section');
-      section.className = 'section-block durger-catalog';
-      section.innerHTML = `<div class="product-grid"></div>`;
-      const grid = section.querySelector('.product-grid');
-      group.items.forEach(item => grid.appendChild(productCard(item)));
-      els.products.appendChild(section);
-    });
+    const grid = els.products.querySelector('.product-grid');
+    products.forEach(item => grid.appendChild(productCard(item)));
     els.products.querySelectorAll('[data-nav-page]').forEach(button => {
       button.addEventListener('click', () => navigateTo(button.dataset.navPage || 'home'));
     });
@@ -958,9 +976,10 @@ export function createRenderer({ state, telegram, handlers }) {
       state.query = event.target.value;
       scheduleCatalogReload();
     });
-    els.products.querySelectorAll('[data-category-filter]').forEach(button => {
+    els.products.querySelectorAll('[data-category-section]').forEach(button => {
       button.addEventListener('click', () => {
-        state.query = button.dataset.categoryFilter || '';
+        state.section = button.dataset.categorySection || '';
+        state.query = '';
         renderProducts();
         scheduleCatalogReload();
       });
@@ -1253,6 +1272,7 @@ export function createRenderer({ state, telegram, handlers }) {
   }
 
   function openProductSheet(id) {
+    if (state.cartOpen) state.cartOpen = false;
     state.productSheetId = id;
     state.currentPage = 'product';
     trackMiniAppEvent('product_open', { productId: id });
@@ -1313,36 +1333,30 @@ export function createRenderer({ state, telegram, handlers }) {
     if (!els.ordersList) return;
     const orders = Array.isArray(state.orders) ? state.orders : [];
     if (!orders.length) {
-      els.ordersList.innerHTML = '<div class="empty">Quando seu primeiro pedido for enviado, ele aparece aqui.</div>';
+      els.ordersList.innerHTML = '<h2>Histórico</h2><div class="empty">Quando seu primeiro pedido for enviado, ele aparece aqui.</div>';
       return;
     }
     const current = orders.find(order => !['entregue', 'cancelado', 'arquivado'].includes(String(order.status || '').toLowerCase())) || orders[0];
-    const history = orders.filter(order => order !== current).slice(0, 5);
+    const history = [current].concat(orders.filter(order => order !== current)).slice(0, 12);
     els.ordersList.innerHTML = `
-      <h2>Pedido atual</h2>
-      <article class="order-card-current">
-        <div class="order-main-row">
-          <span class="order-icon">&#128717;</span>
-          <div><strong>Pedido #${escapeHtml(orderDisplayId(current.id))}</strong><small>${escapeHtml(current.criadoEm || current.data || 'Hoje')}</small></div>
-          <em>${escapeHtml(orderStatusLabel(current))}</em>
-        </div>
-        <div class="order-thumbs">${orderThumbs(current)}<span>+ itens</span></div>
-        <div class="order-card-bottom">
-          <div><small>Entrega até</small><strong>Hoje, 10:15 - 10:45</strong></div>
-          <div><small>Total</small><strong>${money(current.total || 0)}</strong></div>
-        </div>
-        <button type="button" data-order-track="${escapeHtml(current.id || '')}">Ver detalhes <b>&rsaquo;</b></button>
-        <button class="ghost" type="button" data-order-pix="${escapeHtml(current.id || '')}">Ver Pix</button>
-      </article>
-      <h2>Histórico de pedidos</h2>
-      ${history.length ? history.map(order => `
-        <article class="order-history-row" data-order-track="${escapeHtml(order.id || '')}">
-          <span>&check;</span>
-          <div><strong>Pedido #${escapeHtml(orderDisplayId(order.id))}</strong><small>${escapeHtml(order.criadoEm || order.data || '')}</small></div>
-          <div><strong>${money(order.total || 0)}</strong><small>${escapeHtml(orderStatusLabel(order))}</small></div>
-          <b>&rsaquo;</b>
+      <h2>Histórico</h2>
+      ${history.map(order => `
+        <article class="order-card-current mj-clean-order-card">
+          <div class="order-main-row">
+            <span class="order-icon">${escapeHtml(String(storeNameFromState(state)).slice(0, 1).toUpperCase())}</span>
+            <div><strong>${escapeHtml(storeNameFromState(state))}</strong><small>${escapeHtml(orderStatusLabel(order))} &check;</small></div>
+          </div>
+          <div class="mj-clean-order-item">
+            <span>1</span>
+            <div><strong>Pedido #${escapeHtml(orderDisplayId(order.id))}</strong><small>${escapeHtml(order.criadoEm || order.data || 'Hoje')}</small></div>
+            <div class="order-thumbs">${orderThumbs(order)}</div>
+          </div>
+          <div class="order-card-bottom">
+            <button type="button" data-order-track="${escapeHtml(order.id || '')}">Ajuda</button>
+            <button type="button" data-order-pix="${escapeHtml(order.id || '')}">Adicionar à sacola</button>
+          </div>
         </article>
-      `).join('') : '<div class="empty">Sem histórico por enquanto.</div>'}
+      `).join('')}
     `;
   }
 
@@ -1435,30 +1449,23 @@ export function createRenderer({ state, telegram, handlers }) {
     const cliente = state.cliente || {};
     const telegramUser = state.telegramUser || {};
     const nome = cliente.nome || telegramUser.first_name || 'Cliente';
-    const telefone = cliente.telefone || 'Telefone pelo Telegram';
+    const telefone = cliente.telefone || 'Dados do Telegram';
     const endereco = deliveryAddressFull();
     const saldo = Number(state.loyalty?.saldoPontos || state.loyalty?.pontosDisponiveis || 0);
     if (els.profileStatus) els.profileStatus.textContent = state.authOk ? 'Identificado' : 'Aguardando Telegram';
     els.profileContent.innerHTML = `
       <section class="account-card">
         <div class="avatar">${escapeHtml(String(nome).slice(0, 1).toUpperCase())}</div>
-        <div><h2>${escapeHtml(nome)}</h2><small>${escapeHtml(telefone)}</small></div>
-        <b>&rsaquo;</b>
-        <div class="account-address"><span>&#128205;</span><div><strong>${escapeHtml(endereco[0] || customerAddress())}</strong><small>${escapeHtml(endereco[1] || 'Endereço cadastrado no Telegram')}</small></div><em>Principal</em></div>
-      </section>
-      <section class="account-benefit-card">
-        <span class="star">&#9733;</span>
-        <div><strong>Meus pontos</strong><h2>${saldo} pts</h2><small>Faltam pontos para novos benefícios</small></div>
-        <button type="button" data-nav-page="loyalty">Ver benefícios &rsaquo;</button>
+        <div><h2>${escapeHtml(nome)}</h2><small>${escapeHtml(telefone)}</small><strong>Clube Mercadinho M&J</strong></div>
       </section>
       <nav class="profile-menu">
-        <button type="button"><span>&#128205;</span><div><strong>Meus endereços</strong><small>Gerencie seus endereços de entrega</small></div><b>&rsaquo;</b></button>
-        <button type="button"><span>&#128179;</span><div><strong>Pagamento</strong><small>Formas de pagamento e carteiras</small></div><b>&rsaquo;</b></button>
-        <button type="button"><span>?</span><div><strong>Ajuda</strong><small>Dúvidas frequentes e suporte</small></div><b>&rsaquo;</b></button>
-        <button type="button"><span>&#128276;</span><div><strong>Notificações</strong><small>Preferências de comunicação</small></div><b>&rsaquo;</b></button>
-        <button type="button"><span>&#8618;</span><div><strong>Sair da conta</strong><small>Finalizar sessão no app</small></div><b>&rsaquo;</b></button>
+        <button type="button" data-nav-page="orders"><span>&#128172;</span><div><strong>Conversas</strong><small>Fale com a loja pelo Telegram</small></div><b>&rsaquo;</b></button>
+        <button type="button"><span>&#128276;</span><div><strong>Notificações</strong><small>Status dos pedidos e avisos da loja</small></div><em>4</em><b>&rsaquo;</b></button>
+        <button type="button" data-nav-page="loyalty"><span>&#127873;</span><div><strong>Recompensas e Benefícios</strong><small>${saldo} pontos disponíveis</small></div><b>&rsaquo;</b></button>
+        <button type="button" data-nav-page="delivery"><span>&#128100;</span><div><strong>Conta</strong><small>${escapeHtml(endereco[0] || customerAddress())}</small></div><b>&rsaquo;</b></button>
+        <button type="button" data-share-referral><span>$</span><div><strong>Convide e Ganhe</strong><small>${escapeHtml(state.loyalty?.codigoIndicacao || 'Compartilhe seu código')}</small></div><b>&rsaquo;</b></button>
+        <button type="button"><span>&#9881;</span><div><strong>Configurações</strong><small>Segurança, notificações e dispositivos</small></div><b>&rsaquo;</b></button>
       </nav>
-      <article class="benefits-banner"><div><span>Vantagens pra você!</span><strong>Frete grátis, ofertas exclusivas e muito mais.</strong><button type="button" data-nav-page="loyalty">Ver benefícios &rarr;</button></div><div class="mj-basket-mini">${basketSceneMarkup()}</div></article>
     `;
   }
 
@@ -1536,18 +1543,25 @@ export function createRenderer({ state, telegram, handlers }) {
       el.classList.toggle('active-page', visible);
     });
     if (els.marketHero) els.marketHero.hidden = !['home'].includes(page);
-    if (els.searchPanel) els.searchPanel.hidden = true;
+    if (els.searchPanel) els.searchPanel.hidden = page !== 'home';
     if (els.categoryRail) els.categoryRail.hidden = page !== 'home';
     if (els.cartDrawer) {
       els.cartDrawer.hidden = page !== 'cart';
       els.cartDrawer.classList.toggle('open', page === 'cart');
       els.cartDrawer.classList.toggle('as-page', page === 'cart');
     }
-    if (els.productSheetBackdrop) els.productSheetBackdrop.hidden = true;
+    const isProduct = page === 'product';
+    if (els.productSheetBackdrop) {
+      els.productSheetBackdrop.hidden = !isProduct;
+      els.productSheetBackdrop.classList.toggle('open', isProduct);
+    }
     if (els.productSheet) {
-      els.productSheet.hidden = page !== 'product';
-      els.productSheet.classList.toggle('open', page === 'product');
-      els.productSheet.classList.toggle('as-page', page === 'product');
+      els.productSheet.hidden = !isProduct;
+      els.productSheet.classList.toggle('open', isProduct);
+      els.productSheet.classList.toggle('as-page', isProduct);
+    }
+    if (els.stickyCartBar) {
+      els.stickyCartBar.hidden = ['product', 'payment', 'delivery', 'tracking', 'cart'].includes(page);
     }
     if (els.bottomNav) {
       els.bottomNav.hidden = ['delivery', 'payment', 'product', 'tracking'].includes(page);
@@ -1581,6 +1595,7 @@ export function createRenderer({ state, telegram, handlers }) {
     document.body.dataset.miniappTheme = tema;
     document.body.dataset.miniappMode = design.modo || 'simples';
     document.body.classList.add('mj-reference-layout');
+    document.body.classList.add('mj-clean-layout');
     renderCustomerHeader();
     renderStatusLoja();
     renderTabs();

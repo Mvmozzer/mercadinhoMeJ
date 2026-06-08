@@ -236,6 +236,7 @@ export function catalogSectionsFromPayload(payload = {}, products = []) {
     return payload.catalogo.secoes.map((section, index) => ({
       id: section.id || '',
       name: section.nome || section.name || titleFromId(section.id),
+      icon: section.emoji || section.icon || '',
       order: toNumber(section.ordem ?? section.order, index),
       products: toNumber(section.produtos ?? section.productCount ?? counts.get(section.id), 0)
     })).filter(section => section.id && section.products > 0)
@@ -251,6 +252,7 @@ export function sectionItemsFromProducts(products = []) {
       map.set(item.section, {
         id: item.section,
         name: item.sectionLabel || titleFromId(item.section),
+        icon: '',
         order: toNumber(item.sectionOrder, 0),
         products: 0
       });

@@ -27,10 +27,288 @@ import { createInitialState } from './state.js';
 import { persistMiniAppUiState, restoreMiniAppUiState, validateRestoredMiniAppUiOwner } from './storage.js';
 import { getUser, isActive, setMainButtonLoading, setupTelegram } from './telegram.js';
 import { loadTracking, pollLocation, stopTrackingWhenDelivered } from './tracking.js';
+import { runningOnStaticHost } from './utils.js';
+import { escapeHtml } from './utils.js';
 
 const state = createInitialState();
 const handlers = {};
 let renderer = null;
+let startupWatchdog = null;
+const STARTUP_TIMEOUT_MS = 14000;
+const DEBUG_PANEL_MAX_ERRORS = 8;
+
+const startupDebugEvents = [];
+let debugCaptureInstalled = false;
+let buildMetaProbeInProgress = null;
+
+function getStartupDebugMode() {
+  try {
+    const value = new URL(window.location.href).searchParams.get('debug') || '';
+    return ['1', 'true', 'sim', 'yes'].includes(String(value).toLowerCase());
+  } catch (_) {
+    return false;
+  }
+}
+
+function detectBuildVersion() {
+  try {
+    const query = new URL(window.location.href).searchParams.get('miniapp_v');
+    if (query) return query;
+    const scripts = Array.from(document.querySelectorAll('script[src]'));
+    const mainScript = scripts.find(script => /\/miniapp\/src\/main\.js(\?|$)/.test(String(script.getAttribute('src') || '')))
+      || scripts.find(script => /\/src\/main\.js(\?|$)/.test(String(script.getAttribute('src') || '')))
+      || scripts.find(script => /\/miniapp\/main\.js(\?|$)/.test(String(script.getAttribute('src') || '')));
+    if (!mainScript) return '';
+    const src = mainScript.getAttribute('src') || '';
+    return new URL(src, window.location.href).searchParams.get('v') || '';
+  } catch (_) {
+    return '';
+  }
+}
+
+function formatBuildVersion(version = '') {
+  const text = String(version || '').trim();
+  return text && /^\d{4}\.\d{2}\.\d{2}\.\d{3}$/.test(text) ? text : text;
+}
+
+function appendCacheBuster(url) {
+  const version = formatBuildVersion(state.buildVersion);
+  if (!version) return String(url || '');
+  if (String(url || '').includes(`v=${version}`)) return String(url);
+  const separator = String(url || '').includes('?') ? '&' : '?';
+  return `${url}${separator}v=${encodeURIComponent(version)}`;
+}
+
+async function detectBuildVersionFromVersionJson() {
+  if (buildMetaProbeInProgress) return buildMetaProbeInProgress;
+  const candidates = [
+    './version.json',
+    './publicacao-github-pages/version.json',
+    '../version.json',
+    '../publicacao-github-pages/version.json',
+    '/version.json'
+  ];
+  buildMetaProbeInProgress = (async () => {
+    for (const candidate of candidates) {
+      try {
+        const response = await fetch(candidate, { cache: 'no-store' });
+        if (!response.ok) continue;
+        const payload = await response.json();
+        const fromPayload = String(payload?.webBuild || '').trim();
+        if (fromPayload) {
+          state.buildVersion = fromPayload;
+          return fromPayload;
+        }
+      } catch (_) {
+        // versão estática antiga pode não ter versão pública publicada.
+      }
+    }
+    return '';
+  })();
+  const result = await buildMetaProbeInProgress;
+  buildMetaProbeInProgress = null;
+  return result;
+}
+
+function collectConsoleMessage(value) {
+  try {
+    return String(typeof value === 'string' ? value : JSON.stringify(value)).slice(0, 700);
+  } catch (_) {
+    return String(value || 'erro');
+  }
+}
+
+function pushDebugEvent(message, type = 'log') {
+  const line = `${new Date().toISOString()} [${type}] ${String(message).slice(0, 680)}`;
+  startupDebugEvents.unshift(line);
+  if (startupDebugEvents.length > DEBUG_PANEL_MAX_ERRORS) startupDebugEvents.length = DEBUG_PANEL_MAX_ERRORS;
+}
+
+function installDebugCapture() {
+  if (debugCaptureInstalled || !state.debugMode) return;
+  debugCaptureInstalled = true;
+
+  const originalConsoleError = console.error;
+  console.error = (...args) => {
+    pushDebugEvent(args.map(arg => collectConsoleMessage(arg)).join(' | '), 'error');
+    return originalConsoleError(...args);
+  };
+
+  window.addEventListener('error', (event) => {
+    pushDebugEvent(`${event.message || 'Erro de script'} ${event.filename || ''}:${event.lineno || ''}:${event.colno || ''}`, 'error');
+    markStartupFailure('Erro de script detectado. Veja detalhes no debug.');
+  });
+
+  window.addEventListener('unhandledrejection', (event) => {
+    pushDebugEvent(`Promise rejeitada: ${collectConsoleMessage(event?.reason)}`, 'promise');
+    markStartupFailure('Erro assíncrono detectado. Veja detalhes no debug.');
+  });
+}
+
+function markStartupFailure(error) {
+  const elapsed = state.startupStartedAt ? Math.max(0, Date.now() - state.startupStartedAt) : 0;
+  const message = typeof error === 'string'
+    ? error
+    : error?.message || 'Não foi possível finalizar o carregamento da loja.';
+  state.startupFailed = true;
+  state.startupError = `${message} (${Math.round(elapsed / 1000)}s)`;
+  state.startupCompletedAt = Date.now();
+  clearStartupWatchdog();
+  renderStartupFailure();
+}
+
+function clearStartupWatchdog() {
+  if (startupWatchdog) window.clearTimeout(startupWatchdog);
+  startupWatchdog = null;
+}
+
+function startStartupWatchdog() {
+  clearStartupWatchdog();
+  startupWatchdog = window.setTimeout(() => {
+    const stillBooting = state.authMode === 'pending' || state.catalogLoading;
+    if (!state.startupCompletedAt && stillBooting) {
+      markStartupFailure('A inicialização travou no carregamento. Verifique conexão e tente novamente.');
+    }
+  }, STARTUP_TIMEOUT_MS);
+}
+
+function collectResourceDebugInfo() {
+  const stylesheet = document.getElementById('mainStylesheet')
+    || Array.from(document.querySelectorAll('link[rel="stylesheet"]')).find(link => /miniapp\/styles\.css|\.\/styles\.css/i.test(String(link.getAttribute('href') || '')));
+  const runtimeCss = document.getElementById('miniapp-design-runtime-css');
+  const mainJs = document.getElementById('miniappMainJs')
+    || Array.from(document.scripts).find(script => /(miniapp\/src\/main\.js|\.\/src\/main\.js)/i.test(String(script.getAttribute('src') || '')));
+  const runtimeJs = document.getElementById('miniapp-design-runtime-js');
+  return {
+    stylesheetHref: stylesheet?.getAttribute('href') || '',
+    runtimeCssLoaded: Boolean(runtimeCss),
+    runtimeJsLoaded: Boolean(runtimeJs),
+    runtimeCssHref: runtimeCss?.getAttribute('href') || '',
+    runtimeJsHref: runtimeJs?.getAttribute('src') || '',
+    mainJsLoaded: Boolean(mainJs)
+  };
+}
+
+function getDebugSafeUrl() {
+  try {
+    const safeKeys = new Set(['apiBase', 'miniapp_v', 'debug', 'state', 'pedido', 'allowTempApi', 'allowtempapi']);
+    const cleaned = new URL(window.location.href);
+    const blacklist = [];
+    for (const key of Array.from(cleaned.searchParams.keys())) {
+      if (!safeKeys.has(String(key))) continue;
+      const value = cleaned.searchParams.get(key) || '';
+      cleaned.searchParams.set(key, String(value).slice(0, 300));
+    }
+    for (const key of Array.from(cleaned.searchParams.keys())) {
+      if (!safeKeys.has(key)) {
+        blacklist.push(key);
+      }
+    }
+    blacklist.forEach(key => cleaned.searchParams.delete(key));
+    return cleaned.toString();
+  } catch (_) {
+    return String(window.location.href || '');
+  }
+}
+
+function collectDebugSnapshot() {
+  const api = apiBase(state);
+  const health = state.apiHealth || {};
+  const resources = collectResourceDebugInfo();
+  return {
+    carregadoEm: new Date().toLocaleString('pt-BR'),
+    urlAtual: getDebugSafeUrl(),
+    buildVersion: state.buildVersion || detectBuildVersion(),
+    apiBase: api || '(não definido)',
+    emTelegram: Boolean(window.Telegram?.WebApp),
+    initDataExiste: Boolean(state.telegramInitData),
+    authMode: state.authMode || 'desconhecido',
+    apiRunningOnStaticHost: runningOnStaticHost(),
+    cssCarregado: Boolean(resources.stylesheetHref),
+    runtimeCssHref: resources.runtimeCssHref || '',
+    runtimeJsHref: resources.runtimeJsHref || '',
+    runtimeCss: resources.runtimeCssLoaded,
+    runtimeJs: resources.runtimeJsLoaded,
+    mainJs: resources.mainJsLoaded,
+    apiHealth: {
+      ok: Boolean(health.ok),
+      status: Number(health.status || 0)
+    },
+    erros: startupDebugEvents,
+    cssHref: resources.stylesheetHref
+  };
+}
+
+function renderStartupFailure() {
+  const root = document.getElementById('miniapp-root');
+  if (!root) return;
+  root.classList.remove('app-loading');
+  const debugUrl = new URL(window.location.href);
+  debugUrl.searchParams.set('debug', '1');
+  if (state.buildVersion) debugUrl.searchParams.set('miniapp_v', state.buildVersion);
+  root.innerHTML = `
+    <section class="startup-failed-shell">
+      <h2>Não foi possível concluir o carregamento</h2>
+      <p class="startup-failed-reason">${escapeHtml(state.startupError || 'Erro desconhecido')}</p>
+      <p>Verifique conexão e tente novamente.</p>
+      <button id="miniappRetryButton" type="button">Tentar novamente</button>
+      <a href="${debugUrl.toString()}" class="miniapp-debug-link">Abrir diagnóstico</a>
+    </section>
+  `;
+  const retryButton = root.querySelector('#miniappRetryButton');
+  if (retryButton) retryButton.addEventListener('click', () => window.location.reload());
+  if (state.debugMode) renderDebugPanel(root);
+}
+
+function renderDebugPanel(rootFallback) {
+  if (!state.debugMode) return;
+  const root = rootFallback || document.getElementById('miniapp-root');
+  if (!root) return;
+  const debug = collectDebugSnapshot();
+  let debugRoot = document.getElementById('miniappDebugOverlay');
+  if (!debugRoot) {
+    debugRoot = document.createElement('section');
+    debugRoot.id = 'miniappDebugOverlay';
+    debugRoot.className = 'miniapp-debug-panel';
+    root.appendChild(debugRoot);
+  }
+  debugRoot.innerHTML = `
+    <h2>Mini App Debug</h2>
+    <div><strong>URL atual:</strong> ${escapeHtml(debug.urlAtual)}</div>
+    <div><strong>buildVersion:</strong> ${escapeHtml(debug.buildVersion || 'indefinida')}</div>
+    <div><strong>apiBase:</strong> ${escapeHtml(debug.apiBase)}</div>
+    <div><strong>Dentro do Telegram:</strong> ${debug.emTelegram ? 'sim' : 'não'}</div>
+    <div><strong>initData existe:</strong> ${debug.initDataExiste ? 'sim' : 'não'}</div>
+    <div><strong>authMode:</strong> ${escapeHtml(debug.authMode)}</div>
+    <div><strong>Static host:</strong> ${debug.apiRunningOnStaticHost ? 'sim' : 'não'}</div>
+    <div><strong>CSS carregado:</strong> ${debug.cssCarregado ? 'sim' : 'não'} ${debug.cssHref ? `(${escapeHtml(debug.cssHref)})` : ''}</div>
+    <div><strong>runtime.css/js:</strong> ${debug.runtimeCss ? 'sim' : 'não'} / ${debug.runtimeJs ? 'sim' : 'não'}</div>
+    <div><strong>main.js:</strong> ${debug.mainJs ? 'sim' : 'não'}</div>
+    <div><strong>runtime.css:</strong> ${debug.runtimeCss ? escapeHtml(debug.runtimeCssHref) : 'não carregado'}</div>
+    <div><strong>runtime.js:</strong> ${debug.runtimeJs ? escapeHtml(debug.runtimeJsHref) : 'não carregado'}</div>
+    <div><strong>API health:</strong> ${debug.apiHealth.ok ? 'ok' : 'não ok'} (status ${debug.apiHealth.status})</div>
+    <div><strong>Carregado em:</strong> ${escapeHtml(debug.carregadoEm)}</div>
+    <details>
+      <summary>Erros recentes do frontend</summary>
+      <pre>${escapeHtml((debug.erros || []).join('\n') || 'Sem erros')}</pre>
+    </details>
+  `;
+}
+
+function markStartupCompleted() {
+  state.startupCompletedAt = Date.now();
+  state.startupFailed = false;
+  state.startupError = '';
+  clearStartupWatchdog();
+  renderDebugPanel();
+}
+
+function resetStartupState() {
+  state.startupStartedAt = Date.now();
+  state.startupCompletedAt = 0;
+  state.startupFailed = false;
+  state.startupError = '';
+}
 
 const telegram = setupTelegram(() => {
   if (state.currentPage === 'cart') return sendCartToTelegram();
@@ -46,21 +324,22 @@ function installMiniAppDesignRuntime() {
   if (!apiBaseConfigurada(state)) return;
   const base = apiBase(state);
   const runtimeBase = base || '';
+  const normalizedBase = String(runtimeBase || '').replace(/\/+$/, '');
 
   if (!document.getElementById('miniapp-design-runtime-css')) {
     const link = document.createElement('link');
     link.id = 'miniapp-design-runtime-css';
     link.rel = 'stylesheet';
-    link.href = `${runtimeBase}/mini-app-design/runtime.css`;
+    link.href = appendCacheBuster(`${normalizedBase}/mini-app-design/runtime.css`);
     document.head.appendChild(link);
   }
 
   if (!document.getElementById('miniapp-design-runtime-js')) {
     const script = document.createElement('script');
     script.id = 'miniapp-design-runtime-js';
-    script.src = `${runtimeBase}/mini-app-design/runtime.js`;
+    script.src = appendCacheBuster(`${normalizedBase}/mini-app-design/runtime.js`);
     script.defer = true;
-    if (base) script.dataset.apiBase = base;
+    if (normalizedBase) script.dataset.apiBase = normalizedBase;
     document.head.appendChild(script);
   }
 }
@@ -366,6 +645,16 @@ async function authenticate() {
 }
 
 async function init() {
+  resetStartupState();
+  state.debugMode = getStartupDebugMode();
+  state.buildVersion = detectBuildVersion();
+  if (!state.buildVersion) await detectBuildVersionFromVersionJson().catch(() => null);
+  state.buildVersion = formatBuildVersion(state.buildVersion || '');
+  state.startupStartedAt = Date.now();
+  state.startupAttempts += 1;
+  installDebugCapture();
+  const root = document.getElementById('miniapp-root');
+  if (root) root.classList.remove('app-loading');
   handlers.reloadCatalog = reloadCatalog;
   handlers.loadMoreProducts = loadMoreProducts;
   handlers.sendCart = sendCartToTelegram;
@@ -387,16 +676,20 @@ async function init() {
   renderer.render();
   installMiniAppDesignRuntime();
 
+  startStartupWatchdog();
+
   await Promise.all([
     reloadCatalog(),
     authenticate()
   ]);
 
   await sincronizarStatusLoja();
+  markStartupCompleted();
   state.storeStatusTimer = setInterval(sincronizarStatusLoja, Math.max(1000, Number(state.updateIntervalMs || 7000)));
 }
 
 init().catch(error => {
   console.error(error);
-  renderer.showToast('Não foi possível iniciar a loja. Atualize a página.');
+  const message = `Não foi possível iniciar a loja. ${error?.message || 'Atualize a página.'}`;
+  markStartupFailure(message);
 });
