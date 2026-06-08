@@ -7,6 +7,19 @@ import {
 import { API_BASE_KEY, MINIAPP_TOKEN_KEY, writeText, removeKey } from './storage.js';
 import { isTemporaryPublicApiBase, normalizePublicApiBase, runningOnStaticHost } from './utils.js';
 
+function parseImportMetaEnv() {
+  if (typeof import.meta === 'undefined' || !import.meta?.env) return '';
+  const value = import.meta.env?.VITE_API_BASE;
+  return String(value || '').trim();
+}
+
+function resolveWindowApiFallback() {
+  if (typeof window === 'undefined') return '';
+  const direct = String(window.VITE_API_BASE || '').trim();
+  if (direct) return direct;
+  return parseImportMetaEnv();
+}
+
 export function apiBase(state) {
   const url = new URL(window.location.href);
   const fromQuery = url.searchParams.get('apiBase');
@@ -31,6 +44,14 @@ export function apiBase(state) {
     state.apiBaseUrl = '';
     state.allowTemporaryApiBase = false;
     removeKey(API_BASE_KEY);
+  }
+  const fallback = normalizePublicApiBase(resolveWindowApiFallback(), {
+    allowTemporary: state.allowTemporaryApiBase === true
+  });
+  if (fallback && (!baseTemporariaBloqueada(fallback))) {
+    state.apiBaseUrl = fallback;
+    writeText(API_BASE_KEY, fallback);
+    return fallback;
   }
   return '';
 }
@@ -457,9 +478,7 @@ export async function loadProductsPage(state, { reset = false } = {}) {
   }
 
   try {
-    const res = await fetch(`${apiBase(state)}/api/client/catalog-page?${params.toString()}`, { cache: 'no-store' });
-    if (!res.ok) throw new Error('catalogo paginado indisponivel');
-    const payload = await res.json();
+    const payload = await apiFetch(state, `/api/client/catalog-page?${params.toString()}`, { cache: 'no-store' });
     atualizarStatusLoja(state, payload);
     state.miniappDesign = payload.catalogo?.design || payload.design || state.miniappDesign;
     const products = normalizeCatalogPayload(payload);
@@ -486,9 +505,7 @@ export async function loadProducts(state) {
   if (await loadProductsPage(state, { reset: true })) return;
   try {
     exigirApiBaseConfigurada(state);
-    const res = await fetch(`${apiBase(state)}/api/miniapp/catalogo`, { cache: 'no-store' });
-    if (!res.ok) throw new Error('catalogo indisponivel');
-    const payload = await res.json();
+    const payload = await apiFetch(state, '/api/miniapp/catalogo', { cache: 'no-store' });
     atualizarStatusLoja(state, payload);
     state.miniappDesign = payload.catalogo?.design || payload.design || state.miniappDesign;
     state.products = normalizeCatalogPayload(payload);
@@ -539,9 +556,7 @@ export async function loadMoreProducts(state) {
 
 export async function sincronizarStatusLoja(state) {
   try {
-    const res = await fetch(`${apiBase(state)}/loja/status`, { cache: 'no-store' });
-    if (!res.ok) return state.loja;
-    return atualizarStatusLoja(state, await res.json());
+    return atualizarStatusLoja(state, await apiFetch(state, '/api/loja/status', { cache: 'no-store' }));
   } catch (_) {
     return state.loja;
   }

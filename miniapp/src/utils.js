@@ -74,7 +74,12 @@ export function compactWhitespace(value, maxLength = 500) {
 }
 
 export function runningOnStaticHost() {
-  return /\.github\.io$/i.test(window.location.hostname) || window.location.protocol === 'file:';
+  if (window.location.protocol === 'file:') return true;
+  const host = String(window.location.hostname || '').toLowerCase();
+  if (!host) return false;
+  if (host === 'localhost' || host === '127.0.0.1' || host === '::1') return false;
+  if (/^(127\.|0\.0\.0\.0$|10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.)/.test(host)) return false;
+  return true;
 }
 
 export function isTemporaryPublicApiBase(value) {
