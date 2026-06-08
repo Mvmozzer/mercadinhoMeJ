@@ -3659,12 +3659,31 @@ body.mj-reference-layout .daily-offer-card b {
 
 body.mj-reference-layout .mini-card-bottom,
 body.mj-reference-layout .price-row {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
   gap: 8px;
   margin-top: auto;
   min-width: 0;
+}
+
+body.mj-reference-layout .mini-product-card .price,
+body.mj-reference-layout .product.durger-card .price {
+  min-width: 0;
+}
+
+body.mj-reference-layout .mini-product-card .price strong,
+body.mj-reference-layout .product.durger-card .price strong {
+  display: block;
+  line-height: 1.05;
+  white-space: nowrap;
+}
+
+body.mj-reference-layout .mini-product-card .qty,
+body.mj-reference-layout .product.durger-card .qty {
+  width: 100%;
+  grid-template-columns: 34px minmax(0, 1fr) 34px;
+  justify-self: stretch;
 }
 
 body.mj-reference-layout .quick-add-button,
@@ -3717,9 +3736,10 @@ body.mj-reference-layout .qty span {
 body.mj-reference-layout .daily-offer-card {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 116px;
-  min-height: 156px;
-  padding: 22px 14px;
+  grid-template-columns: minmax(0, 1fr) 112px;
+  gap: 12px;
+  min-height: 174px;
+  padding: 22px 14px 16px;
   overflow: hidden;
   border-radius: 24px;
   background: linear-gradient(135deg, #ffe8cf, #fff8ef);
@@ -3745,6 +3765,8 @@ body.mj-reference-layout .timer-pill {
 body.mj-reference-layout .daily-offer-media {
   display: grid;
   place-items: center;
+  align-self: start;
+  min-width: 0;
 }
 
 body.mj-reference-layout .daily-offer-media img {
@@ -3754,12 +3776,14 @@ body.mj-reference-layout .daily-offer-media img {
 }
 
 body.mj-reference-layout .floating-cart {
-  position: absolute;
-  right: 16px;
-  bottom: 16px;
+  position: relative;
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: center;
+  align-self: end;
   display: grid;
-  width: 94px;
-  height: 94px;
+  width: 86px;
+  height: 86px;
   place-items: center;
   border-radius: 50%;
   background: linear-gradient(180deg, #ff641d, var(--mj-ref-red));
@@ -3773,8 +3797,8 @@ body.mj-reference-layout .floating-cart span {
 
 body.mj-reference-layout .floating-cart em {
   position: absolute;
-  right: 22px;
-  top: 16px;
+  right: 16px;
+  top: 12px;
   display: grid;
   width: 21px;
   height: 21px;
@@ -3788,7 +3812,8 @@ body.mj-reference-layout .floating-cart em {
 
 body.mj-reference-layout .delivery-banner {
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr) 36px;
+  grid-template-columns: 48px minmax(0, 1fr) 20px;
+  grid-template-rows: auto auto;
   align-items: center;
   gap: 10px;
   min-height: 76px;
@@ -3797,6 +3822,34 @@ body.mj-reference-layout .delivery-banner {
   border-radius: 20px;
   background: linear-gradient(180deg, #ff4a17, #f03611);
   color: #fff;
+}
+
+body.mj-reference-layout .delivery-banner span {
+  grid-row: 1 / 3;
+}
+
+body.mj-reference-layout .delivery-banner strong,
+body.mj-reference-layout .delivery-banner small {
+  grid-column: 2;
+  min-width: 0;
+}
+
+body.mj-reference-layout .delivery-banner strong {
+  line-height: 1.15;
+}
+
+body.mj-reference-layout .delivery-banner small {
+  color: rgba(255, 255, 255, .9);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: normal;
+}
+
+body.mj-reference-layout .delivery-banner b {
+  grid-column: 3;
+  grid-row: 1 / 3;
+  justify-self: end;
 }
 
 body.mj-reference-layout .miniapp-bottom-nav {
