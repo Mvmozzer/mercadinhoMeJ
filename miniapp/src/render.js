@@ -1,4 +1,4 @@
-import {
+﻿import {
   cartCount,
   cartItems,
   cartQty,
@@ -53,12 +53,11 @@ function shellMarkup() {
             <button class="mj-address-button" type="button" data-nav-page="profile">
               <span id="customerAddressLine"></span>
             </button>
-            <span id="customerGreeting" hidden>Ola!</span>
+            <span id="customerGreeting" hidden>Olá!</span>
             <span id="storeStatus" hidden>Aberto agora</span>
             <span hidden>Meus pedidos</span>
             <span hidden>Acompanhar entrega</span>
             <span hidden>SEU PEDIDO</span>
-            <span hidden>VER PEDIDO</span>
           </div>
           <button class="mj-bell" id="profileButton" type="button" aria-label="Minha conta">
             <span aria-hidden="true">&#128276;</span>
@@ -90,13 +89,13 @@ function shellMarkup() {
         <section class="vini-ai-outdoor" id="viniAiOutdoor" aria-label="Alertas do Vini" hidden>
           <div class="vini-ai-alert is-hidden" id="viniAiAlert" aria-live="polite" role="status" aria-hidden="true">
             <strong>Alerta do Vini</strong>
-            <span>Use a busca para achar produtos rapido.</span>
+            <span>Use a busca para achar produtos rápido.</span>
           </div>
         </section>
 
-        <section class="marketplace-home miniapp-page" id="marketHome" data-page="home" aria-label="Inicio">
+        <section class="marketplace-home miniapp-page" id="marketHome" data-page="home" aria-label="Início">
           <div class="miniapp-design-home-slot" data-design-slot="home-top"></div>
-          <section class="promo-banners" id="promoBanners" aria-label="Promocoes"></section>
+          <section class="promo-banners" id="promoBanners" aria-label="Promoções"></section>
           <nav class="quick-category-rail" id="categoryRail" aria-label="Categorias principais"></nav>
           <section class="market-row" id="buyAgainSection" aria-label="Mais pedidos"></section>
           <section class="market-row" id="bestSellersSection" aria-label="Mais vendidos"></section>
@@ -109,7 +108,7 @@ function shellMarkup() {
               <span id="pointsBalanceLabel">0 pts</span>
             </div>
             <div class="coupon-row">
-              <input id="couponCode" type="text" maxlength="40" placeholder="Cupom ou indicacao">
+              <input id="couponCode" type="text" maxlength="40" placeholder="Cupom ou indicação">
               <button class="ghost" id="copyInviteCode" type="button">Convidar</button>
             </div>
             <label class="toggle-line">
@@ -186,13 +185,13 @@ function shellMarkup() {
               <button class="mj-bell" type="button" data-nav-page="profile" aria-label="Minha conta">&#128276;</button>
             </div>
             <h1>Pedidos</h1>
-            <p>Acompanhe seus pedidos em andamento e veja seu historico.</p>
+          <p>Acompanhe seus pedidos em andamento e veja seu histórico.</p>
             <div class="mj-basket-small" aria-hidden="true">${basketSceneMarkup()}</div>
           </div>
           <div class="mj-screen-body">
             <div class="mj-tabs">
               <button class="active" type="button">Em andamento</button>
-              <button type="button">Historico</button>
+              <button type="button">Histórico</button>
             </div>
             <div id="ordersList"></div>
             <span id="authStatus" hidden>Conectando</span>
@@ -237,7 +236,7 @@ function shellMarkup() {
             <button class="mj-back" type="button" data-nav-page="home" aria-label="Voltar">&lt;</button>
             <div>
               <span>Listas e pontos</span>
-              <h1>Meus beneficios</h1>
+              <h1>Meus benefícios</h1>
             </div>
             <span id="loyaltyBalance">0 pontos</span>
           </div>
@@ -252,8 +251,8 @@ function shellMarkup() {
               <span>100</span>
             </div>
             <h1>Minha conta</h1>
-            <p>Gerencie seu perfil e preferencias</p>
-            <button class="mj-bell" type="button" aria-label="Notificacoes">&#128276;</button>
+            <p>Gerencie seu perfil e preferências</p>
+            <button class="mj-bell" type="button" aria-label="Notificações">&#128276;</button>
           </div>
           <div id="profileContent"></div>
           <span id="profileStatus" hidden>Mini App</span>
@@ -277,8 +276,8 @@ function shellMarkup() {
         <div class="mj-delivery-strip">
           <span class="mj-delivery-bike" aria-hidden="true">&#128757;</span>
           <div>
-            <strong>Entrega rapida na sua regiao</strong>
-            <small id="deliveryAddressText">Receba em ate 40 min</small>
+            <strong>Entrega rápida na sua região</strong>
+            <small id="deliveryAddressText">Receba em até 40 min</small>
           </div>
           <button type="button" data-nav-page="delivery">Alterar</button>
         </div>
@@ -296,9 +295,9 @@ function shellMarkup() {
           <div class="total"><span>Total</span><strong id="drawerGrandTotal">R$ 0,00</strong></div>
         </div>
         <label class="cart-notes" id="cartNotesPanel">
-          <span>Observacao</span>
-          <textarea id="cartNotes" maxlength="500" placeholder="Alguma observacao para a loja?"></textarea>
-          <small id="cartNotesHint">Ex: trocar sabor, ponto de referencia.</small>
+          <span>Observação</span>
+          <textarea id="cartNotes" maxlength="500" placeholder="Alguma observação para a loja?"></textarea>
+          <small id="cartNotesHint">Ex: trocar sabor, ponto de referência.</small>
         </label>
         <div class="checkout-stage" id="cartStepPanel">
           <span class="checkout-step-label" id="checkoutStepLabel">Pedido pronto</span>
@@ -331,8 +330,8 @@ function shellMarkup() {
       </button>
     </footer>
 
-    <nav class="miniapp-bottom-nav" id="bottomNav" aria-label="Navegacao principal">
-      <button type="button" data-nav-page="home"><span>&#8962;</span>Inicio</button>
+    <nav class="miniapp-bottom-nav" id="bottomNav" aria-label="Navegação principal">
+      <button type="button" data-nav-page="home"><span>&#8962;</span>Início</button>
       <button type="button" data-nav-page="search"><span>&#128269;</span>Buscar</button>
       <button type="button" data-nav-page="orders"><span>&#128717;</span>Pedidos</button>
       <button type="button" data-nav-page="loyalty"><span>&#9776;</span>Listas</button>
@@ -413,7 +412,7 @@ function designHighlights(state) {
   const configured = Array.isArray(designConfig(state).destaques?.itens) ? designConfig(state).destaques.itens : [];
   const defaults = [
     { id: 'ofertas', title: 'Ofertas da semana', body: 'Descontos selecionados', cta: 'Ver ofertas', action: 'ofertas', active: true, order: 1 },
-    { id: 'combos', title: 'Combos economicos', body: 'Leve mais pagando menos', cta: 'Ver combos', action: 'combos', active: true, order: 2 },
+    { id: 'combos', title: 'Combos econômicos', body: 'Leve mais pagando menos', cta: 'Ver combos', action: 'combos', active: true, order: 2 },
     { id: 'pontos', title: 'Meus pontos', body: 'Use pontos no checkout', cta: 'Ver pontos', action: 'loyalty', active: true, order: 3 }
   ];
   return defaults.map((item, index) => {
@@ -497,7 +496,7 @@ export function createRenderer({ state, telegram, handlers }) {
         return `<span class="journey-step ${classe}" data-step="${id}">${escapeHtml(label)}</span>`;
       }).join('');
     }
-    if (els.journeyStatus) els.journeyStatus.textContent = etapas[indiceAtual]?.[1] || 'Catalogo';
+    if (els.journeyStatus) els.journeyStatus.textContent = etapas[indiceAtual]?.[1] || 'Catálogo';
   }
 
   function customerName() {
@@ -524,7 +523,7 @@ export function createRenderer({ state, telegram, handlers }) {
 
   function renderCustomerHeader() {
     const address = customerAddress();
-    if (els.customerGreeting) els.customerGreeting.textContent = customerName() ? `Ola, ${customerName()}` : 'Ola!';
+    if (els.customerGreeting) els.customerGreeting.textContent = customerName() ? `Olá, ${customerName()}` : 'Olá!';
     if (els.customerAddressLine) els.customerAddressLine.textContent = address;
     if (els.searchAddressLine) els.searchAddressLine.textContent = address;
     if (els.ordersAddressLine) els.ordersAddressLine.textContent = address;
@@ -683,7 +682,7 @@ export function createRenderer({ state, telegram, handlers }) {
 
   function quantityControl(item, compact = false) {
     const qty = cartQty(state, item.id);
-    if (Number(item.stock || 0) <= 0) return '<span class="stock-empty">Indisponivel</span>';
+    if (Number(item.stock || 0) <= 0) return '<span class="stock-empty">Indisponível</span>';
     if (qty > 0) {
       return `<div class="qty ${compact ? 'compact' : ''}">
         <button type="button" data-action="minus" aria-label="Diminuir quantidade">-</button>
@@ -791,8 +790,8 @@ export function createRenderer({ state, telegram, handlers }) {
       </article>
       <article class="delivery-banner" data-nav-page="delivery">
         <span>&#128757;</span>
-        <strong>Entrega rapida na sua regiao</strong>
-        <small>Receba em ate 40 min</small>
+        <strong>Entrega rápida na sua região</strong>
+        <small>Receba em até 40 min</small>
         <b>&rsaquo;</b>
       </article>
     `;
@@ -818,7 +817,7 @@ export function createRenderer({ state, telegram, handlers }) {
     if (!els.categoriesPageList) return;
     const sections = sectionItems(state);
     if (!sections.length) {
-      els.categoriesPageList.innerHTML = '<div class="empty">Nenhuma categoria disponivel agora.</div>';
+      els.categoriesPageList.innerHTML = '<div class="empty">Nenhuma categoria disponível agora.</div>';
       return;
     }
     els.categoriesPageList.innerHTML = sections.map(section => `
@@ -871,7 +870,7 @@ export function createRenderer({ state, telegram, handlers }) {
         <div class="search-category-row">
           ${sectionShortcuts(5).map(item => `<button class="${item.id === state.section ? 'active' : ''}" type="button" data-search-section="${escapeHtml(item.id)}" data-search-term="${escapeHtml(item.search || item.name)}"><span>${escapeHtml(item.icon)}</span>${escapeHtml(item.name)}</button>`).join('')}
         </div>
-        <div class="filter-sort-row"><button type="button">Filtros</button><button type="button">Ordenar <span>Relevancia</span></button></div>
+        <div class="filter-sort-row"><button type="button">Filtros</button><button type="button">Ordenar <span>Relevância</span></button></div>
       `;
       els.searchCategories.querySelectorAll('[data-search-section], [data-search-term]').forEach(button => {
         button.addEventListener('click', () => {
@@ -941,7 +940,7 @@ export function createRenderer({ state, telegram, handlers }) {
     `;
     const products = filteredProducts(state);
     if (state.catalogLoading) {
-      els.products.insertAdjacentHTML('beforeend', '<div class="empty">Carregando catalogo...</div>');
+      els.products.insertAdjacentHTML('beforeend', '<div class="empty">Carregando catálogo...</div>');
       return;
     }
     if (!products.length) {
@@ -976,7 +975,7 @@ export function createRenderer({ state, telegram, handlers }) {
     const items = cartItems(state);
     if (!els.cartList) return;
     if (!items.length) {
-      els.cartList.innerHTML = '<div class="empty">Seu carrinho esta vazio. Adicione produtos para continuar.</div>';
+      els.cartList.innerHTML = '<div class="empty">Seu carrinho está vazio. Adicione produtos para continuar.</div>';
       return;
     }
     els.cartList.innerHTML = '';
@@ -1015,7 +1014,7 @@ export function createRenderer({ state, telegram, handlers }) {
     if (pointsText) {
       const box = document.createElement('div');
       box.className = 'points-box';
-      box.innerHTML = `<strong>${escapeHtml(pointsText)}</strong><small>Os pontos entram apos confirmacao do pedido.</small>`;
+      box.innerHTML = `<strong>${escapeHtml(pointsText)}</strong><small>Os pontos entram após confirmação do pedido.</small>`;
       els.cartList.appendChild(box);
     }
   }
@@ -1049,11 +1048,11 @@ export function createRenderer({ state, telegram, handlers }) {
         <button class="${!entrega ? 'active' : ''}" type="button" data-delivery-mode="retirada"><span>&#8962;</span> Retirada</button>
       </div>
       <section class="checkout-section">
-        <h2><span>&#128205;</span> ${entrega ? 'Endereco de entrega' : 'Retirada no local'}</h2>
+        <h2><span>&#128205;</span> ${entrega ? 'Endereço de entrega' : 'Retirada no local'}</h2>
         <div class="address-card ${entrega && !completo ? 'incomplete' : ''}">
           <span>&#128205;</span>
           <div>
-            <strong>${escapeHtml(entrega ? (addressLines[0] || 'Endereco incompleto') : 'Mercadinho M&J')}</strong>
+            <strong>${escapeHtml(entrega ? (addressLines[0] || 'Endereço incompleto') : 'Mercadinho M&J')}</strong>
             <small>${escapeHtml(entrega ? (addressLines[1] || 'Complete os dados abaixo') : 'Retire seu pedido na loja')}</small>
             <small>${escapeHtml(entrega ? (addressLines[2] || '') : statusText())}</small>
           </div>
@@ -1062,7 +1061,7 @@ export function createRenderer({ state, telegram, handlers }) {
         <div class="address-form">
           <input data-checkout-field="checkoutCep" placeholder="CEP" value="${escapeHtml(endereco.cep || '')}">
           <input data-checkout-field="checkoutRua" placeholder="Rua" value="${escapeHtml(endereco.rua || '')}">
-          <input data-checkout-field="checkoutNumero" placeholder="Numero" value="${escapeHtml(endereco.numero || '')}">
+          <input data-checkout-field="checkoutNumero" placeholder="Número" value="${escapeHtml(endereco.numero || '')}">
           <input data-checkout-field="checkoutBairro" placeholder="Bairro" value="${escapeHtml(endereco.bairro || '')}">
           <input data-checkout-field="checkoutCidade" placeholder="Cidade" value="${escapeHtml(endereco.cidade || '')}">
           <input data-checkout-field="checkoutEstado" placeholder="UF" value="${escapeHtml(endereco.estado || '')}">
@@ -1070,12 +1069,12 @@ export function createRenderer({ state, telegram, handlers }) {
         </div>
       </section>
       <section class="checkout-section">
-        <h2><span>&#9719;</span> Previsao de entrega</h2>
-        <div class="delivery-eta-card"><span>&#128757;</span><div><strong>Hoje, entre 10:00 e 10:40</strong><small>Entrega rapida na sua regiao</small></div><b>Ate 40 min</b></div>
+        <h2><span>&#9719;</span> Previsão de entrega</h2>
+        <div class="delivery-eta-card"><span>&#128757;</span><div><strong>Hoje, entre 10:00 e 10:40</strong><small>Entrega rápida na sua região</small></div><b>Até 40 min</b></div>
       </section>
       <section class="checkout-section">
-        <h2><span>&#9998;</span> Observacao (opcional)</h2>
-        <textarea id="deliveryNoteMirror" maxlength="120" placeholder="Alguma observacao sobre a entrega?">${escapeHtml(els.cartNotes?.value || '')}</textarea>
+        <h2><span>&#9998;</span> Observação (opcional)</h2>
+        <textarea id="deliveryNoteMirror" maxlength="120" placeholder="Alguma observação sobre a entrega?">${escapeHtml(els.cartNotes?.value || '')}</textarea>
       </section>
       <section class="order-summary-footer">
         <div>
@@ -1200,7 +1199,7 @@ export function createRenderer({ state, telegram, handlers }) {
       <section class="product-detail-copy">
         <h2>${escapeHtml(item.name)}</h2>
         <p>${escapeHtml(item.description || 'Produto selecionado pela loja para o seu pedido.')}</p>
-        <div class="rating-row"><span>*****</span><b>4,8</b><small>(avaliacoes)</small><em>${escapeHtml(itemUnit(item))}</em></div>
+        <div class="rating-row"><span>*****</span><b>4,8</b><small>(avaliações)</small><em>${escapeHtml(itemUnit(item))}</em></div>
         <div class="detail-price">
           <span class="detail-price-copy">${item.promotion ? `<del>${money(item.normalPrice)}</del>` : ''}<strong>${priceLabel(item)}</strong></span>
           <div class="qty detail-qty">
@@ -1211,9 +1210,9 @@ export function createRenderer({ state, telegram, handlers }) {
         </div>
       </section>
       ${opcoesPeso}
-      <section class="detail-accordion"><span>&#9432;</span><div><strong>Descricao</strong><small>${escapeHtml(item.description || 'Ideal para o dia a dia.')}</small></div><b>&or;</b></section>
-      <section class="detail-accordion"><span>i</span><div><strong>Informacoes</strong><small>Estoque e preco final sao validados pela loja.</small></div><b>&or;</b></section>
-      <label class="item-note">Observacao deste item
+          <section class="detail-accordion"><span>&#9432;</span><div><strong>Descrição</strong><small>${escapeHtml(item.description || 'Ideal para o dia a dia.')}</small></div><b>&or;</b></section>
+          <section class="detail-accordion"><span>i</span><div><strong>Informações</strong><small>Estoque e preço final são validados pela loja.</small></div><b>&or;</b></section>
+          <label class="item-note">Observação deste item
         <textarea id="productItemNote" maxlength="240" placeholder="Ex: escolher bem maduro">${escapeHtml(itemNoteValue(state, item.id))}</textarea>
       </label>
       <section class="related-products"><h3>Produtos relacionados</h3><div class="market-strip"></div></section>
@@ -1333,13 +1332,13 @@ export function createRenderer({ state, telegram, handlers }) {
         </div>
         <div class="order-thumbs">${orderThumbs(current)}<span>+ itens</span></div>
         <div class="order-card-bottom">
-          <div><small>Entrega ate</small><strong>Hoje, 10:15 - 10:45</strong></div>
+          <div><small>Entrega até</small><strong>Hoje, 10:15 - 10:45</strong></div>
           <div><small>Total</small><strong>${money(current.total || 0)}</strong></div>
         </div>
         <button type="button" data-order-track="${escapeHtml(current.id || '')}">Ver detalhes <b>&rsaquo;</b></button>
         <button class="ghost" type="button" data-order-pix="${escapeHtml(current.id || '')}">Ver Pix</button>
       </article>
-      <h2>Historico de pedidos</h2>
+      <h2>Histórico de pedidos</h2>
       ${history.length ? history.map(order => `
         <article class="order-history-row" data-order-track="${escapeHtml(order.id || '')}">
           <span>&check;</span>
@@ -1347,7 +1346,7 @@ export function createRenderer({ state, telegram, handlers }) {
           <div><strong>${money(order.total || 0)}</strong><small>${escapeHtml(orderStatusLabel(order))}</small></div>
           <b>&rsaquo;</b>
         </article>
-      `).join('') : '<div class="empty">Sem historico por enquanto.</div>'}
+      `).join('') : '<div class="empty">Sem histórico por enquanto.</div>'}
     `;
   }
 
@@ -1381,22 +1380,22 @@ export function createRenderer({ state, telegram, handlers }) {
         <div class="total"><span>Total do pedido</span><strong>${money(total)}</strong></div>
       </section>
       <section class="payment-method-card">
-        <h2>Metodo de pagamento</h2>
-        <div class="pay-option selected"><span class="radio"></span><b>Pix</b><small>Pagamento instantaneo</small><em>Selecionado</em></div>
-        <div class="pay-option muted"><span class="radio"></span><b>Cartao de credito</b><small>Em breve</small></div>
+        <h2>Método de pagamento</h2>
+        <div class="pay-option selected"><span class="radio"></span><b>Pix</b><small>Pagamento instantâneo</small><em>Selecionado</em></div>
+        <div class="pay-option muted"><span class="radio"></span><b>Cartão de crédito</b><small>Em breve</small></div>
         <div class="pix-box">
           <p>Escaneie o QR Code com o app do seu banco</p>
           ${pix.qrCodeDataUrl ? `<img class="pix-qr" src="${escapeHtml(pix.qrCodeDataUrl)}" alt="QR Code do Pix">` : '<div class="pix-qr placeholder">QR</div>'}
-          <label class="pix-copy">Pix copia e cola
+          <label class="pix-copy">Pix cópia e cola
             <textarea readonly>${escapeHtml(pix.copiaCola)}</textarea>
           </label>
           <div class="checkout-actions">
-            <button class="ghost" type="button" data-copy-pix>Copiar codigo</button>
+            <button class="ghost" type="button" data-copy-pix>Copiar código</button>
             <label class="primary receipt-button">Enviar comprovante<input type="file" data-send-receipt-file accept="image/png,image/jpeg,image/webp,application/pdf" hidden></label>
             <button class="ghost" type="button" data-refresh-pix>Atualizar status</button>
-            <button class="ghost" type="button" data-send-receipt>Ja paguei</button>
+            <button class="ghost" type="button" data-send-receipt>Já paguei</button>
           </div>
-          <small class="approved-note">Pagamento aprovado automaticamente apos confirmacao.</small>
+          <small class="approved-note">Pagamento aprovado automaticamente após confirmação.</small>
         </div>
       </section>
       <footer class="payment-fixed">
@@ -1421,16 +1420,16 @@ export function createRenderer({ state, telegram, handlers }) {
           <h2>${saldo} pts</h2>
           <small>${money(loyalty.saldoReais || 0)} em saldo equivalente</small>
         </div>
-        <button type="button" data-share-referral>Compartilhar codigo</button>
+        <button type="button" data-share-referral>Compartilhar código</button>
       </div>
       <div class="profile-menu">
         <button type="button" data-nav-page="cart"><span>%</span><div><strong>Usar pontos no carrinho</strong><small>Backend valida limite e saldo</small></div><b>&rsaquo;</b></button>
-        <button type="button" data-share-referral><span>&#127873;</span><div><strong>Codigo de indicacao</strong><small>${escapeHtml(loyalty.codigoIndicacao || 'Indisponivel')}</small></div><b>&rsaquo;</b></button>
+        <button type="button" data-share-referral><span>&#127873;</span><div><strong>Código de indicação</strong><small>${escapeHtml(loyalty.codigoIndicacao || 'Indisponível')}</small></div><b>&rsaquo;</b></button>
       </div>
       <div class="points-box">
         <strong>Regras do clube</strong>
-        <small>Minimo: ${Number(loyalty.regras?.minimoPontos || loyalty.minPontosResgate || 0)} pontos.</small>
-        <small>Maximo no pedido: ${Number(loyalty.regras?.percentualMaximoPedido || loyalty.percentualMaximoPedido || 75)}%.</small>
+        <small>Mínimo: ${Number(loyalty.regras?.minimoPontos || loyalty.minPontosResgate || 0)} pontos.</small>
+        <small>Máximo no pedido: ${Number(loyalty.regras?.percentualMaximoPedido || loyalty.percentualMaximoPedido || 75)}%.</small>
       </div>
     `;
   }
@@ -1449,21 +1448,21 @@ export function createRenderer({ state, telegram, handlers }) {
         <div class="avatar">${escapeHtml(String(nome).slice(0, 1).toUpperCase())}</div>
         <div><h2>${escapeHtml(nome)}</h2><small>${escapeHtml(telefone)}</small></div>
         <b>&rsaquo;</b>
-        <div class="account-address"><span>&#128205;</span><div><strong>${escapeHtml(endereco[0] || customerAddress())}</strong><small>${escapeHtml(endereco[1] || 'Endereco cadastrado no Telegram')}</small></div><em>Principal</em></div>
+        <div class="account-address"><span>&#128205;</span><div><strong>${escapeHtml(endereco[0] || customerAddress())}</strong><small>${escapeHtml(endereco[1] || 'Endereço cadastrado no Telegram')}</small></div><em>Principal</em></div>
       </section>
       <section class="account-benefit-card">
         <span class="star">&#9733;</span>
-        <div><strong>Meus pontos</strong><h2>${saldo} pts</h2><small>Faltam pontos para novos beneficios</small></div>
-        <button type="button" data-nav-page="loyalty">Ver beneficios &rsaquo;</button>
+        <div><strong>Meus pontos</strong><h2>${saldo} pts</h2><small>Faltam pontos para novos benefícios</small></div>
+        <button type="button" data-nav-page="loyalty">Ver benefícios &rsaquo;</button>
       </section>
       <nav class="profile-menu">
-        <button type="button"><span>&#128205;</span><div><strong>Meus enderecos</strong><small>Gerencie seus enderecos de entrega</small></div><b>&rsaquo;</b></button>
+        <button type="button"><span>&#128205;</span><div><strong>Meus endereços</strong><small>Gerencie seus endereços de entrega</small></div><b>&rsaquo;</b></button>
         <button type="button"><span>&#128179;</span><div><strong>Pagamento</strong><small>Formas de pagamento e carteiras</small></div><b>&rsaquo;</b></button>
-        <button type="button"><span>?</span><div><strong>Ajuda</strong><small>Duvidas frequentes e suporte</small></div><b>&rsaquo;</b></button>
-        <button type="button"><span>&#128276;</span><div><strong>Notificacoes</strong><small>Preferencias de comunicacao</small></div><b>&rsaquo;</b></button>
-        <button type="button"><span>&#8618;</span><div><strong>Sair da conta</strong><small>Finalizar sessao no app</small></div><b>&rsaquo;</b></button>
+        <button type="button"><span>?</span><div><strong>Ajuda</strong><small>Dúvidas frequentes e suporte</small></div><b>&rsaquo;</b></button>
+        <button type="button"><span>&#128276;</span><div><strong>Notificações</strong><small>Preferências de comunicação</small></div><b>&rsaquo;</b></button>
+        <button type="button"><span>&#8618;</span><div><strong>Sair da conta</strong><small>Finalizar sessão no app</small></div><b>&rsaquo;</b></button>
       </nav>
-      <article class="benefits-banner"><div><span>Vantagens pra voce!</span><strong>Frete gratis, ofertas exclusivas e muito mais.</strong><button type="button" data-nav-page="loyalty">Ver beneficios &rarr;</button></div><div class="mj-basket-mini">${basketSceneMarkup()}</div></article>
+      <article class="benefits-banner"><div><span>Vantagens pra você!</span><strong>Frete grátis, ofertas exclusivas e muito mais.</strong><button type="button" data-nav-page="loyalty">Ver benefícios &rarr;</button></div><div class="mj-basket-mini">${basketSceneMarkup()}</div></article>
     `;
   }
 
@@ -1483,10 +1482,10 @@ export function createRenderer({ state, telegram, handlers }) {
       <section class="tracking-summary">
         <div><h2>Pedido #${escapeHtml(orderDisplayId(pedido.id || tracking.pedidoId))}</h2><small>Realizado hoje</small></div>
         <button type="button" data-order-pix="${escapeHtml(pedido.id || tracking.pedidoId || '')}">&#9776; Ver detalhes</button>
-        <div class="eta-card"><span>&#9719;</span><div><small>Previsao de entrega</small><strong>Hoje, ate 10:20</strong></div></div>
+        <div class="eta-card"><span>&#9719;</span><div><small>Previsão de entrega</small><strong>Hoje, até 10:20</strong></div></div>
       </section>
       <section class="tracking-timeline">
-        ${steps.map(step => `<div class="timeline-row ${step.done ? 'done' : ''} ${step.active ? 'active' : ''}"><span>${step.done ? '&check;' : step.active ? '&#128757;' : ''}</span><div><strong>${escapeHtml(step.label)}</strong><small>${escapeHtml(step.active ? 'Seu pedido esta a caminho!' : 'Acompanhe esta etapa')}</small></div><em>09:35</em></div>`).join('')}
+        ${steps.map(step => `<div class="timeline-row ${step.done ? 'done' : ''} ${step.active ? 'active' : ''}"><span>${step.done ? '&check;' : step.active ? '&#128757;' : ''}</span><div><strong>${escapeHtml(step.label)}</strong><small>${escapeHtml(step.active ? 'Seu pedido está a caminho!' : 'Acompanhe esta etapa')}</small></div><em>09:35</em></div>`).join('')}
       </section>
       <section class="tracking-order-summary">
         <div><h2>Resumo do pedido</h2><small>${pedido.quantidadeItens || cartCount(state) || 4} itens</small></div>
@@ -1494,13 +1493,13 @@ export function createRenderer({ state, telegram, handlers }) {
         <div><small>Total</small><strong>${money(pedido.total || 0)}</strong><small>Pagamento Pix</small></div>
       </section>
       <button class="help-row" type="button"><span>&#9742;</span><div><strong>Precisa de ajuda?</strong><small>Fale com a equipe pelo chat</small></div><b>&rsaquo;</b></button>
-      <article class="delivery-card-bottom" data-open-courier><span>&#128757;</span><div><strong>Entrega rapida na sua regiao</strong><small>Acompanhe em tempo real ate sua casa</small></div></article>
+      <article class="delivery-card-bottom" data-open-courier><span>&#128757;</span><div><strong>Entrega rápida na sua região</strong><small>Acompanhe em tempo real até sua casa</small></div></article>
     `;
     if (els.trackingMap) {
       const map = mapStateFromTracking(tracking);
       els.trackingMap.innerHTML = map.aoVivo && map.mapaUrl
         ? `<iframe title="Mapa do motoboy" src="${escapeHtml(map.mapaUrl)}" loading="lazy" referrerpolicy="no-referrer"></iframe>`
-        : `<div class="map-fallback">${escapeHtml(map.mensagem || 'Mapa indisponivel agora.')}</div>`;
+        : `<div class="map-fallback">${escapeHtml(map.mensagem || 'Mapa indisponível agora.')}</div>`;
     }
   }
 
@@ -1516,8 +1515,8 @@ export function createRenderer({ state, telegram, handlers }) {
       </section>
       <section class="courier-status-card">
         <span>&#128230;</span>
-        <div><strong>Saiu para entrega</strong><small>Seu pedido esta a caminho!</small></div>
-        <div><small>Previsao de chegada</small><b>12 min</b></div>
+        <div><strong>Saiu para entrega</strong><small>Seu pedido está a caminho!</small></div>
+        <div><small>Previsão de chegada</small><b>12 min</b></div>
       </section>
       <section class="courier-driver-card">
         <div class="driver-avatar">C</div>
@@ -1527,7 +1526,7 @@ export function createRenderer({ state, telegram, handlers }) {
         <button type="button">Ligar</button>
       </section>
       <section class="courier-total-card"><span>&#128179;</span><div><strong>Total do pedido</strong><small>Ver detalhes do pedido</small></div><b>${money(state.pedidoAtual?.total || 0)}</b></section>
-      <section class="live-card"><span></span><strong>Atualizacao em tempo real</strong><em>LIVE</em></section>
+      <section class="live-card"><span></span><strong>Atualização em tempo real</strong><em>LIVE</em></section>
     `;
   }
 
@@ -1656,7 +1655,7 @@ export function createRenderer({ state, telegram, handlers }) {
       const text = code || 'Abra o Mercadinho M&J pelo Telegram.';
       try {
         await navigator.clipboard?.writeText?.(text);
-        showToast(code ? 'Codigo copiado' : 'Convite copiado');
+        showToast(code ? 'Código copiado' : 'Convite copiado');
       } catch (_) {
         showToast(text);
       }
@@ -1674,7 +1673,7 @@ export function createRenderer({ state, telegram, handlers }) {
       showToast('Carrinho limpo');
     });
     els.continueToDelivery?.addEventListener('click', () => {
-      if (!cartItems(state).length) return showToast('Seu carrinho esta vazio');
+      if (!cartItems(state).length) return showToast('Seu carrinho está vazio');
       navigateTo('delivery');
     });
     els.deliveryBack?.addEventListener('click', () => navigateTo('cart'));
@@ -1751,3 +1750,4 @@ export function createRenderer({ state, telegram, handlers }) {
     renderViniAIAlert
   };
 }
+

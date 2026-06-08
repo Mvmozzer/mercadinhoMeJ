@@ -1,4 +1,4 @@
-import {
+﻿import {
   bridgeSendAction,
   checkoutCreate,
   checkoutPreview,
@@ -309,8 +309,8 @@ export async function finalizarCheckoutMiniApp(state, els, telegram, callbacks =
     callbacks.render?.();
     const diagnostico = error?.message ? ` ${error.message}` : '';
     callbacks.showToast?.(telegram?.webApp
-      ? `Nao finalizei pela API.${diagnostico} Enviei seu pedido ao Telegram.`
-      : `Nao finalizei pela API.${diagnostico} Payload de fallback no console.`);
+      ? `Não finalizei pela API.${diagnostico} Enviei seu pedido ao Telegram.`
+      : `Não finalizei pela API.${diagnostico} Payload de fallback no console.`);
     return { ok: true, mode: 'fallback', error };
   }
 }
@@ -334,6 +334,6 @@ export async function enviarCarrinhoParaCheckoutTelegram(state, els, telegram, c
   if (els.cartNotes) els.cartNotes.value = '';
   persistCart(state);
   callbacks.render?.();
-  callbacks.showToast?.('Sua solicitacao foi enviada com sucesso. Agora confirme entrega e pagamento no Telegram.');
+  callbacks.showToast?.('Sua solicitação foi enviada com sucesso. Agora confirme entrega e pagamento no Telegram.');
   return true;
 }

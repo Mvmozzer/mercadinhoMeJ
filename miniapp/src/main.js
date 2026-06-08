@@ -1,4 +1,4 @@
-import {
+﻿import {
   authenticateMiniApp,
   apiBase,
   apiBaseConfigurada,
@@ -130,7 +130,7 @@ async function sincronizarStatusLoja() {
 async function sendCartToTelegram() {
   if (state.sending) return;
   if (!state.loja.aceitaPedidos) {
-    renderer.showToast(state.loja.mensagem || 'A loja nao esta recebendo pedidos agora.');
+    renderer.showToast(state.loja.mensagem || 'A loja não está recebendo pedidos agora.');
     return;
   }
   if (!cartItems(state).length) {
@@ -185,7 +185,7 @@ async function showPix(pedidoId) {
     renderer.navigateTo('payment');
     renderer.render();
   } catch (error) {
-    renderer.showToast(error.message || 'Nao foi possivel carregar o Pix.');
+    renderer.showToast(error.message || 'Não foi possível carregar o Pix.');
   }
 }
 
@@ -196,7 +196,7 @@ async function showTracking(pedidoId) {
     renderer.navigateTo('tracking');
     renderer.render();
   } catch (error) {
-    renderer.showToast(error.message || 'Nao foi possivel carregar acompanhamento.');
+    renderer.showToast(error.message || 'Não foi possível carregar acompanhamento.');
   }
 }
 
@@ -241,7 +241,7 @@ async function refreshPix() {
     renderer.render();
     renderer.showToast('Pagamento atualizado');
   } catch (error) {
-    renderer.showToast(error.message || 'Nao foi possivel atualizar Pix.');
+    renderer.showToast(error.message || 'Não foi possível atualizar o Pix.');
   }
 }
 
@@ -250,9 +250,9 @@ function receiptFileError(file) {
   const maxBytes = 5 * 1024 * 1024;
   const allowedTypes = new Set(['image/png', 'image/jpeg', 'image/webp', 'application/pdf']);
   const allowedExtensions = /\.(png|jpe?g|webp|pdf)$/i;
-  if (file.size > maxBytes) return 'Comprovante muito grande. Envie arquivo de ate 5 MB.';
-  if (!allowedTypes.has(String(file.type || '').toLowerCase())) return 'Formato invalido. Use PNG, JPG, WEBP ou PDF.';
-  if (!allowedExtensions.test(file.name || '')) return 'Extensao invalida. Use PNG, JPG, WEBP ou PDF.';
+  if (file.size > maxBytes) return 'Comprovante muito grande. Envie arquivo de até 5 MB.';
+  if (!allowedTypes.has(String(file.type || '').toLowerCase())) return 'Formato inválido. Use PNG, JPG, WEBP ou PDF.';
+  if (!allowedExtensions.test(file.name || '')) return 'Extensão inválida. Use PNG, JPG, WEBP ou PDF.';
   return '';
 }
 
@@ -269,7 +269,7 @@ async function sendReceipt(file = null) {
     payload = new FormData();
     payload.append('comprovante', file, file.name || 'comprovante');
   } else {
-    const texto = window.prompt('Informe uma observacao sobre o pagamento ou comprovante:');
+    const texto = window.prompt('Informe uma observação sobre o pagamento ou comprovante:');
     if (!texto) return;
     payload = { texto };
   }
@@ -280,9 +280,9 @@ async function sendReceipt(file = null) {
     }).catch(() => null);
     await uploadReceipt(state, pedidoId, payload);
     await pollOrderStatus(state, pedidoId).catch(() => null);
-    renderer.showToast('Comprovante registrado para conferencia.');
+    renderer.showToast('Comprovante registrado para conferência.');
   } catch (error) {
-    renderer.showToast(error.message || 'Nao foi possivel enviar comprovante.');
+    renderer.showToast(error.message || 'Não foi possível enviar comprovante.');
   }
 }
 
@@ -291,16 +291,16 @@ async function copyCurrentPix() {
     await copyPix(state);
     renderer.showToast('Pix copiado.');
   } catch (error) {
-    renderer.showToast(error.message || 'Pix indisponivel.');
+    renderer.showToast(error.message || 'Pix indisponível.');
   }
 }
 
 async function shareReferral() {
   try {
     await shareReferralCode(state);
-    renderer.showToast('Codigo de indicacao compartilhado.');
+    renderer.showToast('Código de indicação compartilhado.');
   } catch (_) {
-    renderer.showToast('Codigo de indicacao copiado.');
+    renderer.showToast('Código de indicação copiado.');
   }
 }
 
@@ -358,8 +358,8 @@ async function authenticate() {
   } catch (error) {
     state.authOk = false;
     state.authMode = 'offline';
-    state.authError = error?.message || 'Sessao da Mini App indisponivel.';
-    if (renderer.els.authStatus) renderer.els.authStatus.textContent = 'Sessao indisponivel';
+    state.authError = error?.message || 'Sessão da Mini App indisponível.';
+    if (renderer.els.authStatus) renderer.els.authStatus.textContent = 'Sessão indisponível';
     renderer.render();
     return null;
   }
@@ -398,5 +398,5 @@ async function init() {
 
 init().catch(error => {
   console.error(error);
-  renderer.showToast('Nao foi possivel iniciar a loja. Atualize a pagina.');
+  renderer.showToast('Não foi possível iniciar a loja. Atualize a página.');
 });

@@ -1,4 +1,4 @@
-import { apiFetch } from './api.js';
+﻿import { apiFetch } from './api.js';
 import { writeText } from './storage.js';
 
 export function normalizePixPayload(payload = {}) {
@@ -42,7 +42,7 @@ export async function uploadReceipt(state, pedidoId, payload = {}) {
 
 export async function copyPix(state) {
   const pix = String(state.pix?.copiaCola || '').trim();
-  if (!pix) throw new Error('Pix indisponivel.');
+  if (!pix) throw new Error('Pix indisponível.');
   await writeTextToClipboard(pix);
   return pix;
 }

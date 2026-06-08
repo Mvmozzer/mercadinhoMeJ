@@ -1,4 +1,4 @@
-import {
+﻿import {
   catalogSectionsFromPayload,
   cacheProducts,
   mergeProducts,
@@ -72,7 +72,7 @@ export async function carregarRuntimeConfigPages(state, options = {}) {
         config = null;
       }
     }
-    if (!config) throw new Error('runtime config indisponivel');
+    if (!config) throw new Error('runtime config indisponível');
     if (!Object.prototype.hasOwnProperty.call(config || {}, 'apiBaseUrl')) return;
     const allowTemporary = config.allowTemporaryApiBase === true || config.temporaryApiBase === true;
     const clean = normalizePublicApiBase(config.apiBaseUrl, { allowTemporary });
@@ -109,7 +109,7 @@ export function apiBaseConfigurada(state) {
 
 export function exigirApiBaseConfigurada(state) {
   if (apiBaseConfigurada(state)) return;
-  throw new Error('URL publica do servidor da loja nao configurada. Vou tentar continuar pelo Telegram quando possivel.');
+  throw new Error('URL pública do servidor da loja não configurada. Vou tentar continuar pelo Telegram quando possível.');
 }
 
 export function baseTemporariaBloqueada(value) {
@@ -123,19 +123,19 @@ export function apiDiagnosticMessage(error, state, path, response = null, data =
   const status = Number(response?.status || error?.status || 0);
   const base = apiBase(state);
   if (!base && runningOnStaticHost()) {
-    return 'URL publica do servidor da loja ausente. Vou tentar continuar pelo Telegram.';
+    return 'URL pública do servidor da loja ausente. Vou tentar continuar pelo Telegram.';
   }
   if (base && state.allowTemporaryApiBase !== true && baseTemporariaBloqueada(base)) {
-    return 'A URL publica configurada e temporaria ou expirada. Vou tentar continuar pelo Telegram.';
+    return 'A URL pública configurada é temporária ou expirada. Vou tentar continuar pelo Telegram.';
   }
-  if (error?.name === 'AbortError') return `Timeout ao chamar ${path}. A loja nao respondeu dentro do limite.`;
-  if (status === 401) return 'Sessao Telegram invalida ou expirada. Feche e abra a loja pelo bot novamente.';
-  if (status === 403) return 'Esta origem nao esta autorizada a acessar a API da loja.';
-  if (status === 404) return `Rota ${path} nao encontrada no servidor da loja.`;
+  if (error?.name === 'AbortError') return `Timeout ao chamar ${path}. A loja não respondeu dentro do limite.`;
+  if (status === 401) return 'Sessão Telegram inválida ou expirada. Feche e abra a loja pelo bot novamente.';
+  if (status === 403) return 'Esta origem não está autorizada a acessar a API da loja.';
+  if (status === 404) return `Rota ${path} não encontrada no servidor da loja.`;
   if (status === 409) return data?.erro || data?.error || 'A loja recusou esta etapa do checkout.';
   if (status >= 500) return `Servidor da loja respondeu HTTP ${status}. Tente novamente em instantes.`;
   if (status > 0) return data?.erro || data?.error || `API da loja respondeu HTTP ${status}.`;
-  return `Nao consegui acessar a API da loja em ${base || 'mesma origem'}. Vou tentar continuar pelo Telegram.`;
+  return `Não consegui acessar a API da loja em ${base || 'mesma origem'}. Vou tentar continuar pelo Telegram.`;
 }
 
 function devUserFromTelegram(webApp) {
@@ -353,7 +353,7 @@ export async function bridgeSendAction(state, action, payload = {}) {
     return aplicarSnapshot(await tunnel.sendCommand(action, payload));
   }
   const bridge = window.MJMiniAppBridge;
-  if (!bridge || typeof bridge.sendAction !== 'function') throw new Error('Ponte da Mini App indisponivel.');
+  if (!bridge || typeof bridge.sendAction !== 'function') throw new Error('Ponte da Mini App indisponível.');
   const data = await bridge.sendAction(action, payload);
   return aplicarSnapshot(data);
 }
@@ -519,7 +519,7 @@ export async function loadProducts(state) {
         res = await fetch(url, { cache: 'no-store' });
         if (res.ok) break;
       }
-      if (!res || !res.ok) throw new Error('catalogo indisponivel');
+      if (!res || !res.ok) throw new Error('catálogo indisponível');
       const payload = await res.json();
       atualizarStatusLoja(state, payload, { source: 'static' });
       state.miniappDesign = payload.catalogo?.design || payload.design || state.miniappDesign;
@@ -534,7 +534,7 @@ export async function loadProducts(state) {
           res = await fetch(url, { cache: 'no-store' });
           if (res.ok) break;
         }
-        if (!res || !res.ok) throw new Error('catalogo indisponivel');
+        if (!res || !res.ok) throw new Error('catálogo indisponível');
         state.products = normalizeCatalogPayload(await res.json());
         cacheProducts(state, state.products);
         state.catalogSections = catalogSectionsFromPayload(null, state.products);

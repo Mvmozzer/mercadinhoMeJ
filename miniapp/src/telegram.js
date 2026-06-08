@@ -104,8 +104,7 @@ export function updateMainButton(webApp, { count, totalText = '', sending, curre
     return;
   }
   if (currentPage === 'home' && !hasPix) {
-    webApp.MainButton.setText('VER PEDIDO');
-    webApp.MainButton.show?.();
+    webApp.MainButton.hide?.();
     return;
   }
   if (currentPage === 'cart') {

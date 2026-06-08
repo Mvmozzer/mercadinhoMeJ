@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-06-08T10:49:33.815-03:00",
-  "webBuild": "2026.06.08.573",
-  "apiBaseUrl": "https://api.example.com",
+  "updatedAt": "2026-06-08T11:54:01.330-03:00",
+  "webBuild": "2026.06.08.441",
+  "apiBaseUrl": "",
   "allowTemporaryApiBase": false,
-  "apiBaseKind": "fixed"
+  "apiBaseKind": ""
 }

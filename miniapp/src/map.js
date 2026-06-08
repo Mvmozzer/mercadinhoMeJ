@@ -1,4 +1,4 @@
-export function mapStateFromTracking(tracking = {}) {
+﻿export function mapStateFromTracking(tracking = {}) {
   const localizacao = tracking.localizacao || tracking.entrega?.localizacaoAoVivo || {};
   return {
     aoVivo: localizacao.aoVivo === true,
@@ -6,7 +6,7 @@ export function mapStateFromTracking(tracking = {}) {
     longitude: Number(localizacao.longitude || 0),
     atualizadaEm: localizacao.atualizadaEm || '',
     mapaUrl: localizacao.mapaUrl || tracking.entrega?.mapaUrl || '',
-    mensagem: localizacao.mensagem || 'Localizacao ainda indisponivel.'
+    mensagem: localizacao.mensagem || 'Localização ainda indisponível.'
   };
 }
 
