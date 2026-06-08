@@ -573,10 +573,19 @@ export async function checkoutPreview(state, payload) {
 }
 
 export async function checkoutCreate(state, payload) {
-  const data = await apiFetch(state, '/api/miniapp/checkout/create', {
-    method: 'POST',
-    body: JSON.stringify(payload)
-  });
+  let data;
+  try {
+    data = await apiFetch(state, '/api/payments/pix/create', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  } catch (error) {
+    if (Number(error?.status) !== 404) throw error;
+    data = await apiFetch(state, '/api/miniapp/checkout/create', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
   state.pedidoAtual = data.pedido || null;
   state.pix = data.pix || null;
   state.checkout.lastCreate = data;

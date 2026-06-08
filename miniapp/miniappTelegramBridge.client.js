@@ -116,7 +116,7 @@
 
     function startPolling(intervalMs) {
       stopPolling();
-      const delay = Math.max(1000, Number(intervalMs || 2000) || 2000);
+      const delay = Math.max(1000, Number(intervalMs || 7000) || 7000);
       state.pollingTimer = window.setInterval(() => {
         loadEvents().catch(error => state.onError?.(error));
       }, delay);

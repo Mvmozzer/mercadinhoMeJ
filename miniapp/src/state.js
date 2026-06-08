@@ -103,7 +103,7 @@ export function createInitialState() {
     bootstrap: null,
     tracking: null,
     location: null,
-    updateIntervalMs: 5000,
+    updateIntervalMs: 7000,
     lastUpdated: 0,
     cliente: null,
     savingProfile: false,

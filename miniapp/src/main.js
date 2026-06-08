@@ -325,7 +325,7 @@ async function pollMiniApp() {
 
 function startPolling() {
   if (state.pollTimer) window.clearInterval(state.pollTimer);
-  const delay = Math.max(2000, Number(state.updateIntervalMs || 5000));
+  const delay = Math.max(1000, Number(state.updateIntervalMs || 7000));
   state.pollTimer = window.setInterval(pollMiniApp, delay);
 }
 
@@ -352,7 +352,7 @@ async function authenticate() {
     await Promise.all([loadOrders(), loadLoyaltyState()]);
     await resumeRestoredFlow();
     window.MJMiniAppBridge?.startStream?.();
-    window.MJMiniAppBridge?.startPolling?.(state.updateIntervalMs || 5000);
+    window.MJMiniAppBridge?.startPolling?.(state.updateIntervalMs || 7000);
     startPolling();
     return data;
   } catch (error) {
@@ -393,7 +393,7 @@ async function init() {
   ]);
 
   await sincronizarStatusLoja();
-  state.storeStatusTimer = setInterval(sincronizarStatusLoja, 15000);
+  state.storeStatusTimer = setInterval(sincronizarStatusLoja, Math.max(1000, Number(state.updateIntervalMs || 7000)));
 }
 
 init().catch(error => {
