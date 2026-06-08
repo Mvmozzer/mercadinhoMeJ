@@ -3775,41 +3775,6 @@ body.mj-reference-layout .daily-offer-media img {
   object-fit: contain;
 }
 
-body.mj-reference-layout .floating-cart {
-  position: relative;
-  grid-column: 2;
-  grid-row: 2;
-  justify-self: center;
-  align-self: end;
-  display: grid;
-  width: 86px;
-  height: 86px;
-  place-items: center;
-  border-radius: 50%;
-  background: linear-gradient(180deg, #ff641d, var(--mj-ref-red));
-  color: #fff;
-  box-shadow: 0 18px 36px rgba(118, 27, 3, .26);
-}
-
-body.mj-reference-layout .floating-cart span {
-  font-size: 28px;
-}
-
-body.mj-reference-layout .floating-cart em {
-  position: absolute;
-  right: 16px;
-  top: 12px;
-  display: grid;
-  width: 21px;
-  height: 21px;
-  place-items: center;
-  border-radius: 50%;
-  background: #fff;
-  color: var(--mj-ref-red);
-  font-style: normal;
-  font-weight: 1000;
-}
-
 body.mj-reference-layout .delivery-banner {
   display: grid;
   grid-template-columns: 48px minmax(0, 1fr) 20px;

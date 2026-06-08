@@ -382,7 +382,7 @@ function collectElements() {
     'deliveryPanel', 'deliveryContent', 'deliveryBack', 'pixPanel', 'pixStatus', 'pixContent',
     'loyaltyPanel', 'loyaltyBalance', 'loyaltyContent', 'profilePanel', 'profileStatus', 'profileContent',
     'trackingPanel', 'trackingStatus', 'trackingContent', 'trackingMap', 'courierPanel', 'courierContent',
-    'products', 'search', 'clearSearch', 'cartButton', 'cartDrawer', 'closeCart',
+    'products', 'search', 'clearSearch', 'cartDrawer', 'closeCart',
     'cartList', 'itemsCount', 'bottomCount', 'bottomFreeDeliveryHint', 'total',
     'drawerTotal', 'drawerSubtotal', 'drawerDelivery', 'drawerGrandTotal',
     'cartCouponCode', 'cartUsePointsIntent', 'freeDeliveryHint', 'cartNotes', 'cartPerksPanel', 'cartNotesPanel',
@@ -784,9 +784,6 @@ export function createRenderer({ state, telegram, handlers }) {
           <b>${priceLabel(item)}</b>
         </div>
         <div class="daily-offer-media">${itemMedia(item)}</div>
-        <button class="floating-cart" type="button" id="cartButton" aria-label="Abrir carrinho">
-          <span>&#128722;</span><em>${cartCount(state)}</em><strong>Carrinho</strong><small>${money(cartTotal(state))}</small>
-        </button>
       </article>
       <article class="delivery-banner" data-nav-page="delivery">
         <span>&#128757;</span>
@@ -799,7 +796,6 @@ export function createRenderer({ state, telegram, handlers }) {
       if (event.target.closest('button')) return;
       openProductSheet(item.id);
     });
-    target.querySelector('#cartButton')?.addEventListener('click', iniciarCheckout);
     target.querySelector('[data-nav-page="delivery"]')?.addEventListener('click', () => navigateTo('delivery'));
   }
 
