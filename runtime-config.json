@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-06-08T14:32:10.550-03:00",
-  "webBuild": "2026.06.08.930",
-  "apiBaseUrl": "https://4ef2e3e68338ce.lhr.life",
+  "updatedAt": "2026-06-08T14:39:41.729-03:00",
+  "webBuild": "2026.06.08.381",
+  "apiBaseUrl": "https://fixes-achieved-electrical-geometry.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
 }
