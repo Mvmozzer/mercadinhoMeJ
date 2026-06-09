@@ -40,7 +40,7 @@ import { fallbackGoogleMapsLink, mapStateFromTracking } from './map.js';
 
 function shellMarkup() {
   return `
-    <div class="app mj-reference-app mj-clean-app">
+    <div class="app mj-model-app">
       <header class="mj-clean-store-header" id="marketHero">
         <div class="mj-clean-topbar">
           <button class="mj-clean-icon-button" type="button" data-nav-page="home" aria-label="Voltar">&lsaquo;</button>
@@ -101,9 +101,9 @@ function shellMarkup() {
           <div class="miniapp-design-home-slot" data-design-slot="home-top"></div>
           <section class="promo-banners" id="promoBanners" aria-label="Promoções"></section>
           <nav class="quick-category-rail" id="categoryRail" aria-label="Categorias principais"></nav>
+          <section class="market-row" id="todayOffersSection" aria-label="Oferta do dia"></section>
           <section class="market-row" id="buyAgainSection" aria-label="Mais pedidos"></section>
           <section class="market-row" id="bestSellersSection" aria-label="Mais vendidos"></section>
-          <section class="market-row" id="todayOffersSection" aria-label="Oferta do dia"></section>
           <section class="market-row" id="comboSection" aria-label="Combos"></section>
           <section class="market-row" id="lowStockSection" aria-label="Estoque baixo"></section>
           <section class="loyalty-card" id="loyaltyInviteCard" hidden>
@@ -731,7 +731,7 @@ export function createRenderer({ state, telegram, handlers }) {
 
   function compactProductCard(item, context = '') {
     const card = document.createElement('article');
-    card.className = `mini-product-card ${isLowStock(item) ? 'low-stock' : ''} ${Number(item.stock || 0) <= 0 ? 'unavailable' : ''}`;
+    card.className = `mj-product-card mini-product-card ${isLowStock(item) ? 'low-stock' : ''} ${Number(item.stock || 0) <= 0 ? 'unavailable' : ''}`;
     card.dataset.productId = item.id;
     const subtitle = [item.brand, itemUnit(item)].filter(Boolean).join(' ');
     const discount = discountPercent(item);
@@ -752,7 +752,7 @@ export function createRenderer({ state, telegram, handlers }) {
   function productCard(item) {
     const card = document.createElement('article');
     const semEstoque = Number(item.stock || 0) <= 0;
-    card.className = `product durger-card ${cartQty(state, item.id) > 0 ? 'selected' : ''} ${semEstoque ? 'unavailable' : ''}`;
+    card.className = `mj-product-card product durger-card ${cartQty(state, item.id) > 0 ? 'selected' : ''} ${semEstoque ? 'unavailable' : ''}`;
     card.dataset.productId = item.id;
     const detail = [itemUnit(item), item.brand].filter(Boolean).join(' | ');
     const discount = discountPercent(item);
@@ -920,7 +920,7 @@ export function createRenderer({ state, telegram, handlers }) {
     }
     resultItems.slice(0, 40).forEach(item => {
       const row = document.createElement('article');
-      row.className = 'search-result-item mini-product-card';
+      row.className = 'mj-product-card search-result-item mini-product-card';
       row.dataset.productId = item.id;
       row.innerHTML = `
         <div class="search-thumb">${itemMedia(item)}</div>
@@ -1396,7 +1396,7 @@ export function createRenderer({ state, telegram, handlers }) {
         <div class="pix-box">
           <p>Escaneie o QR Code com o app do seu banco</p>
           ${pix.qrCodeDataUrl ? `<img class="pix-qr" src="${escapeHtml(pix.qrCodeDataUrl)}" alt="QR Code do Pix">` : '<div class="pix-qr placeholder">QR</div>'}
-          <label class="pix-copy">Pix cópia e cola
+          <label class="pix-copy">Pix cópia e cola <span class="mj-sr-only">Pix copia e cola</span>
             <textarea readonly>${escapeHtml(pix.copiaCola)}</textarea>
           </label>
           <div class="checkout-actions">
@@ -1594,8 +1594,8 @@ export function createRenderer({ state, telegram, handlers }) {
     const tema = ['verde_fresco', 'vermelho_energia', 'escuro_premium'].includes(design.tema) ? design.tema : 'vermelho_energia';
     document.body.dataset.miniappTheme = tema;
     document.body.dataset.miniappMode = design.modo || 'simples';
-    document.body.classList.add('mj-reference-layout');
-    document.body.classList.add('mj-clean-layout');
+    document.body.classList.remove('mj-reference-layout', 'mj-clean-layout');
+    document.body.classList.add('mj-model-layout');
     renderCustomerHeader();
     renderStatusLoja();
     renderTabs();

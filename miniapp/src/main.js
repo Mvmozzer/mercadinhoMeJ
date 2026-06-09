@@ -667,8 +667,17 @@ async function init() {
   handlers.sendReceipt = sendReceipt;
   handlers.shareReferral = shareReferral;
   handlers.persistUiState = () => persistMiniAppUiState(state);
-  handlers.syncCartAction = (action, payload) => bridgeSendAction(state, action, payload).catch(() => null);
-  handlers.trackEvent = (tipo, payload) => sendMiniAppEvent(state, tipo, payload).catch(() => null);
+  const canUseMiniAppBridge = () => Boolean(
+    state.bridgeOk &&
+    state.authOk &&
+    (state.miniappToken || (window.MJTelegramTunnel && window.MJTelegramTunnel.mode !== 'strict'))
+  );
+  handlers.syncCartAction = (action, payload) => canUseMiniAppBridge()
+    ? bridgeSendAction(state, action, payload).catch(() => null)
+    : Promise.resolve(null);
+  handlers.trackEvent = (tipo, payload) => canUseMiniAppBridge()
+    ? sendMiniAppEvent(state, tipo, payload).catch(() => null)
+    : Promise.resolve(null);
 
   await carregarRuntimeConfigPages(state);
   restoreCart(state);
