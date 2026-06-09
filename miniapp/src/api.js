@@ -76,15 +76,15 @@ export function headers(state) {
 }
 
 export function apiDiagnosticMessage(error) {
-  return error?.message || 'Nao foi possivel conectar ao painel agora.';
+  return error?.message || 'Não foi possível conectar ao painel agora.';
 }
 
 export async function requestApi(state, path, options = {}) {
   const base = apiBase(state);
-  if (!base) throw new Error('API publica da loja nao configurada.');
+  if (!base) throw new Error('A API pública da loja não está configurada.');
   const url = new URL(currentLocation().href);
   const baseTemporariaBloqueada = isTemporaryPublicApiBase(base) && !url.searchParams.has('allowTempApi') && options.critical === true && state.allowTemporaryApiBase !== true;
-  if (baseTemporariaBloqueada) throw new Error('Base publica temporaria bloqueada para checkout.');
+  if (baseTemporariaBloqueada) throw new Error('Base pública temporária bloqueada para checkout.');
   const res = await fetch(base + path, { ...options, headers: { ...headers(state), ...(options.headers || {}) } });
   const data = await res.json().catch(() => ({}));
   if (!res.ok || data.ok === false) throw new Error(data.erro || data.error || `Falha HTTP ${res.status}`);
@@ -132,7 +132,7 @@ export async function loadStaticCatalog() {
       lastError = error;
     }
   }
-  throw lastError || new Error('Catalogo estatico indisponivel.');
+  throw lastError || new Error('Catálogo estático indisponível.');
 }
 export async function loadCatalogWithFallback(state) {
   try {
@@ -152,6 +152,33 @@ export async function syncCart(state, payload) {
 }
 export async function sendMiniAppEvent(state, tipo, payload = {}) { return retryApiFetchWithFreshRuntimeConfig(state, '/api/miniapp/events', { method: 'POST', body: JSON.stringify({ tipo, payload }) }).catch(() => null); }
 export async function bridgeSendAction(state, action, payload = {}) { return globalThis.window?.MJMiniAppBridge?.sendAction ? globalThis.window.MJMiniAppBridge.sendAction(action, payload) : null; }
+
+export async function uploadPixReceipt(state, pedidoId, options = {}) {
+  const id = String(pedidoId || '').trim();
+  if (!id) throw new Error('Pedido não encontrado para enviar comprovante.');
+  const path = `/api/miniapp/pedidos/${encodeURIComponent(id)}/comprovante`;
+  const texto = String(options.texto || '').trim();
+  if (options.arquivo) {
+    const body = new FormData();
+    body.append('comprovante', options.arquivo);
+    if (texto) body.append('texto', texto);
+    const requestHeaders = headers(state);
+    delete requestHeaders['Content-Type'];
+    return retryApiFetchWithFreshRuntimeConfig(state, path, {
+      method: 'POST',
+      body,
+      headers: requestHeaders
+    });
+  }
+  return retryApiFetchWithFreshRuntimeConfig(state, path, {
+    method: 'POST',
+    body: JSON.stringify({ texto }),
+    headers: {
+      ...headers(state),
+      'Content-Type': 'application/json'
+    }
+  });
+}
 
 export function atualizarStatusLoja(state, payload = {}, options = {}) {
   if (options.source === 'static') return state.loja || state.store;

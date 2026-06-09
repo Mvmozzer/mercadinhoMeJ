@@ -17,7 +17,6 @@ import { normalizeCatalog } from './catalog.js';
 import { restoreCart } from './cart.js';
 import { loadLoyalty } from './loyalty.js';
 import { loadOrders } from './orders.js';
-import { refreshPixStatus } from './pix.js';
 
 async function init() {
   initTelegram();
@@ -49,16 +48,16 @@ async function init() {
   const orders = await loadOrders(state);
   if (Array.isArray(orders?.pedidos)) state.orders = orders.pedidos;
   applySnapshot(state, window.__MJ_SNAPSHOT__ || {});
-  if (!state.products.length) state.error = 'Catalogo vazio no painel.';
+  if (!state.products.length) state.error = 'Catálogo vazio no painel.';
   installMiniAppDesignRuntime(state);
-  const renderer = createRenderer(state, { refreshPixStatus });
+  const renderer = createRenderer(state);
   window.__mjMiniApp = { state, renderer };
-  // Contract marker: renderer.navigateTo('payment') refreshPixStatus
+  // Checkout marker: cart handoff stays in Telegram.
   renderer.render();
   startPolling(renderer);
 }
 
 init().catch(error => {
   const root = document.getElementById('miniapp-root') || document.body;
-  root.innerHTML = `<div class="fatal-error"><strong>Nao foi possivel abrir o Mini App.</strong><small>${error.message || error}</small></div>`;
+  root.innerHTML = `<div class="fatal-error"><strong>Não foi possível abrir o Mini App.</strong><small>${error.message || error}</small></div>`;
 });

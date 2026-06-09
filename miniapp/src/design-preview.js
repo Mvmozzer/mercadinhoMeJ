@@ -198,8 +198,8 @@ function checkoutScreen() {
         </div>
       </section>
       <section class="step-block">
-        <h2>3. Pagamento</h2>
-        <button class="payment-selected" type="button">Pix selecionado</button>
+        <h2>3. Finalização</h2>
+        <button class="payment-selected" type="button">Telegram</button>
       </section>
       <section class="step-block">
         <h2>4. Pontos</h2>
@@ -213,7 +213,7 @@ function checkoutScreen() {
         <h2>Resumo</h2>
         ${summaryRows()}
       </section>
-      <button class="primary-action" data-screen="pix" type="button">Gerar Pix</button>
+      <button class="primary-action" data-screen="tracking" type="button">Enviar para Telegram</button>
     </main>
   `;
 }
@@ -227,29 +227,22 @@ function summaryRows() {
   `;
 }
 
-function pixScreen() {
+function telegramScreen() {
   return `
     <header class="simple-top">
       <button data-screen="checkout" type="button">←</button>
-      <h1>Pedido #1234</h1>
+      <h1>Telegram</h1>
       <span></span>
     </header>
     <main class="screen pix-screen">
       <section class="pix-status">
-        <span>Aguardando pagamento</span>
-        <strong>Valor: ${money(total())}</strong>
-        <p>Recebedor: Mercadinho M&J</p>
-      </section>
-      <div class="qr-mock" aria-label="QR Code Pix">
-        ${Array.from({ length: 49 }, (_, index) => `<i class="${index % 3 === 0 || index % 7 === 0 ? 'dark' : ''}"></i>`).join('')}
-      </div>
-      <section class="copy-card">
-        <h2>Pix cópia e cola</h2>
-        <code>00020126580014BR.GOV.BCB.PIX0136mj-preview-pedido-1234-valor-${total().toFixed(2)}</code>
+        <span>Carrinho enviado</span>
+        <strong>Total: ${money(total())}</strong>
+        <p>Entrega, retirada e pagamento continuam no chat.</p>
       </section>
       <div class="action-grid">
-        <button class="primary-action" type="button">Copiar Pix</button>
-        <button type="button">Já paguei</button>
+        <button class="primary-action" data-screen="home" type="button">Voltar para produtos</button>
+        <button data-screen="tracking" type="button">Acompanhar pedido</button>
       </div>
     </main>
   `;
@@ -294,7 +287,7 @@ function bottomBar() {
 
 function renderScreen() {
   if (state.screen === 'checkout') return checkoutScreen();
-  if (state.screen === 'pix') return pixScreen();
+  if (state.screen === 'pix') return telegramScreen();
   if (state.screen === 'tracking') return trackingScreen();
   return homeScreen();
 }

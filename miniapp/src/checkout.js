@@ -1,5 +1,36 @@
-const WEIGHTED_CHECKOUT_MARKERS = ['quantidade_solicitada', 'peso_estimado', 'subtotal_estimado_exibido', "modo_venda: item.saleMode === 'weighted' ? 'granel' : 'unidade'"];import { cartPayload } from './cart.js';
+import { cartPayload } from './cart.js';
 import { fallbackSendData } from './telegram.js';
 import { retryApiFetchWithFreshRuntimeConfig } from './api.js';
-export async function checkoutCreate(state) { const itens = cartPayload(state); const payload = { type: 'mercadinho_order', origem: 'miniapp', modalidade_entrega: state.selectedDeliveryMode || 'retirada', entrega: { modo: state.selectedDeliveryMode || 'retirada' }, items: itens, itens }; try { return await retryApiFetchWithFreshRuntimeConfig(state, '/api/miniapp/checkout/create', { method: 'POST', critical: true, body: JSON.stringify(payload) }); } catch (error) { const fallback_cart = { type: 'mercadinho_cart', origem: 'miniapp', items: itens, itens: itens.map(item => ({ produto_id: item.id, quantidade: item.quantity || item.quantidade })) }; const fallback_order = { ...payload, forma_pagamento: 'pix', fallback_cart }; fallbackSendData(fallback_order); return { ok: false, erro: error.message, fallback: true, fallback_cart, fallback_order }; } }
-export async function telegramHandoff(state) { const itens = cartPayload(state); const payload = { type: 'mercadinho_cart', origem: 'miniapp', modalidade_entrega: state.selectedDeliveryMode || 'retirada', items: itens, itens }; try { return await retryApiFetchWithFreshRuntimeConfig(state, '/api/miniapp/checkout/telegram-handoff', { method: 'POST', body: JSON.stringify(payload) }); } catch { fallbackSendData(payload); return { ok: false, fallback: true }; } }
+
+function telegramCartPayload(state) {
+  const itens = cartPayload(state);
+  return {
+    type: 'mercadinho_cart',
+    origem: 'miniapp',
+    checkout: 'telegram',
+    items: itens,
+    itens
+  };
+}
+
+export async function telegramHandoff(state) {
+  const payload = telegramCartPayload(state);
+  try {
+    return await retryApiFetchWithFreshRuntimeConfig(state, '/api/miniapp/checkout/telegram-handoff', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  } catch (error) {
+    fallbackSendData(payload);
+    return {
+      ok: false,
+      fallback: true,
+      erro: error.message,
+      mensagem: 'Carrinho enviado ao Telegram. Termine entrega, retirada e Pix pelo chat.'
+    };
+  }
+}
+
+export async function checkoutCreate(state) {
+  return telegramHandoff(state);
+}
