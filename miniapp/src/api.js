@@ -54,7 +54,6 @@ export async function carregarRuntimeConfigPages(state, options = {}) {
         const runtimeBase = normalizeApiBaseUrl(data.apiBaseUrl || data.publicApiBaseUrl || state.apiBaseUrl || state.apiBase || localBase);
         state.apiBase = runtimeBase;
         state.apiBaseUrl = runtimeBase;
-        state.webBuild = String(data.webBuild || '').trim() || state.webBuild;
         state.allowTemporaryApiBase = data.allowTemporaryApiBase === true;
         return data;
       }

@@ -13,16 +13,6 @@ const DURGER_COMPATIBILITY_MARKERS = [
   'escapeHtml(item.image)',
   'referrerpolicy="no-referrer"'
 ];
-
-const RUNTIME_LOGO_BUILD = String(globalThis?.__MJ_LOGO_BUILD || '').trim();
-function resolveBuildFromHtml() {
-  const styles = globalThis.document?.getElementById?.('mainStylesheet');
-  const href = String(styles?.getAttribute?.('href') || '');
-  const byHref = href.match(/(?:\\?|&)v=([^&]+)/)?.[1];
-  const byQuery = globalThis.location?.searchParams?.get?.('v');
-  return String(byHref || byQuery || '').trim();
-}
-
 export const MINIAPP_THEME_ATTRIBUTE = 'data-miniapp-theme';
 
 import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js';
@@ -35,7 +25,6 @@ import { updateMainButton } from './telegram.js';
 import { loadTracking } from './tracking.js';
 
 const SPLASH_DURATION_MS = 5000;
-const LOGO_ASSET = './assets/logo-mj-mercadinho.png';
 
 function formatMoney(value = 0) {
   return money(Number(value || 0));
@@ -56,11 +45,6 @@ function customerName(state = {}) {
     window.Telegram?.WebApp?.initDataUnsafe?.user?.first_name ||
     'cliente';
   return String(nameFromClient || 'cliente').trim() || 'cliente';
-}
-
-function logoSrc(state = {}) {
-  const webBuild = String(state.webBuild || RUNTIME_LOGO_BUILD || resolveBuildFromHtml() || '').trim();
-  return webBuild ? `${LOGO_ASSET}?v=${encodeURIComponent(webBuild)}` : LOGO_ASSET;
 }
 
 function customerGreetingLine(state = {}) {
@@ -101,7 +85,7 @@ export function createRenderer(state) {
     if (Date.now() - splashStartedAt > SPLASH_DURATION_MS + 400) return '';
     return `
       <section class="miniapp-splash" id="miniappSplash" aria-label="Carregando Mercadinho M&J">
-        <img class="miniapp-splash-logo" src="${logoSrc(state)}" alt="Mercadinho M&J">
+        <img src="./assets/logo-mj-mercadinho.png" alt="Mercadinho M&J">
       </section>
     `;
   }
@@ -143,7 +127,7 @@ export function createRenderer(state) {
     return `
       <header class="market-hero" id="marketHero">
         <div class="hero-top">
-          <img src="${logoSrc(state)}" alt="Mercadinho M&J" class="brand-logo">
+          <img src="./assets/logo-mj-mercadinho.png" alt="Mercadinho M&J" class="brand-logo">
           <button class="icon-button" data-page="cart" aria-label="Ver carrinho">
             🛒
             <b>${cartCount(state)}</b>
@@ -414,7 +398,7 @@ export function createRenderer(state) {
           <span></span>
         </div>
         <section class="checkout-card telegram-handoff-card">
-          <img src="${logoSrc(state)}" alt="Mercadinho M&J">
+          <img src="./assets/logo-mj-mercadinho.png" alt="Mercadinho M&J">
           <h2>Continue pelo Telegram</h2>
           <p>${escapeHtml(state.checkoutMessage || 'Seu pedido foi enviado para o Telegram. Defina entrega, pontos e pagamento diretamente no chat.')}</p>
           <button id="retryTelegramHandoff">Enviar carrinho novamente</button>
