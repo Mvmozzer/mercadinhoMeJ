@@ -1,22 +1,18 @@
-function installMiniAppDesignRuntime(state) {
-  if (document.querySelector('[data-miniapp-design-runtime]')) return;
-  const base = state.apiBase || state.apiBaseUrl || '';
-  const script = document.createElement('script');
-  script.src = `${base}/mini-app-design/runtime.js`;
-  script.dataset.miniappDesignRuntime = '1';
-  script.async = true;
-  document.head.appendChild(script);
-}function sincronizarStatusLoja(state, health) { if (health?.loja) state.store = { ...state.store, ...health.loja }; return state.store; }
-function pollMiniApp(renderer) { renderer?.render?.(); }
-function startPolling(renderer) { return window.setInterval(() => pollMiniApp(renderer), 30000); }
 import { initTelegram, telegramUserName } from './telegram.js';
 import { carregarRuntimeConfigPages, authenticateBridge, loadBootstrap, loadCatalogWithFallback, loadHealth } from './api.js';
 import { createRenderer } from './render.js';
-import { createState, applySnapshot } from './state.js';
+import { createState, applySnapshot, normalizeMiniAppUi } from './state.js';
 import { normalizeCatalog } from './catalog.js';
 import { restoreCart } from './cart.js';
 import { loadLoyalty } from './loyalty.js';
 import { loadOrders } from './orders.js';
+
+function sincronizarStatusLoja(state, health) {
+  if (health?.loja) state.store = { ...state.store, ...health.loja };
+  return state.store;
+}
+function pollMiniApp(renderer) { renderer?.render?.(); }
+function startPolling(renderer) { return window.setInterval(() => pollMiniApp(renderer), 30000); }
 
 async function init() {
   initTelegram();
@@ -32,7 +28,7 @@ async function init() {
     if (boot?.loja) state.store = { ...state.store, ...boot.loja };
     if (boot?.cliente) state.cliente = { ...state.cliente, ...boot.cliente };
     if (boot?.programa) state.loyalty = { ...state.loyalty, ...boot.programa };
-    if (boot?.design) state.miniappDesign = { ...state.miniappDesign, ...boot.design };
+    if (boot?.miniappUi) state.miniappUi = normalizeMiniAppUi(boot.miniappUi);
     if (Array.isArray(boot?.pedidosAtivos)) state.orders = boot.pedidosAtivos;
     const normalized = normalizeCatalog({ catalogo: { secoes: boot.secoes, produtos: boot.produtos } });
     state.sections = normalized.sections;
@@ -49,7 +45,6 @@ async function init() {
   if (Array.isArray(orders?.pedidos)) state.orders = orders.pedidos;
   applySnapshot(state, window.__MJ_SNAPSHOT__ || {});
   if (!state.products.length) state.error = 'Catálogo vazio no painel.';
-  installMiniAppDesignRuntime(state);
   const renderer = createRenderer(state);
   window.__mjMiniApp = { state, renderer };
   // Checkout marker: cart handoff stays in Telegram.

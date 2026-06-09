@@ -1,6 +1,11 @@
 :root{
   --mj-primary:#ed000b;
   --mj-primary-soft:#ffefef;
+  --mj-header-gradient-from:#ff3b4b;
+  --mj-header-gradient-to:#ed000b;
+  --mj-splash-background:#ed000b;
+  --mj-splash-gradient-from:#ff3b4b;
+  --mj-splash-gradient-to:#ed000b;
   --mj-success:#0b9f5a;
   --mj-warning:#ffb703;
   --mj-danger:#d90000;
@@ -13,23 +18,6 @@
   --mj-shadow-soft:0 12px 26px rgba(21,24,34,.08);
   --mj-radius:22px;
   --mj-space:18px;
-}
-
-:root[data-miniapp-theme="verde_fresco"]{
-  --mj-primary:#0f9d58;
-  --mj-primary-soft:#eafff3;
-  --mj-success:#0f9d58;
-}
-
-:root[data-miniapp-theme="escuro_premium"]{
-  --mj-primary:#1f2430;
-  --mj-primary-soft:#202839;
-  --mj-success:#22c55e;
-  --mj-bg:#10131b;
-  --mj-card:#171b25;
-  --mj-text:#f3f5fb;
-  --mj-muted:#a2a8bd;
-  --mj-border:#2a3242;
 }
 
 *{box-sizing:border-box}
@@ -70,21 +58,63 @@ button{
   color:var(--mj-text);
 }
 
+.miniapp-loading-brand{
+  display:grid;
+  gap:14px;
+  justify-items:center;
+  text-align:center;
+  max-width:280px;
+}
+
+.miniapp-loading-brand img{
+  width:92px;
+  height:92px;
+  object-fit:contain;
+  border-radius:22px;
+  background:#fff;
+  padding:6px;
+  box-shadow:0 16px 30px rgba(20,22,29,.12);
+}
+
 .miniapp-splash{
   position:fixed;
   inset:0;
   z-index:1000;
   display:grid;
   place-items:center;
-  background:#ed000b;
-  background:radial-gradient(circle at 50% 18%,#ff3b4b,#ed000b 56%);
-  animation:miniappSplashExit 5s ease forwards;
+  background:var(--mj-splash-background, #ed000b);
+  background:radial-gradient(circle at 50% 18%,var(--mj-splash-gradient-from, #ff3b4b),var(--mj-splash-gradient-to, #ed000b) 56%);
+  animation:miniappSplashExit var(--mj-splash-duration, 5s) ease forwards;
 }
 
-.miniapp-splash img{
-  width:100%;
-  height:100%;
+.miniapp-splash-media,
+.miniapp-splash-logo{
+  width:min(180px, 60vw);
+  height:auto;
+  aspect-ratio:1/1;
   object-fit:contain;
+  border-radius:20px;
+  background:#fff;
+  padding:8px;
+  box-shadow:0 16px 30px rgba(20,22,29,.12);
+}
+
+.miniapp-splash-media{
+  width:min(260px, 76vw);
+  max-height:min(46vh, 340px);
+  object-fit:contain;
+}
+
+.miniapp-splash-media:where(video){
+  width:min(90vw, 320px);
+  max-height:50vh;
+  aspect-ratio:auto;
+  object-fit:cover;
+}
+
+.miniapp-splash-media:where(video[autoplay]){
+  width:min(90vw, 320px);
+  max-height:50vh;
 }
 
 @keyframes miniappSplashExit{
@@ -105,7 +135,7 @@ button{
   position:relative;
   padding:10px 14px 12px;
   color:#fff;
-  background:linear-gradient(155deg,var(--mj-primary),color-mix(in srgb,var(--mj-primary) 78%, #000 22%));
+  background:linear-gradient(155deg,var(--mj-header-gradient-from, var(--mj-primary)), var(--mj-header-gradient-to, color-mix(in srgb,var(--mj-primary) 78%, #000 22%)));
   overflow:hidden;
   border-bottom-left-radius:18px;
   border-bottom-right-radius:18px;
@@ -393,6 +423,7 @@ button{
   place-items:center;
   width:100%;
   height:136px;
+  aspect-ratio: 1 / 1;
   border-radius:14px;
   background:var(--mj-primary-soft);
   color:var(--mj-primary);
@@ -401,9 +432,10 @@ button{
 }
 
 .product-image img{
-  width:92%;
-  height:92%;
+  width:100%;
+  height:100%;
   object-fit:contain;
+  padding:8px;
 }
 
 .product-info h3{

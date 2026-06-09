@@ -13,7 +13,37 @@ const DURGER_COMPATIBILITY_MARKERS = [
   'escapeHtml(item.image)',
   'referrerpolicy="no-referrer"'
 ];
-export const MINIAPP_THEME_ATTRIBUTE = 'data-miniapp-theme';
+
+const RUNTIME_LOGO_BUILD = String(globalThis?.__MJ_LOGO_BUILD || '').trim();
+const MINIAPP_UI_DEFAULTS = {
+  header: { logo: '/assets/logo-mj-mercadinho.png' },
+  theme: {
+    primary: '#ed000b',
+    primarySoft: '#ffefef',
+    bg: '#f4f5f9',
+    card: '#ffffff',
+    text: '#14161d',
+    muted: '#6a6e82',
+    border: '#e8ebf3',
+    heroFrom: '#ff3b4b',
+    heroTo: '#ed000b'
+  },
+  splash: {
+    mode: 'logo',
+    mediaUrl: '',
+    background: '#ed000b',
+    gradientFrom: '#ff3b4b',
+    gradientTo: '#ed000b',
+    durationMs: 5000
+  }
+};
+function resolveBuildFromHtml() {
+  const styles = globalThis.document?.getElementById?.('mainStylesheet');
+  const href = String(styles?.getAttribute?.('href') || '');
+  const byHref = href.match(/[?&]v=([^&]+)/)?.[1];
+  const byQuery = globalThis.location?.searchParams?.get?.('v');
+  return String(byHref || byQuery || '').trim();
+}
 
 import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js';
 import { filterProducts, productBadges } from './catalog.js';
@@ -24,7 +54,73 @@ import { persistMiniAppUiState } from './storage.js';
 import { updateMainButton } from './telegram.js';
 import { loadTracking } from './tracking.js';
 
-const SPLASH_DURATION_MS = 5000;
+const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
+
+function clampMs(value, fallback) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(1000, Math.round(parsed));
+}
+
+function normalizeMiniAppUi(raw = {}) {
+  const cfg = raw && typeof raw === 'object' ? raw : {};
+  return {
+    header: {
+      logo: String((cfg.header && cfg.header.logo) || MINIAPP_UI_DEFAULTS.header.logo).trim() || MINIAPP_UI_DEFAULTS.header.logo
+    },
+    theme: {
+      ...MINIAPP_UI_DEFAULTS.theme,
+      ...(cfg.theme || {})
+    },
+    splash: {
+      ...MINIAPP_UI_DEFAULTS.splash,
+      ...(cfg.splash || {}),
+      durationMs: clampMs(cfg.splash?.durationMs, MINIAPP_UI_DEFAULTS.splash.durationMs)
+    }
+  };
+}
+
+function resolveAssetUrl(value, fallback) {
+  const raw = String(value || '').trim();
+  const fallbackValue = String(fallback || LOGO_ASSET_URL).trim() || LOGO_ASSET_URL;
+  if (!raw) return fallbackValue;
+  if (/^(https?:\/\/|data:|blob:)/i.test(raw) || raw.startsWith('/')) return raw;
+  try {
+    return new URL(raw, new URL('../', import.meta.url)).href;
+  } catch (_) {
+    return raw;
+  }
+}
+
+function appendBuildTag(rawUrl, state = {}) {
+  const webBuild = String(state.webBuild || RUNTIME_LOGO_BUILD || resolveBuildFromHtml() || '').trim();
+  if (!webBuild) return rawUrl;
+  try {
+    const url = new URL(rawUrl);
+    url.searchParams.set('v', webBuild);
+    return url.toString();
+  } catch (_) {
+    return rawUrl;
+  }
+}
+
+function applyThemeVariables(uiState = {}) {
+  const root = document.documentElement;
+  const theme = uiState.theme || {};
+  const splash = uiState.splash || {};
+  root.style.setProperty('--mj-primary', theme.primary || MINIAPP_UI_DEFAULTS.theme.primary);
+  root.style.setProperty('--mj-primary-soft', theme.primarySoft || MINIAPP_UI_DEFAULTS.theme.primarySoft);
+  root.style.setProperty('--mj-bg', theme.bg || MINIAPP_UI_DEFAULTS.theme.bg);
+  root.style.setProperty('--mj-card', theme.card || MINIAPP_UI_DEFAULTS.theme.card);
+  root.style.setProperty('--mj-text', theme.text || MINIAPP_UI_DEFAULTS.theme.text);
+  root.style.setProperty('--mj-muted', theme.muted || MINIAPP_UI_DEFAULTS.theme.muted);
+  root.style.setProperty('--mj-border', theme.border || MINIAPP_UI_DEFAULTS.theme.border);
+  root.style.setProperty('--mj-header-gradient-from', theme.heroFrom || MINIAPP_UI_DEFAULTS.theme.heroFrom);
+  root.style.setProperty('--mj-header-gradient-to', theme.heroTo || MINIAPP_UI_DEFAULTS.theme.heroTo);
+  root.style.setProperty('--mj-splash-background', splash.background || MINIAPP_UI_DEFAULTS.splash.background);
+  root.style.setProperty('--mj-splash-gradient-from', splash.gradientFrom || MINIAPP_UI_DEFAULTS.splash.gradientFrom);
+  root.style.setProperty('--mj-splash-gradient-to', splash.gradientTo || MINIAPP_UI_DEFAULTS.splash.gradientTo);
+}
 
 function formatMoney(value = 0) {
   return money(Number(value || 0));
@@ -45,6 +141,12 @@ function customerName(state = {}) {
     window.Telegram?.WebApp?.initDataUnsafe?.user?.first_name ||
     'cliente';
   return String(nameFromClient || 'cliente').trim() || 'cliente';
+}
+
+function logoSrc(state = {}) {
+  const ui = normalizeMiniAppUi(state.miniappUi || state.miniappui || {});
+  const resolved = resolveAssetUrl(ui.header?.logo || LOGO_ASSET_URL, LOGO_ASSET_URL);
+  return appendBuildTag(resolved, state);
 }
 
 function customerGreetingLine(state = {}) {
@@ -81,11 +183,27 @@ export function createRenderer(state) {
   const root = document.getElementById('miniapp-root') || document.body;
   const splashStartedAt = Date.now();
 
+  function splashMedia(uiState) {
+    const mode = String(uiState.splash?.mode || 'logo').toLowerCase();
+    const mediaUrl = String(uiState.splash?.mediaUrl || '').trim();
+    const logo = logoSrc(state);
+    const commonClass = 'miniapp-splash-media';
+    if ((mode === 'photo' || mode === 'gif') && mediaUrl) {
+      return `<img class="${commonClass}" src="${escapeHtml(resolveAssetUrl(mediaUrl, logo)}" alt="Splash">`;
+    }
+    if (mode === 'video' && mediaUrl) {
+      return `<video class="${commonClass}" src="${escapeHtml(resolveAssetUrl(mediaUrl, logo))}" autoplay muted loop playsinline></video>`;
+    }
+    return `<img class="${commonClass}" src="${escapeHtml(logo)}" alt="Mercadinho M&J">`;
+  }
+
   function renderSplash() {
-    if (Date.now() - splashStartedAt > SPLASH_DURATION_MS + 400) return '';
+    const ui = normalizeMiniAppUi(state.miniappUi || state.miniappui || {});
+    const splashDuration = clampMs(ui.splash?.durationMs, MINIAPP_UI_DEFAULTS.splash.durationMs);
+    if (Date.now() - splashStartedAt > splashDuration + 400) return '';
     return `
       <section class="miniapp-splash" id="miniappSplash" aria-label="Carregando Mercadinho M&J">
-        <img src="./assets/logo-mj-mercadinho.png" alt="Mercadinho M&J">
+        ${splashMedia(ui)}
       </section>
     `;
   }
@@ -127,7 +245,7 @@ export function createRenderer(state) {
     return `
       <header class="market-hero" id="marketHero">
         <div class="hero-top">
-          <img src="./assets/logo-mj-mercadinho.png" alt="Mercadinho M&J" class="brand-logo">
+          <img src="${logoSrc(state)}" alt="Mercadinho M&J" class="brand-logo">
           <button class="icon-button" data-page="cart" aria-label="Ver carrinho">
             🛒
             <b>${cartCount(state)}</b>
@@ -229,25 +347,21 @@ export function createRenderer(state) {
 
   function renderHome() {
     const filtered = state.query ? filterProducts(state.products, state.query) : null;
-    const design = state.miniappDesign || {};
-    const hero = design.banners?.ativo && design.banners?.itens?.[0]
-      ? design.banners.itens[0]
-      : {
-        titulo: 'Ofertas para o seu mercado',
-        subtitulo: 'Produtos por peso, ofertas e itens essenciais com entrega rápida.',
-        imagem: ''
-      };
+    const hero = {
+      titulo: 'Ofertas para o seu mercado',
+      subtitulo: 'Produtos por peso, ofertas e itens essenciais com entrega rápida.',
+      imagem: ''
+    };
     return `
       ${renderCustomerHeader()}
       <main class="page home-page" data-page="home">
         ${searchBox('Buscar produtos')}
-        <section class="hero-offer" id="promoBanners" data-design-slot="home-top">
+        <section class="hero-offer" id="promoBanners">
           <div>
             <small>Mercadinho M&J</small>
             <h2>${escapeHtml(hero.titulo || 'Ofertas de hoje')}</h2>
             <p>${escapeHtml(hero.subtitulo || 'Atualizado com o painel administrativo')}</p>
           </div>
-          <button data-promo-action="ofertas">Ver ofertas</button>
           ${hero.imagem ? `<img class="promo-image-3d" src="${escapeHtml(hero.imagem)}" alt="Oferta">` : '<span class="promo-image-3d">🎁</span>'}
         </section>
         ${renderSectionMenu()}
@@ -398,7 +512,7 @@ export function createRenderer(state) {
           <span></span>
         </div>
         <section class="checkout-card telegram-handoff-card">
-          <img src="./assets/logo-mj-mercadinho.png" alt="Mercadinho M&J">
+          <img src="${logoSrc(state)}" alt="Mercadinho M&J">
           <h2>Continue pelo Telegram</h2>
           <p>${escapeHtml(state.checkoutMessage || 'Seu pedido foi enviado para o Telegram. Defina entrega, pontos e pagamento diretamente no chat.')}</p>
           <button id="retryTelegramHandoff">Enviar carrinho novamente</button>
@@ -458,7 +572,6 @@ export function createRenderer(state) {
   function renderLoyalty() {
     const pontos = Number(state.loyalty?.saldoPontos || 0);
     const saldoReais = Number(state.loyalty?.saldoReais || 0);
-    const imagemCapa = state.miniappDesign?.fidelidade?.imagemCapa || '';
     return `
       ${renderCustomerHeader('Fidelidade')}
       <main class="page loyalty-panel" id="loyaltyPanel" data-page="loyalty">
@@ -468,7 +581,6 @@ export function createRenderer(state) {
           <span></span>
         </div>
         <section class="loyalty-hero">
-          ${imagemCapa ? `<img class="loyalty-cover" src="${escapeHtml(imagemCapa)}" alt="Capa de fidelidade">` : ''}
           <h2>Meus pontos</h2>
           <strong>⭐ ${pontos} pontos</strong>
           <p>Saldo convertido: ${formatMoney(saldoReais)} em vantagem de compra.</p>
@@ -607,13 +719,11 @@ export function createRenderer(state) {
   }
 
   function render() {
-    const currentTheme = state.miniappDesign?.tema || 'vermelho_energia';
-    const currentMode = state.miniappDesign?.modo || 'mercado';
-    document.body.dataset.miniappTheme = currentTheme;
-    document.body.dataset.miniappMode = currentMode;
-    document.body.setAttribute(MINIAPP_THEME_ATTRIBUTE, currentTheme);
-
     let html = '';
+    const activeUi = normalizeMiniAppUi(state.miniappUi || state.miniappui || {});
+    const splashDuration = clampMs(activeUi.splash?.durationMs, MINIAPP_UI_DEFAULTS.splash.durationMs);
+    applyThemeVariables(activeUi);
+    document.documentElement.style.setProperty('--mj-splash-duration', `${splashDuration}ms`);
     if (state.page === 'categories') html = renderCategories();
     else if (state.page === 'products') html = renderProducts();
     else if (state.page === 'product') html = renderProductDetail();
@@ -629,7 +739,7 @@ export function createRenderer(state) {
     root.innerHTML = `${renderSplash()}${html}${stickyCart()}${bottomNav()}<div id="productSheet" hidden></div>`;
     window.setTimeout(() => {
       root.querySelector('#miniappSplash')?.remove();
-    }, SPLASH_DURATION_MS + 350);
+    }, splashDuration + 350);
 
     setMainButton();
 
