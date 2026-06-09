@@ -6,14 +6,36 @@
   <meta name="theme-color" content="#ed000b">
   <title>Mercadinho M&J</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link id="mainStylesheet" rel="stylesheet" href="./styles.css?v=2026.06.09.629">
+  <link id="mainStylesheet" rel="stylesheet" href="./styles.css?v=2026.06.09.584">
 </head>
 <body>
   <div id="miniapp-root" class="app-loading">
-    <div>Carregando o Mini App do Mercadinho M&J...</div>
+    <div class="miniapp-loading-brand">
+      <img id="miniappLoadingLogo" src="./assets/logo-mj-mercadinho.png" alt="Mercadinho M&J">
+      <div>Carregando o Mini App do Mercadinho M&J...</div>
+    </div>
   </div>
-  <script id="miniappBridge" src="./miniappTelegramBridge.client.js?v=2026.06.09.629"></script>
-  <script id="miniappTunnel" src="./miniappTelegramTunnel.client.js?v=2026.06.09.629"></script>
-  <script id="miniappMainJs" type="module" src="./src/main.js?v=2026.06.09.629"></script>
+  <script>
+    (function initMiniAppLogoCacheBust() {
+      const styleHref = document.getElementById('mainStylesheet')?.getAttribute?.('href') || '';
+      const buildFromStyle = String((styleHref.match(/(?:\\?|&)v=([^&]+)/) || [])[1] || '').trim();
+      const query = new URLSearchParams(location.search);
+      const build = String(
+        buildFromStyle ||
+        query.get('v') ||
+        query.get('miniapp_v') ||
+        Date.now()
+      ).trim();
+      const loadingLogo = document.getElementById('miniappLoadingLogo');
+      if (loadingLogo) {
+        const src = String(loadingLogo.getAttribute('src') || '').split('?')[0];
+        loadingLogo.src = `${src}?v=${encodeURIComponent(build)}`;
+      }
+      globalThis.__MJ_LOGO_BUILD = build;
+    })();
+  </script>
+  <script id="miniappBridge" src="./miniappTelegramBridge.client.js?v=2026.06.09.584"></script>
+  <script id="miniappTunnel" src="./miniappTelegramTunnel.client.js?v=2026.06.09.584"></script>
+  <script id="miniappMainJs" type="module" src="./src/main.js?v=2026.06.09.584"></script>
 </body>
 </html>
