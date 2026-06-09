@@ -120,6 +120,32 @@ export async function authenticateBridge(state) {
 export async function loadBootstrap(state) { return retryApiFetchWithFreshRuntimeConfig(state, MINIAPP_API_PATHS.bootstrap); }
 export async function loadHealth(state) { return retryApiFetchWithFreshRuntimeConfig(state, MINIAPP_API_PATHS.health).catch(() => null); }
 export async function loadCatalog(state) { return retryApiFetchWithFreshRuntimeConfig(state, MINIAPP_API_PATHS.catalog); }
+export async function loadStaticCatalog() {
+  const candidates = ['./catalogo.json', '../catalogo.json'];
+  let lastError = null;
+  for (const path of candidates) {
+    try {
+      const res = await fetch(path, { cache: 'no-store' });
+      if (res.ok) return res.json();
+      lastError = new Error(`Falha HTTP ${res.status}`);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError || new Error('Catalogo estatico indisponivel.');
+}
+export async function loadCatalogWithFallback(state) {
+  try {
+    return await loadCatalog(state);
+  } catch (error) {
+    if (!apiBase(state)) return loadStaticCatalog();
+    try {
+      return await loadStaticCatalog();
+    } catch {
+      throw error;
+    }
+  }
+}
 export async function syncCart(state, payload) {
   const normalizedPayload = payload?.items ? payload : { ...payload, items: payload?.itens || [] };
   return retryApiFetchWithFreshRuntimeConfig(state, MINIAPP_API_PATHS.cartSync, { method: 'POST', body: JSON.stringify(normalizedPayload) }).catch(() => null);

@@ -10,7 +10,7 @@ function installMiniAppDesignRuntime(state) {
 function pollMiniApp(renderer) { renderer?.render?.(); }
 function startPolling(renderer) { return window.setInterval(() => pollMiniApp(renderer), 30000); }
 import { initTelegram, telegramUserName } from './telegram.js';
-import { carregarRuntimeConfigPages, authenticateBridge, loadBootstrap, loadCatalog, loadHealth } from './api.js';
+import { carregarRuntimeConfigPages, authenticateBridge, loadBootstrap, loadCatalogWithFallback, loadHealth } from './api.js';
 import { createRenderer } from './render.js';
 import { createState, applySnapshot } from './state.js';
 import { normalizeCatalog } from './catalog.js';
@@ -39,7 +39,7 @@ async function init() {
     state.sections = normalized.sections;
     state.products = normalized.products;
   } catch {
-    const catalog = await loadCatalog(state);
+    const catalog = await loadCatalogWithFallback(state);
     const normalized = normalizeCatalog(catalog);
     state.sections = normalized.sections;
     state.products = normalized.products;
@@ -60,5 +60,5 @@ async function init() {
 
 init().catch(error => {
   const root = document.getElementById('miniapp-root') || document.body;
-  root.innerHTML = `<div class="fatal-error"><strong>N�o foi poss�vel abrir o Mini App.</strong><small>${error.message || error}</small></div>`;
+  root.innerHTML = `<div class="fatal-error"><strong>Nao foi possivel abrir o Mini App.</strong><small>${error.message || error}</small></div>`;
 });
