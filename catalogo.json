@@ -218,7 +218,7 @@
     ],
     "miniappUi": {
       "header": {
-        "logo": "https://raw.githubusercontent.com/Mvmozzer/mercadinhoMeJ/refs/heads/main/miniapp/assets/logo-mj-mercadinho.png"
+        "logo": "https://github.com/Mvmozzer/mercadinhoMeJ/blob/main/miniapp/assets/copa-splash.png?raw=true"
       },
       "theme": {
         "primary": "#ed000b",
@@ -232,7 +232,7 @@
         "heroTo": "#ed000b"
       },
       "splash": {
-        "logo": "https://raw.githubusercontent.com/Mvmozzer/mercadinhoMeJ/refs/heads/main/miniapp/assets/logo-mj-mercadinho.png",
+        "logo": "https://github.com/Mvmozzer/mercadinhoMeJ/blob/main/miniapp/assets/copa-splash.png?raw=true",
         "mode": "logo",
         "mediaUrl": "",
         "animation": "fade",
