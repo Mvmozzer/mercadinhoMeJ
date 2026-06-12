@@ -32,28 +32,7 @@
         "gradientFrom": "#ff3b4b",
         "gradientTo": "#ed000b",
         "durationMs": 5000
-      },
-      "bannerCarousel": {
-        "autoplay": true,
-        "intervalMs": 5000,
-        "animation": "slide"
-      },
-      "banners": [
-        {
-          "id": "clube-mj-pontos",
-          "title": "Ganhe Pontos no Clube M&J",
-          "subtitle": "Compre, acumule e aproveite beneficios exclusivos.",
-          "eyebrow": "Mercadinho M&J",
-          "image": "assets/banner-clube-mj.png",
-          "emoji": "🎁",
-          "imageOnly": true,
-          "buttonText": "Saiba mais",
-          "targetType": "page",
-          "targetValue": "loyalty",
-          "active": true,
-          "order": 0
-        }
-      ]
+      }
     },
     "mostrar_produtos_sem_estoque": true
   }

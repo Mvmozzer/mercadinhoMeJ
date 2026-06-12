@@ -476,12 +476,22 @@ export function createRenderer(state) {
     `;
   }
 
+  function sectionIconImage(section = {}) {
+    return String(section.iconImage || section.icon_image || section.image || section.imagem || section.icone || '').trim();
+  }
+
+  function renderSectionMenuIcon(section = {}) {
+    const image = sectionIconImage(section);
+    if (!image) return '<span class="section-menu-icon-placeholder" aria-hidden="true"></span>';
+    return `<img class="section-menu-icon-image" src="${escapeHtml(resolveAssetUrl(image, ''))}" alt="" loading="lazy" referrerpolicy="no-referrer">`;
+  }
+
   function renderSectionMenu() {
     return `
       <nav class="section-menu" id="categoryRail" aria-label="Seções">
         ${state.sections.map(section => `
           <button data-section-open="${escapeHtml(section.id)}">
-            <span>${escapeHtml(section.icon || '🧺')}</span>
+            ${renderSectionMenuIcon(section)}
             ${escapeHtml(section.name)}
           </button>
         `).join('')}
@@ -559,7 +569,7 @@ export function createRenderer(state) {
           <div class="category-list">
             ${sections.map(section => `
               <button class="category-row" data-section-open="${escapeHtml(section.id)}">
-                <span>${escapeHtml(section.icon || '🧺')}</span>
+                ${renderSectionMenuIcon(section)}
                 <strong>${escapeHtml(section.name)}</strong>
                 <b>${(section.products?.length || 0)} itens</b>
               </button>

@@ -42,9 +42,30 @@ export function emojiForSection(name = '') {
   return 'M&J';
 }
 
+function looksLikeSectionImage(value = '') {
+  const text = String(value || '').trim();
+  return /^(https?:\/\/|data:image\/|blob:|\/|\.\/|\.\.\/|assets\/|uploads\/)/i.test(text)
+    || /\.(png|jpe?g|gif|webp|svg)(\?|#|$)/i.test(text);
+}
+
+function sectionImage(section = {}) {
+  const direct = section.iconImage || section.icon_image || section.imagem || section.image || section.imageUrl || section.image_url || section.icone;
+  const icon = section.icon || '';
+  return String(direct || (looksLikeSectionImage(icon) ? icon : '') || '').trim();
+}
+
+function sectionEmoji(section = {}, name = '') {
+  const icon = String(section.icon || '').trim();
+  if (icon && !looksLikeSectionImage(icon)) return icon;
+  return section.emoji || emojiForSection(name);
+}
+
 export function normalizeProduct(raw = {}, sectionName = '', index = 0) {
   const name = raw.nome || raw.name || raw.titulo || 'Produto';
-  const section = raw.secao || raw.section || raw.secao_nome || sectionName || 'Produtos';
+  const rawSectionId = raw.secao_id || raw.sectionId || raw.section_id || raw.secao || '';
+  const fallbackSectionId = rawSectionId || (sectionName && !raw.section ? sectionName : '');
+  const section = raw.secao_nome || raw.sectionName || raw.section_name || raw.section || sectionName || fallbackSectionId || 'Produtos';
+  const sectionId = String(fallbackSectionId || slugify(section));
   const id = String(raw.id || raw.produto_id || `${slugify(section)}_${index}`);
   const price = productPrice(raw);
   return {
@@ -54,8 +75,8 @@ export function normalizeProduct(raw = {}, sectionName = '', index = 0) {
     name,
     nome: name,
     section,
-    secao: section,
-    sectionId: slugify(section),
+    secao: raw.secao || sectionId,
+    sectionId,
     image: productImage(raw),
     price,
     preco: price,
@@ -96,11 +117,15 @@ export function normalizeCatalog(payload = {}) {
   rawSections.forEach((section, index) => {
     const name = section.nome || section.name || section.titulo || `Seção ${index + 1}`;
     const id = String(section.id || slugify(name));
+    const iconImage = sectionImage(section);
     map.set(id, {
       id,
       name,
       nome: name,
-      icon: section.icon || section.emoji || emojiForSection(name),
+      icon: sectionEmoji(section, name),
+      emoji: section.emoji || '',
+      iconImage,
+      image: iconImage,
       products: []
     });
   });
@@ -112,6 +137,9 @@ export function normalizeCatalog(payload = {}) {
         name: product.section,
         nome: product.section,
         icon: emojiForSection(product.section),
+        emoji: '',
+        iconImage: '',
+        image: '',
         products: []
       });
     }
