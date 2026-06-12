@@ -346,6 +346,138 @@ button{
   background:var(--mj-primary-soft);
 }
 
+.miniapp-banner-carousel{
+  margin:12px 0 16px;
+  border-radius:24px;
+  border:1px solid var(--mj-border);
+  background:var(--mj-card);
+  box-shadow:0 12px 28px rgba(19,23,35,.06);
+  overflow:hidden;
+}
+
+.miniapp-banner-slide{
+  min-height:154px;
+  padding:16px;
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:12px;
+  align-items:center;
+}
+
+.banner-animation-slide .miniapp-banner-slide{
+  animation:miniappBannerSlideIn .38s ease both;
+}
+
+.banner-animation-fade .miniapp-banner-slide{
+  animation:miniappBannerFadeIn .32s ease both;
+}
+
+.banner-animation-none .miniapp-banner-slide{
+  animation:none;
+}
+
+@keyframes miniappBannerSlideIn{
+  from{opacity:.35;transform:translateX(22px)}
+  to{opacity:1;transform:translateX(0)}
+}
+
+@keyframes miniappBannerFadeIn{
+  from{opacity:.25}
+  to{opacity:1}
+}
+
+.miniapp-banner-image-only{
+  min-height:0;
+  padding:0;
+  display:block;
+}
+
+.miniapp-banner-image-button{
+  width:100%;
+  display:block;
+  padding:0;
+  border:0;
+  background:transparent;
+  text-align:inherit;
+}
+
+.miniapp-banner-full-image{
+  width:100%;
+  display:block;
+  aspect-ratio:3/1;
+  object-fit:cover;
+}
+
+.miniapp-banner-copy small{
+  display:inline-flex;
+  margin-bottom:4px;
+  color:var(--mj-muted);
+  font-size:12px;
+  font-weight:800;
+  text-transform:uppercase;
+}
+
+.miniapp-banner-copy h2{
+  margin:0 0 4px;
+  color:var(--mj-primary);
+  font-size:25px;
+  line-height:1.05;
+}
+
+.miniapp-banner-copy p{
+  margin:0;
+  color:var(--mj-muted);
+  line-height:1.35;
+}
+
+.miniapp-banner-cta{
+  margin-top:12px;
+  min-height:42px;
+  border-radius:14px;
+  background:var(--mj-primary);
+  color:#fff;
+  font-weight:800;
+  padding:0 14px;
+}
+
+.miniapp-banner-image,
+.miniapp-banner-emoji{
+  width:82px;
+  height:82px;
+  border-radius:22px;
+  display:grid;
+  place-items:center;
+  background:var(--mj-primary-soft);
+  box-shadow:0 12px 24px rgba(19,23,35,.08);
+}
+
+.miniapp-banner-image{
+  object-fit:cover;
+}
+
+.miniapp-banner-emoji{
+  font-size:40px;
+}
+
+.miniapp-banner-dots{
+  display:flex;
+  justify-content:center;
+  gap:7px;
+  padding:0 0 12px;
+}
+
+.miniapp-banner-dots button{
+  width:8px;
+  height:8px;
+  border-radius:999px;
+  background:color-mix(in srgb,var(--mj-primary) 24%, var(--mj-border) 76%);
+}
+
+.miniapp-banner-dots button.active{
+  width:22px;
+  background:var(--mj-primary);
+}
+
 .section-menu{
   display:grid;
   grid-auto-flow:column;
@@ -1097,6 +1229,10 @@ button{
   .market-hero h1{font-size:18px;max-width:280px}
   .hero-offer{grid-template-columns:1fr}
   .hero-offer button{grid-column:1/-1}
+  .miniapp-banner-slide{grid-template-columns:1fr;min-height:0}
+  .miniapp-banner-image,
+  .miniapp-banner-emoji{width:100%;height:72px}
+  .miniapp-banner-copy h2{font-size:22px}
   .section-menu{grid-auto-columns:96px}
   .rail-scroll{grid-auto-columns:154px}
   .product-grid{gap:10px;grid-template-columns:repeat(2,minmax(0,1fr))}
