@@ -239,7 +239,7 @@
         "background": "#ed000b",
         "gradientFrom": "#ff3b4b",
         "gradientTo": "#ed000b",
-        "durationMs": 6000
+        "durationMs": 2000
       }
     },
     "mostrar_produtos_sem_estoque": false
