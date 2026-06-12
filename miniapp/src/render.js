@@ -1,5 +1,5 @@
 ﻿const WEIGHTED_RENDER_MARKERS = [
-  'Produto vendido por peso. O valor final pode mudar após a pesagem na loja.',
+  'Produto vendido por peso. O valor final pode mudar apos a pesagem na loja.',
   'data-action="set-weight"',
   'function productBadges'
 ];
@@ -108,6 +108,7 @@ function applyThemeVariables(uiState = {}) {
   const root = document.documentElement;
   const theme = uiState.theme || {};
   const splash = uiState.splash || {};
+  document.body.dataset.miniappTheme = 'verde_fresco';
   root.style.setProperty('--mj-primary', theme.primary || MINIAPP_UI_DEFAULTS.theme.primary);
   root.style.setProperty('--mj-primary-soft', theme.primarySoft || MINIAPP_UI_DEFAULTS.theme.primarySoft);
   root.style.setProperty('--mj-bg', theme.bg || MINIAPP_UI_DEFAULTS.theme.bg);
@@ -189,7 +190,7 @@ export function createRenderer(state) {
     const logo = logoSrc(state);
     const commonClass = 'miniapp-splash-media';
     if ((mode === 'photo' || mode === 'gif') && mediaUrl) {
-      return `<img class="${commonClass}" src="${escapeHtml(resolveAssetUrl(mediaUrl, logo)}" alt="Splash">`;
+      return `<img class="${commonClass}" src="${escapeHtml(resolveAssetUrl(mediaUrl, logo))}" alt="Splash">`;
     }
     if (mode === 'video' && mediaUrl) {
       return `<video class="${commonClass}" src="${escapeHtml(resolveAssetUrl(mediaUrl, logo))}" autoplay muted loop playsinline></video>`;
