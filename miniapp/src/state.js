@@ -16,8 +16,10 @@ export const MINIAPP_UI_DEFAULTS = {
     heroTo: '#ed000b'
   },
   splash: {
+    logo: '/assets/logo-mj-mercadinho.png',
     mode: 'logo',
     mediaUrl: '',
+    animation: 'fade',
     background: '#ed000b',
     gradientFrom: '#ff3b4b',
     gradientTo: '#ed000b',
@@ -52,6 +54,7 @@ export function createState() {
     apiBase: '',
     bridgeReady: false,
     authOk: false,
+    pollingMs: 7000,
     loading: true,
     sending: false,
     error: '',

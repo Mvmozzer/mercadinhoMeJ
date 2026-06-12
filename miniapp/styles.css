@@ -117,9 +117,36 @@ button{
   max-height:50vh;
 }
 
+.miniapp-splash[data-splash-animation="zoom"] .miniapp-splash-media{
+  animation:miniappSplashZoom .9s ease both;
+}
+
+.miniapp-splash[data-splash-animation="slide-up"] .miniapp-splash-media{
+  animation:miniappSplashSlideUp .9s ease both;
+}
+
+.miniapp-splash[data-splash-animation="pulse"] .miniapp-splash-media{
+  animation:miniappSplashPulse 1.15s ease-in-out infinite;
+}
+
 @keyframes miniappSplashExit{
   0%,86%{opacity:1;visibility:visible}
   100%{opacity:0;visibility:hidden}
+}
+
+@keyframes miniappSplashZoom{
+  0%{opacity:0;transform:scale(.82)}
+  100%{opacity:1;transform:scale(1)}
+}
+
+@keyframes miniappSplashSlideUp{
+  0%{opacity:0;transform:translateY(22px)}
+  100%{opacity:1;transform:translateY(0)}
+}
+
+@keyframes miniappSplashPulse{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.045)}
 }
 
 .mj-fresh-app{
@@ -981,6 +1008,28 @@ button{
   color:var(--mj-primary);
   font-weight:700;
   background:color-mix(in srgb, var(--mj-primary-soft) 72%, transparent);
+}
+
+.miniapp-debug-overlay{
+  position:fixed;
+  right:8px;
+  bottom:calc(94px + env(safe-area-inset-bottom));
+  z-index:1200;
+  display:grid;
+  gap:3px;
+  max-width:min(270px, calc(100vw - 16px));
+  padding:8px 10px;
+  border:1px solid rgba(255,255,255,.28);
+  border-radius:8px;
+  background:rgba(20,22,29,.88);
+  color:#fff;
+  font-size:11px;
+  line-height:1.35;
+  box-shadow:0 12px 24px rgba(0,0,0,.22);
+}
+
+.miniapp-debug-overlay span{
+  word-break:break-word;
 }
 
 .sticky-cart{

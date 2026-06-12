@@ -11,8 +11,28 @@ function sincronizarStatusLoja(state, health) {
   if (health?.loja) state.store = { ...state.store, ...health.loja };
   return state.store;
 }
-function pollMiniApp(renderer) { renderer?.render?.(); }
-function startPolling(renderer) { return window.setInterval(() => pollMiniApp(renderer), 30000); }
+function miniappUiFromPayload(payload) {
+  return payload?.miniappUi || payload?.catalogo?.miniappUi || null;
+}
+function miniappPollingMs(state = {}) {
+  const value = Number(state.pollingMs || 7000);
+  if (!Number.isFinite(value)) return 7000;
+  return Math.max(3000, Math.min(60000, Math.round(value)));
+}
+async function refreshMiniAppVisualConfig(state) {
+  const health = await loadHealth(state);
+  if (health?.checkout?.pollingMs) state.pollingMs = health.checkout.pollingMs;
+  sincronizarStatusLoja(state, health);
+  const ui = miniappUiFromPayload(health);
+  if (ui) state.miniappUi = normalizeMiniAppUi(ui);
+  return health;
+}
+function pollMiniApp(renderer, state) {
+  refreshMiniAppVisualConfig(state)
+    .catch(() => null)
+    .finally(() => renderer?.render?.());
+}
+function startPolling(renderer, state) { return window.setInterval(() => pollMiniApp(renderer, state), miniappPollingMs(state)); }
 
 async function init() {
   initTelegram();
@@ -22,7 +42,9 @@ async function init() {
   await carregarRuntimeConfigPages(state);
   await authenticateBridge(state);
   const health = await loadHealth(state);
+  if (health?.checkout?.pollingMs) state.pollingMs = health.checkout.pollingMs;
   sincronizarStatusLoja(state, health);
+  if (miniappUiFromPayload(health)) state.miniappUi = normalizeMiniAppUi(miniappUiFromPayload(health));
   try {
     const boot = await loadBootstrap(state);
     if (boot?.loja) state.store = { ...state.store, ...boot.loja };
@@ -35,6 +57,7 @@ async function init() {
     state.products = normalized.products;
   } catch {
     const catalog = await loadCatalogWithFallback(state);
+    if (miniappUiFromPayload(catalog)) state.miniappUi = normalizeMiniAppUi(miniappUiFromPayload(catalog));
     const normalized = normalizeCatalog(catalog);
     state.sections = normalized.sections;
     state.products = normalized.products;
@@ -49,7 +72,7 @@ async function init() {
   window.__mjMiniApp = { state, renderer };
   // Checkout marker: cart handoff stays in Telegram.
   renderer.render();
-  startPolling(renderer);
+  startPolling(renderer, state);
 }
 
 init().catch(error => {

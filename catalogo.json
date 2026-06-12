@@ -216,6 +216,32 @@
         "points_preview": 0
       }
     ],
+    "miniappUi": {
+      "header": {
+        "logo": "https://github.com/Mvmozzer/mercadinhoMeJ/blob/main/miniapp/assets/logo-mj-mercadinho.png?raw=true"
+      },
+      "theme": {
+        "primary": "#ed000b",
+        "primarySoft": "#ffefef",
+        "bg": "#f4f5f9",
+        "card": "#ffffff",
+        "text": "#14161d",
+        "muted": "#6a6e82",
+        "border": "#f7f7f7",
+        "heroFrom": "#ff3b4b",
+        "heroTo": "#ed000b"
+      },
+      "splash": {
+        "logo": "https://github.com/Mvmozzer/mercadinhoMeJ/blob/main/miniapp/assets/logo-mj-mercadinho.png?raw=true",
+        "mode": "logo",
+        "mediaUrl": "",
+        "animation": "fade",
+        "background": "#ed000b",
+        "gradientFrom": "#ff3b4b",
+        "gradientTo": "#ed000b",
+        "durationMs": 6000
+      }
+    },
     "mostrar_produtos_sem_estoque": false
   }
 }

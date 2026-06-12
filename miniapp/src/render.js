@@ -29,8 +29,10 @@ const MINIAPP_UI_DEFAULTS = {
     heroTo: '#ed000b'
   },
   splash: {
+    logo: '/assets/logo-mj-mercadinho.png',
     mode: 'logo',
     mediaUrl: '',
+    animation: 'fade',
     background: '#ed000b',
     gradientFrom: '#ff3b4b',
     gradientTo: '#ed000b',
@@ -64,6 +66,7 @@ function clampMs(value, fallback) {
 
 function normalizeMiniAppUi(raw = {}) {
   const cfg = raw && typeof raw === 'object' ? raw : {};
+  const animation = String(cfg.splash?.animation || MINIAPP_UI_DEFAULTS.splash.animation).toLowerCase();
   return {
     header: {
       logo: String((cfg.header && cfg.header.logo) || MINIAPP_UI_DEFAULTS.header.logo).trim() || MINIAPP_UI_DEFAULTS.header.logo
@@ -75,6 +78,8 @@ function normalizeMiniAppUi(raw = {}) {
     splash: {
       ...MINIAPP_UI_DEFAULTS.splash,
       ...(cfg.splash || {}),
+      logo: String(cfg.splash?.logo || cfg.header?.logo || MINIAPP_UI_DEFAULTS.splash.logo).trim(),
+      animation: ['fade', 'zoom', 'slide-up', 'pulse'].includes(animation) ? animation : MINIAPP_UI_DEFAULTS.splash.animation,
       durationMs: clampMs(cfg.splash?.durationMs, MINIAPP_UI_DEFAULTS.splash.durationMs)
     }
   };
@@ -184,10 +189,10 @@ export function createRenderer(state) {
   const root = document.getElementById('miniapp-root') || document.body;
   const splashStartedAt = Date.now();
 
-  function splashMedia(uiState) {
-    const mode = String(uiState.splash?.mode || 'logo').toLowerCase();
-    const mediaUrl = String(uiState.splash?.mediaUrl || '').trim();
-    const logo = logoSrc(state);
+  function splashMedia(ui) {
+    const mode = String(ui.splash?.mode || 'logo').toLowerCase();
+    const mediaUrl = String(ui.splash?.mediaUrl || '').trim();
+    const logo = appendBuildTag(resolveAssetUrl(ui.splash?.logo || logoSrc(state), logoSrc(state)), state);
     const commonClass = 'miniapp-splash-media';
     if ((mode === 'photo' || mode === 'gif') && mediaUrl) {
       return `<img class="${commonClass}" src="${escapeHtml(resolveAssetUrl(mediaUrl, logo))}" alt="Splash">`;
@@ -201,9 +206,10 @@ export function createRenderer(state) {
   function renderSplash() {
     const ui = normalizeMiniAppUi(state.miniappUi || state.miniappui || {});
     const splashDuration = clampMs(ui.splash?.durationMs, MINIAPP_UI_DEFAULTS.splash.durationMs);
+    const splashAnimation = String(ui.splash?.animation || MINIAPP_UI_DEFAULTS.splash.animation).toLowerCase();
     if (Date.now() - splashStartedAt > splashDuration + 400) return '';
     return `
-      <section class="miniapp-splash" id="miniappSplash" aria-label="Carregando Mercadinho M&J">
+      <section class="miniapp-splash" id="miniappSplash" data-splash-animation="${escapeHtml(splashAnimation)}" aria-label="Carregando Mercadinho M&J">
         ${splashMedia(ui)}
       </section>
     `;
@@ -636,6 +642,19 @@ export function createRenderer(state) {
     `;
   }
 
+  function renderDebugOverlay() {
+    const debugAtivo = new URLSearchParams(location.search).get('debug') === '1';
+    if (!debugAtivo) return '';
+    return `
+      <aside class="miniapp-debug-overlay" id="miniappDebugOverlay">
+        <strong>Debug Mini App</strong>
+        <span>buildVersion: ${escapeHtml(state.webBuild || RUNTIME_LOGO_BUILD || resolveBuildFromHtml() || 'local')}</span>
+        <span>apiBase: ${escapeHtml(state.apiBase || state.apiBaseUrl || 'same-origin/static')}</span>
+        <span>Carregado em: ${escapeHtml(new Date().toLocaleString())}</span>
+      </aside>
+    `;
+  }
+
   async function finishInTelegram() {
     if (state.sending) return;
     if (!cartCount(state)) {
@@ -737,7 +756,7 @@ export function createRenderer(state) {
     else html = renderHome();
 
     root.className = 'mj-fresh-app';
-    root.innerHTML = `${renderSplash()}${html}${stickyCart()}${bottomNav()}<div id="productSheet" hidden></div>`;
+    root.innerHTML = `${renderSplash()}${html}${stickyCart()}${bottomNav()}${renderDebugOverlay()}<div id="productSheet" hidden></div>`;
     window.setTimeout(() => {
       root.querySelector('#miniappSplash')?.remove();
     }, splashDuration + 350);
