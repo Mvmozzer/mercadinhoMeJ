@@ -47,18 +47,21 @@ export async function carregarRuntimeConfigPages(state, options = {}) {
   const localBase = apiBaseFromLocation();
   const shouldFetchRuntimeConfig = options.force === true || /github\.io$/i.test(loc.hostname) || loc.protocol === 'file:';
   if (shouldFetchRuntimeConfig) {
-    try {
-      const res = await fetch('./runtime-config.json?ts=' + Date.now(), { cache: 'no-store' });
-      if (res.ok) {
-        const data = await res.json();
-        const runtimeBase = normalizeApiBaseUrl(data.apiBaseUrl || data.publicApiBaseUrl || state.apiBaseUrl || state.apiBase || localBase);
-        state.apiBase = runtimeBase;
-        state.apiBaseUrl = runtimeBase;
-        state.webBuild = String(data.webBuild || '').trim() || state.webBuild;
-        state.allowTemporaryApiBase = data.allowTemporaryApiBase === true;
-        return data;
-      }
-    } catch {}
+    const candidates = ['./runtime-config.json', '../runtime-config.json'];
+    for (const candidate of candidates) {
+      try {
+        const res = await fetch(`${candidate}?ts=${Date.now()}`, { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          const runtimeBase = normalizeApiBaseUrl(data.apiBaseUrl || data.publicApiBaseUrl || state.apiBaseUrl || state.apiBase || localBase);
+          state.apiBase = runtimeBase;
+          state.apiBaseUrl = runtimeBase;
+          state.webBuild = String(data.webBuild || '').trim() || state.webBuild;
+          state.allowTemporaryApiBase = data.allowTemporaryApiBase === true;
+          return data;
+        }
+      } catch {}
+    }
   }
   state.apiBase = normalizeApiBaseUrl(state.apiBase || state.apiBaseUrl || localBase);
   state.apiBaseUrl = state.apiBase;
