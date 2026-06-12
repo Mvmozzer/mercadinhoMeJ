@@ -9,17 +9,17 @@
     "secoes": [
       {
         "id": "mercearia",
-        "nome": "Mercearia",
+        "nome": "mercearia",
         "emoji": "",
         "ativo": true,
-        "ordem": 1
+        "ordem": 0
       },
       {
         "id": "frutas",
-        "nome": "Frutas",
+        "nome": "frutas",
         "emoji": "",
         "ativo": true,
-        "ordem": 2
+        "ordem": 1
       }
     ],
     "produtos": [
@@ -27,8 +27,8 @@
         "id": "mercearia_0",
         "produto_id": "mercearia_0",
         "secao": "mercearia",
-        "secao_nome": "Mercearia",
-        "secao_ordem": 1,
+        "secao_nome": "mercearia",
+        "secao_ordem": 0,
         "index": 0,
         "nome": "Arroz Branco 5kg",
         "grupo": "Arroz Branco 5kg",
@@ -51,8 +51,8 @@
         "id": "mercearia_1",
         "produto_id": "mercearia_1",
         "secao": "mercearia",
-        "secao_nome": "Mercearia",
-        "secao_ordem": 1,
+        "secao_nome": "mercearia",
+        "secao_ordem": 0,
         "index": 1,
         "nome": "Feijao Carioca 1kg",
         "grupo": "Feijao Carioca 1kg",
@@ -75,8 +75,8 @@
         "id": "mercearia_2",
         "produto_id": "mercearia_2",
         "secao": "mercearia",
-        "secao_nome": "Mercearia",
-        "secao_ordem": 1,
+        "secao_nome": "mercearia",
+        "secao_ordem": 0,
         "index": 2,
         "nome": "Acucar Refinado 1kg",
         "grupo": "Acucar Refinado 1kg",
@@ -99,8 +99,8 @@
         "id": "mercearia_3",
         "produto_id": "mercearia_3",
         "secao": "mercearia",
-        "secao_nome": "Mercearia",
-        "secao_ordem": 1,
+        "secao_nome": "mercearia",
+        "secao_ordem": 0,
         "index": 3,
         "nome": "Cafe Torrado e Moido 500g",
         "grupo": "Cafe Torrado e Moido 500g",
@@ -123,8 +123,8 @@
         "id": "frutas_0",
         "produto_id": "frutas_0",
         "secao": "frutas",
-        "secao_nome": "Frutas",
-        "secao_ordem": 2,
+        "secao_nome": "frutas",
+        "secao_ordem": 1,
         "index": 0,
         "nome": "Banana Prata",
         "grupo": "Banana Prata",
@@ -147,8 +147,8 @@
         "id": "frutas_1",
         "produto_id": "frutas_1",
         "secao": "frutas",
-        "secao_nome": "Frutas",
-        "secao_ordem": 2,
+        "secao_nome": "frutas",
+        "secao_ordem": 1,
         "index": 1,
         "nome": "Maca Verde",
         "grupo": "Maca Verde",
@@ -171,8 +171,8 @@
         "id": "frutas_2",
         "produto_id": "frutas_2",
         "secao": "frutas",
-        "secao_nome": "Frutas",
-        "secao_ordem": 2,
+        "secao_nome": "frutas",
+        "secao_ordem": 1,
         "index": 2,
         "nome": "Laranja Pera 1kg",
         "grupo": "Laranja Pera 1kg",
@@ -195,8 +195,8 @@
         "id": "frutas_3",
         "produto_id": "frutas_3",
         "secao": "frutas",
-        "secao_nome": "Frutas",
-        "secao_ordem": 2,
+        "secao_nome": "frutas",
+        "secao_ordem": 1,
         "index": 3,
         "nome": "Abacaxi Dourado 1kg",
         "grupo": "Abacaxi Dourado 1kg",
@@ -218,7 +218,7 @@
     ],
     "miniappUi": {
       "header": {
-        "logo": "https://github.com/Mvmozzer/mercadinhoMeJ/blob/main/miniapp/assets/logo-mj-mercadinho.png?raw=true"
+        "logo": "/assets/logo-mj-mercadinho.png"
       },
       "theme": {
         "primary": "#ed000b",
@@ -227,21 +227,21 @@
         "card": "#ffffff",
         "text": "#14161d",
         "muted": "#6a6e82",
-        "border": "#f7f7f7",
+        "border": "#e8ebf3",
         "heroFrom": "#ff3b4b",
         "heroTo": "#ed000b"
       },
       "splash": {
-        "logo": "https://github.com/Mvmozzer/mercadinhoMeJ/blob/main/miniapp/assets/logo-mj-mercadinho.png?raw=true",
+        "logo": "/assets/logo-mj-mercadinho.png",
         "mode": "logo",
         "mediaUrl": "",
         "animation": "fade",
         "background": "#ed000b",
         "gradientFrom": "#ff3b4b",
         "gradientTo": "#ed000b",
-        "durationMs": 2000
+        "durationMs": 5000
       }
     },
-    "mostrar_produtos_sem_estoque": false
+    "mostrar_produtos_sem_estoque": true
   }
 }
