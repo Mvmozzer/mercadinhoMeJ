@@ -39,6 +39,11 @@ async function refreshMiniAppVisualConfig(state) {
   sincronizarStatusLoja(state, health);
   const ui = miniappUiFromPayload(health);
   if (ui) state.miniappUi = normalizeMiniAppUi(ui);
+  if (!ui) {
+    const catalog = await loadCatalogWithFallback(state).catch(() => null);
+    const catalogUi = miniappUiFromPayload(catalog);
+    if (catalogUi) state.miniappUi = normalizeMiniAppUi(catalogUi);
+  }
   return { health, changed: miniappRefreshSignature(state) !== before };
 }
 function pollMiniApp(renderer, state) {

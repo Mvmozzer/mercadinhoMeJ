@@ -129,7 +129,8 @@ export async function loadStaticCatalog() {
   let lastError = null;
   for (const path of candidates) {
     try {
-      const res = await fetch(path, { cache: 'no-store' });
+      const sep = path.includes('?') ? '&' : '?';
+      const res = await fetch(`${path}${sep}ts=${Date.now()}`, { cache: 'no-store' });
       if (res.ok) return res.json();
       lastError = new Error(`Falha HTTP ${res.status}`);
     } catch (error) {
