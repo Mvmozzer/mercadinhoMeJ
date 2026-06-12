@@ -447,9 +447,25 @@ export function createRenderer(state) {
     `;
   }
 
+  function badgeColor(value = '') {
+    const color = String(value || '').trim();
+    return /^#[0-9a-f]{3,8}$/i.test(color) ? color : '';
+  }
+
+  function renderProductBadge(badge = {}) {
+    const text = String(badge.text || badge.texto || badge.label || badge || '').trim();
+    if (!text) return '';
+    const color = badgeColor(badge.color || badge.cor);
+    const background = badgeColor(badge.background || badge.fundo || badge.bg);
+    const style = [color ? `color:${color}` : '', background ? `background:${background}` : ''].filter(Boolean).join(';');
+    return `<span class="durger-badge"${style ? ` style="${escapeHtml(style)}"` : ''}>${escapeHtml(text)}</span>`;
+  }
+
   function productCard(product) {
     const quantity = cartQty(state, product.id);
     const badges = productBadges(product).slice(0, 2);
+    const brand = String(product.marca || product.brand || '').trim();
+    const description = String(product.descricao || product.description || '').trim();
     return `
       <article class="product-card mini-product-card durger-card" data-product-id="${escapeHtml(product.id)}">
         <button class="product-image" data-product-open="${escapeHtml(product.id)}" aria-label="Abrir ${escapeHtml(product.name)}">
@@ -457,9 +473,11 @@ export function createRenderer(state) {
         </button>
         <div class="product-info">
           <h3>${escapeHtml(product.name)}</h3>
+          ${brand ? `<span class="product-brand">${escapeHtml(brand)}</span>` : ''}
+          ${description ? `<p class="product-description">${escapeHtml(description)}</p>` : ''}
           ${productPriceBlock(product)}
           <small>+ ${product.points || 0} pontos</small>
-          ${badges.length ? `<div class="durger-badge-wrap">${badges.map(item => `<span class="durger-badge">${escapeHtml(item)}</span>`).join('')}</div>` : ''}
+          ${badges.length ? `<div class="durger-badge-wrap">${badges.map(renderProductBadge).join('')}</div>` : ''}
         </div>
         <div class="product-actions">
           ${quantity ? `
@@ -605,6 +623,8 @@ export function createRenderer(state) {
     const product = state.products.find(item => item.id === state.productId) || state.products[0];
     if (!product) return renderHome();
     const badges = productBadges(product).slice(0, 3);
+    const brand = String(product.marca || product.brand || '').trim();
+    const description = String(product.descricao || product.description || product.unit || '').trim();
     return `
       ${renderCustomerHeader(product?.name || 'Produto')}
       <main class="page product-page" data-page="product">
@@ -618,8 +638,9 @@ export function createRenderer(state) {
         </div>
         <section class="detail-content">
           <h1>${escapeHtml(product.name)}</h1>
-          <p>${escapeHtml(product.descricao || product.description || product.unit || '')}</p>
-          ${badges.length ? `<div class="durger-badge-wrap">${badges.map(item => `<span class="durger-badge">${escapeHtml(item)}</span>`).join('')}</div>` : ''}
+          ${brand ? `<span class="product-brand detail-brand">Marca: ${escapeHtml(brand)}</span>` : ''}
+          ${description ? `<p class="product-description">${escapeHtml(description)}</p>` : ''}
+          ${badges.length ? `<div class="durger-badge-wrap">${badges.map(renderProductBadge).join('')}</div>` : ''}
           <div class="product-price-line">
             ${productPriceBlock(product)}
           </div>

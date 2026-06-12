@@ -2,17 +2,75 @@ import { slugify } from './utils.js';
 
 const WEIGHTED_CATALOG_MARKERS = ['item.tarjas'];
 export const STATIC_CATALOG_FALLBACKS = ['./catalogo.json', '../catalogo.json'];
+const DEFAULT_SECTION_ICON_IMAGES = {
+  ofertas: 'assets/secoes/ofertas.png',
+  hortifruti: 'assets/secoes/hortifruti.png',
+  padaria: 'assets/secoes/padaria.png',
+  frios_laticinios: 'assets/secoes/frios_laticinios.png',
+  frios_e_laticinios: 'assets/secoes/frios_laticinios.png',
+  ovos: 'assets/secoes/ovos.png',
+  acougue: 'assets/secoes/acougue.png',
+  peixaria: 'assets/secoes/peixaria.png',
+  congelados: 'assets/secoes/congelados.png',
+  mercearia: 'assets/secoes/mercearia.png',
+  cafe_matinais: 'assets/secoes/cafe_matinais.png',
+  cafe_e_matinais: 'assets/secoes/cafe_matinais.png',
+  biscoitos: 'assets/secoes/biscoitos.png',
+  doces: 'assets/secoes/doces.png',
+  snacks: 'assets/secoes/snacks.png',
+  bebidas: 'assets/secoes/bebidas.png',
+  gelo: 'assets/secoes/gelo.png',
+  bebe: 'assets/secoes/bebe.png',
+  pet_shop: 'assets/secoes/pet_shop.png',
+  higiene: 'assets/secoes/higiene.png',
+  limpeza: 'assets/secoes/limpeza.png',
+  descartaveis: 'assets/secoes/descartaveis.png',
+  utilidades: 'assets/secoes/utilidades.png',
+  festas: 'assets/secoes/festas.png',
+  papelaria: 'assets/secoes/papelaria.png',
+  eletrica: 'assets/secoes/eletrica.png',
+  pilhas_baterias: 'assets/secoes/pilhas_baterias.png',
+  pilhas_e_baterias: 'assets/secoes/pilhas_baterias.png',
+  ferramentas: 'assets/secoes/ferramentas.png',
+  jardinagem: 'assets/secoes/jardinagem.png',
+  farmacinha: 'assets/secoes/farmacinha.png',
+  presentes_sazonais: 'assets/secoes/presentes_sazonais.png',
+  presentes_e_sazonais: 'assets/secoes/presentes_sazonais.png',
+  tabacaria: 'assets/secoes/tabacaria.png',
+  delivery_retirada: 'assets/secoes/delivery_retirada.png',
+  delivery_e_retirada: 'assets/secoes/delivery_retirada.png',
+  servicos_frente_caixa: 'assets/secoes/servicos_frente_caixa.png',
+  servicos_e_frente_de_caixa: 'assets/secoes/servicos_frente_caixa.png'
+};
 
 export function isWeightedProduct(item = {}) {
   return item.vendidoPorPeso === true || item.pesavel === true || item.tipoVenda === 'granel' || item.modo_venda === 'granel' || item.saleMode === 'weighted';
 }
 
+function normalizeBadge(item = {}) {
+  if (typeof item === 'string') {
+    const text = item.trim();
+    return text ? { text } : null;
+  }
+  if (!item || typeof item !== 'object') return null;
+  const text = String(item.text || item.texto || item.nome || item.label || '').trim();
+  if (!text) return null;
+  return {
+    text,
+    color: String(item.color || item.cor || '').trim(),
+    background: String(item.background || item.fundo || item.bg || '').trim()
+  };
+}
+
 export function productBadges(item = {}) {
-  return Array.isArray(item.tarjas)
+  const source = Array.isArray(item.tarjas)
     ? item.tarjas
     : Array.isArray(item.badges)
       ? item.badges
-      : [];
+      : Array.isArray(item.labels)
+        ? item.labels
+        : [];
+  return source.map(normalizeBadge).filter(Boolean);
 }
 
 function num(value) {
@@ -48,10 +106,30 @@ function looksLikeSectionImage(value = '') {
     || /\.(png|jpe?g|gif|webp|svg)(\?|#|$)/i.test(text);
 }
 
+function sectionIconKey(value = '') {
+  return slugify(value).replace(/-/g, '_');
+}
+
+function defaultSectionImage(section = {}, name = '') {
+  const candidates = [section.id, section.secao, section.sectionId, section.nome, section.name, name]
+    .map(sectionIconKey)
+    .filter(Boolean);
+  const key = candidates.find(item => DEFAULT_SECTION_ICON_IMAGES[item]);
+  return key ? DEFAULT_SECTION_ICON_IMAGES[key] : '';
+}
+
 function sectionImage(section = {}) {
-  const direct = section.iconImage || section.icon_image || section.imagem || section.image || section.imageUrl || section.image_url || section.icone;
-  const icon = section.icon || '';
-  return String(direct || (looksLikeSectionImage(icon) ? icon : '') || '').trim();
+  const configured = [
+    section.iconImage,
+    section.icon_image,
+    section.imagem,
+    section.image,
+    section.imageUrl,
+    section.image_url,
+    section.icone,
+    section.icon
+  ].find(looksLikeSectionImage);
+  return String(configured || defaultSectionImage(section, section.nome || section.name || '') || '').trim();
 }
 
 function sectionEmoji(section = {}, name = '') {
@@ -68,6 +146,9 @@ export function normalizeProduct(raw = {}, sectionName = '', index = 0) {
   const sectionId = String(fallbackSectionId || slugify(section));
   const id = String(raw.id || raw.produto_id || `${slugify(section)}_${index}`);
   const price = productPrice(raw);
+  const description = String(raw.descricao || raw.description || raw.detalhes || '').trim();
+  const brand = String(raw.marca || raw.brand || raw.fabricante || '').trim();
+  const badges = productBadges(raw);
   return {
     ...raw,
     id,
@@ -78,6 +159,12 @@ export function normalizeProduct(raw = {}, sectionName = '', index = 0) {
     secao: raw.secao || sectionId,
     sectionId,
     image: productImage(raw),
+    descricao: description,
+    description,
+    marca: brand,
+    brand,
+    tarjas: badges,
+    badges,
     price,
     preco: price,
     normalPrice: num(raw.preco_normal || raw.normalPrice || price),

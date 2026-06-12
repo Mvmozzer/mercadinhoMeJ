@@ -14,23 +14,39 @@ function sincronizarStatusLoja(state, health) {
 function miniappUiFromPayload(payload) {
   return payload?.miniappUi || payload?.catalogo?.miniappUi || null;
 }
+function stableStringify(value) {
+  if (value === undefined) return 'undefined';
+  if (value === null || typeof value !== 'object') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`;
+  return `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${stableStringify(value[key])}`).join(',')}}`;
+}
+function miniappRefreshSignature(state = {}) {
+  return stableStringify({
+    pollingMs: state.pollingMs || 0,
+    store: state.store || {},
+    miniappUi: state.miniappUi || {}
+  });
+}
 function miniappPollingMs(state = {}) {
   const value = Number(state.pollingMs || 7000);
   if (!Number.isFinite(value)) return 7000;
   return Math.max(3000, Math.min(60000, Math.round(value)));
 }
 async function refreshMiniAppVisualConfig(state) {
+  const before = miniappRefreshSignature(state);
   const health = await loadHealth(state);
   if (health?.checkout?.pollingMs) state.pollingMs = health.checkout.pollingMs;
   sincronizarStatusLoja(state, health);
   const ui = miniappUiFromPayload(health);
   if (ui) state.miniappUi = normalizeMiniAppUi(ui);
-  return health;
+  return { health, changed: miniappRefreshSignature(state) !== before };
 }
 function pollMiniApp(renderer, state) {
   refreshMiniAppVisualConfig(state)
-    .catch(() => null)
-    .finally(() => renderer?.render?.());
+    .then(({ changed }) => {
+      if (changed) renderer?.render?.();
+    })
+    .catch(() => null);
 }
 function startPolling(renderer, state) { return window.setInterval(() => pollMiniApp(renderer, state), miniappPollingMs(state)); }
 
