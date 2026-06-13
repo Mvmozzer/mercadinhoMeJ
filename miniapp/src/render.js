@@ -225,8 +225,47 @@ function logoSrc(state = {}) {
   return appendBuildTag(resolved, state);
 }
 
+function customerGreetingPrefix(date = new Date()) {
+  const h = date.getHours();
+  if (h >= 5 && h < 12) return 'Bom dia';
+  if (h >= 12 && h < 18) return 'Boa tarde';
+  return 'Boa noite';
+}
+
 function customerGreetingLine(state = {}) {
-  return `${greetingFor(new Date(), customerName(state))}`;
+  return `${customerGreetingPrefix(new Date())}, ${customerName(state)}`;
+}
+
+function customerTelegramId(state = {}) {
+  return String(
+    state.cliente?.telegramId ||
+    state.cliente?.telegram_id ||
+    state.cliente?.chatId ||
+    window.Telegram?.WebApp?.initDataUnsafe?.user?.id ||
+    ''
+  ).trim();
+}
+
+function customerReferralCode(state = {}) {
+  return String(
+    state.cliente?.codigoIndicacao ||
+    state.cliente?.codigo_indicacao ||
+    state.loyalty?.codigoIndicacao ||
+    state.loyalty?.codigo_indicacao ||
+    ''
+  ).trim();
+}
+
+function customerAddressSummary(state = {}) {
+  const cliente = state.cliente || {};
+  const linha = [
+    cliente.rua,
+    cliente.numero,
+    cliente.bairro,
+    cliente.cidade,
+    cliente.estado
+  ].filter(Boolean).join(', ');
+  return String(cliente.endereco || linha || '').trim();
 }
 
 function normalizeStoreStatus(state = {}) {
@@ -418,7 +457,8 @@ export function createRenderer(state) {
   }
 
   function renderCustomerHeader(title = '') {
-    const greeting = customerGreetingLine(state);
+    const name = customerName(state);
+    const greeting = customerGreetingPrefix(new Date());
     const points = customerPoints(state);
     const status = normalizeStoreStatus(state);
     return `
@@ -430,7 +470,7 @@ export function createRenderer(state) {
             <b>${cartCount(state)}</b>
           </button>
         </div>
-        <p class="greeting" id="customerGreeting">${escapeHtml(greeting)}</p>
+        <p class="greeting" id="customerGreeting">${escapeHtml(greeting)}, <span class="customer-name">${escapeHtml(name)}</span></p>
         <h1>${escapeHtml(title || 'O que vamos comprar hoje?')}</h1>
         <p class="points-line">⭐ ${points} pontos</p>
         <div class="store-status ${status.className}" id="storeStatus">${escapeHtml(status.text)}</div>
@@ -461,6 +501,33 @@ export function createRenderer(state) {
     return `<span class="durger-badge"${style ? ` style="${escapeHtml(style)}"` : ''}>${escapeHtml(text)}</span>`;
   }
 
+  function renderProductPhotoBadge(badge = {}) {
+    const text = String(badge.text || badge.texto || badge.label || badge || '').trim();
+    if (!text) return '';
+    const color = badgeColor(badge.color || badge.cor);
+    const background = badgeColor(badge.background || badge.fundo || badge.bg);
+    const style = [
+      color ? `--badge-color:${color}` : '',
+      background ? `--badge-bg:${background}` : ''
+    ].filter(Boolean).join(';');
+    return `<span class="product-photo-badge"${style ? ` style="${escapeHtml(style)}"` : ''}>${escapeHtml(text)}</span>`;
+  }
+
+  function renderProductPointsChip(product = {}) {
+    const points = Number(product.points || 0);
+    if (!points) return '';
+    const label = points === 1 ? 'ponto' : 'pontos';
+    return `<span class="product-points-chip">+ ${points} ${label}</span>`;
+  }
+
+  function renderProductOverlayStack(product = {}, badges = productBadges(product).slice(0, 2)) {
+    const items = [
+      ...badges.map(renderProductPhotoBadge),
+      renderProductPointsChip(product)
+    ].filter(Boolean);
+    return items.length ? `<div class="product-overlay-stack">${items.join('')}</div>` : '';
+  }
+
   function productCard(product) {
     const quantity = cartQty(state, product.id);
     const badges = productBadges(product).slice(0, 2);
@@ -470,14 +537,13 @@ export function createRenderer(state) {
       <article class="product-card mini-product-card durger-card" data-product-id="${escapeHtml(product.id)}">
         <button class="product-image" data-product-open="${escapeHtml(product.id)}" aria-label="Abrir ${escapeHtml(product.name)}">
           ${productThumb(product)}
+          ${renderProductOverlayStack(product, badges)}
         </button>
         <div class="product-info">
           <h3>${escapeHtml(product.name)}</h3>
           ${brand ? `<span class="product-brand">${escapeHtml(brand)}</span>` : ''}
           ${description ? `<p class="product-description">${escapeHtml(description)}</p>` : ''}
           ${productPriceBlock(product)}
-          <small>+ ${product.points || 0} pontos</small>
-          ${badges.length ? `<div class="durger-badge-wrap">${badges.map(renderProductBadge).join('')}</div>` : ''}
         </div>
         <div class="product-actions">
           ${quantity ? `
@@ -486,7 +552,7 @@ export function createRenderer(state) {
             <button data-qty-plus="${escapeHtml(product.id)}" aria-label="Adicionar ao carrinho">+</button>
           ` : `
             <button class="add-button" data-qty-plus="${escapeHtml(product.id)}" aria-label="Adicionar ao carrinho">
-              + Adicionar
+              +
             </button>
           `}
         </div>
@@ -562,14 +628,6 @@ export function createRenderer(state) {
         ${renderBannerCarousel(ui)}
         ${renderSectionMenu()}
         ${filtered ? renderSearchResults(filtered, 'Resultados da busca') : state.sections.map(renderHomeSectionCarousel).join('')}
-        <section class="loyalty-card" id="loyaltyInviteCard">
-          <h2>Fidelidade</h2>
-          <p>Acumule pontos e troque por vantagens exclusivas da loja.</p>
-          <div class="loyalty-actions">
-            <button data-page="loyalty">Ver meus pontos</button>
-            <button data-page="orders">Meus pedidos</button>
-          </div>
-        </section>
       </main>
     `;
   }
@@ -635,19 +693,18 @@ export function createRenderer(state) {
         </div>
         <div class="detail-image">
           ${productThumb(product)}
+          ${renderProductOverlayStack(product, badges)}
         </div>
         <section class="detail-content">
           <h1>${escapeHtml(product.name)}</h1>
           ${brand ? `<span class="product-brand detail-brand">Marca: ${escapeHtml(brand)}</span>` : ''}
           ${description ? `<p class="product-description">${escapeHtml(description)}</p>` : ''}
-          ${badges.length ? `<div class="durger-badge-wrap">${badges.map(renderProductBadge).join('')}</div>` : ''}
           <div class="product-price-line">
             ${productPriceBlock(product)}
           </div>
-          <small>+ ${product.points || 0} pontos</small>
           <div class="detail-buy">
             <strong>${formatMoney(product.price || 0)}</strong>
-            <button data-qty-plus="${escapeHtml(product.id)}" aria-label="Adicionar ao carrinho">Adicionar ao carrinho</button>
+            <button data-qty-plus="${escapeHtml(product.id)}" aria-label="Adicionar ao carrinho">+</button>
           </div>
         </section>
       </main>
@@ -791,6 +848,14 @@ export function createRenderer(state) {
 
   function renderProfile() {
     const name = customerName(state);
+    const cliente = state.cliente || {};
+    const profileItem = (label, value) => `
+      <div class="profile-detail-item">
+        <span>${escapeHtml(label)}</span>
+        <strong>${escapeHtml(value || 'Nao informado')}</strong>
+      </div>
+    `;
+    const endereco = customerAddressSummary(state);
     return `
       ${renderCustomerHeader('Cadastro')}
       <main class="page profile-panel" data-page="profile">
@@ -798,6 +863,16 @@ export function createRenderer(state) {
           <div class="avatar">${escapeHtml(name.slice(0, 1).toUpperCase())}</div>
           <h2>${escapeHtml(name)}</h2>
           <p>Conta sincronizada com o Telegram.</p>
+          <div class="profile-details">
+            ${profileItem('Nome', name)}
+            ${profileItem('Telegram ID', customerTelegramId(state))}
+            ${profileItem('Usuario Telegram', cliente.username || cliente.telegramUsername)}
+            ${profileItem('Codigo de indicacao', customerReferralCode(state))}
+            ${profileItem('Telefone', cliente.telefone || cliente.phone)}
+            ${profileItem('CPF', cliente.cpf)}
+            ${profileItem('Nascimento', cliente.dataNascimento)}
+            ${profileItem('Endereco', endereco)}
+          </div>
           <button data-page="loyalty">Programa de fidelidade</button>
           <button data-page="home">Sair para produtos</button>
         </section>
