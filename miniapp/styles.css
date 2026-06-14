@@ -44,7 +44,7 @@ button,input,textarea{
 button{
   border:0;
   cursor:pointer;
-  transition:transform .12s ease, opacity .18s ease, box-shadow .18s ease, background .2s ease;
+  transition:none;
 }
 
 .app-loading,.fatal-error{
@@ -285,7 +285,7 @@ button{
 
 .page{
   padding:0 16px 16px;
-  animation:fadeInPage .32s ease both;
+  animation:none;
 }
 
 .page > section + section{
@@ -334,7 +334,7 @@ button{
   grid-template-columns:1fr auto;
   gap:12px;
   align-items:center;
-  transition:transform .2s ease;
+  transition:none;
 }
 
 .hero-offer h2{
@@ -359,7 +359,7 @@ button{
 }
 
 .hero-offer:hover{
-  transform:translateY(-2px);
+  transform:none;
 }
 
 .promo-image-3d{
@@ -550,11 +550,11 @@ button{
   color:var(--mj-text);
   text-align:center;
   padding:10px;
-  transition:transform .15s ease, box-shadow .2s ease, border-color .2s ease;
+  transition:none;
 }
 
 .section-menu button:hover{
-  transform:translateY(-2px);
+  transform:none;
   border-color:color-mix(in srgb, var(--mj-primary) 25%, var(--mj-border) 75%);
   box-shadow:0 12px 24px rgba(21,24,34,.1);
 }
@@ -628,11 +628,11 @@ button{
   background:linear-gradient(180deg,#fff 0%, color-mix(in srgb,var(--mj-card) 92%, var(--mj-bg) 8%) 100%);
   box-shadow:0 12px 26px rgba(20,24,35,.08);
   overflow:hidden;
-  transition:transform .16s ease, box-shadow .2s ease, border-color .2s ease;
+  transition:none;
 }
 
 .product-card:hover{
-  transform:translateY(-2px);
+  transform:none;
   border-color:color-mix(in srgb, var(--mj-primary) 22%, var(--mj-border) 78%);
   box-shadow:0 14px 30px rgba(19,23,35,.12);
 }
@@ -886,7 +886,7 @@ button{
 
 .qty button:active,
 .product-actions button:active{
-  transform:scale(.98);
+  transform:none;
 }
 
 .add-button{
