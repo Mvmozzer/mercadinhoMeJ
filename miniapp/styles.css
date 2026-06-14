@@ -730,14 +730,20 @@ button{
 }
 
 .product-buy-row{
-  display:flex;
-  align-items:flex-end;
-  justify-content:space-between;
-  gap:8px;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:end;
+  gap:7px 8px;
+}
+
+.product-buy-row--quantity{
+  grid-template-columns:1fr;
+  align-items:stretch;
 }
 
 .product-price-block{
   min-width:0;
+  overflow:hidden;
 }
 
 .product-price-block strong{
@@ -746,6 +752,8 @@ button{
   line-height:1.05;
   color:var(--mj-primary);
   margin:0;
+  white-space:nowrap;
+  overflow:hidden;
 }
 
 .durger-badge-wrap{
@@ -854,6 +862,26 @@ button{
   color:#fff;
   font-size:25px;
   box-shadow:0 10px 20px color-mix(in srgb,var(--mj-primary) 28%, transparent);
+}
+
+.product-actions--quantity{
+  width:100%;
+  justify-content:space-between;
+  min-height:40px;
+}
+
+.product-actions--quantity button,
+.product-actions--quantity .product-quick-add{
+  min-width:38px;
+  min-height:38px;
+  border-radius:13px;
+  font-size:22px;
+}
+
+.product-actions--quantity b{
+  flex:1;
+  min-width:0;
+  font-size:16px;
 }
 
 .qty button:active,

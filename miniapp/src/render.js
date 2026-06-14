@@ -573,9 +573,9 @@ export function createRenderer(state) {
           ${brand ? `<span class="product-brand">${escapeHtml(brand)}</span>` : ''}
           ${description ? `<p class="product-description">${escapeHtml(description)}</p>` : ''}
         </div>
-        <div class="product-buy-row">
+        <div class="product-buy-row${quantity ? ' product-buy-row--quantity' : ''}">
           <div class="product-price-block">${productPriceBlock(product)}</div>
-          <div class="product-actions">
+          <div class="product-actions${quantity ? ' product-actions--quantity' : ''}">
             ${quantity ? `
               <button data-qty-minus="${escapeHtml(product.id)}" aria-label="Diminuir quantidade">-</button>
               <b>${quantity}</b>
