@@ -277,10 +277,11 @@ function normalizeStoreStatus(state = {}) {
 }
 
 function productThumb(product) {
+  const fallback = `<span class="product-thumb-fallback" aria-hidden="true">${escapeHtml((product?.name || 'P').slice(0, 1).toUpperCase())}</span>`;
   if (!product?.image) {
-    return `<span>${escapeHtml((product?.name || 'P').slice(0, 1).toUpperCase())}</span>`;
+    return fallback;
   }
-  return `<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name || 'Produto')}" loading="lazy" referrerpolicy="no-referrer">`;
+  return `${fallback}<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name || 'Produto')}" loading="lazy" referrerpolicy="no-referrer" onload="this.previousElementSibling.hidden=true" onerror="this.remove()">`;
 }
 
 function productPriceBlock(product = {}) {
@@ -385,6 +386,12 @@ export function createRenderer(state) {
     }
   }
 
+  function renderBannerDots(banners = [], index = 0, extraClass = '') {
+    if (banners.length <= 1) return '';
+    const classes = ['miniapp-banner-dots', extraClass].filter(Boolean).join(' ');
+    return `<div class="${escapeHtml(classes)}">${banners.map((item, dotIndex) => `<button class="${dotIndex === index ? 'active' : ''}" data-banner-jump="${dotIndex}" aria-label="Abrir banner ${dotIndex + 1}"></button>`).join('')}</div>`;
+  }
+
   function renderBannerCarousel(ui = normalizeMiniAppUi(state.miniappUi || state.miniappui || {})) {
     const banners = activeBanners(ui);
     const index = Math.abs(Number(state.bannerIndex || 0)) % banners.length;
@@ -404,8 +411,8 @@ export function createRenderer(state) {
         <section class="miniapp-banner-carousel banner-animation-${escapeHtml(animation)}" id="promoBanners" data-banner-count="${banners.length}" aria-label="Banners promocionais">
           <article class="miniapp-banner-slide miniapp-banner-image-only" data-banner-id="${escapeHtml(banner.id)}">
             ${hasAction ? `<button class="miniapp-banner-image-button" ${actionAttrs} aria-label="${escapeHtml(banner.buttonText || banner.title || 'Abrir banner')}">${imageMarkup}</button>` : imageMarkup}
+            ${renderBannerDots(banners, index, 'miniapp-banner-dots-overlay')}
           </article>
-          ${banners.length > 1 ? `<div class="miniapp-banner-dots">${banners.map((item, dotIndex) => `<button class="${dotIndex === index ? 'active' : ''}" data-banner-jump="${dotIndex}" aria-label="Abrir banner ${dotIndex + 1}"></button>`).join('')}</div>` : ''}
         </section>
       `;
     }
@@ -420,9 +427,21 @@ export function createRenderer(state) {
           </div>
           ${image ? `<img class="miniapp-banner-image" src="${escapeHtml(image)}" alt="${escapeHtml(banner.title || 'Banner')}" loading="lazy" referrerpolicy="no-referrer">` : `<span class="miniapp-banner-emoji">${escapeHtml(banner.emoji || '🎁')}</span>`}
         </article>
-        ${banners.length > 1 ? `<div class="miniapp-banner-dots">${banners.map((item, dotIndex) => `<button class="${dotIndex === index ? 'active' : ''}" data-banner-jump="${dotIndex}" aria-label="Abrir banner ${dotIndex + 1}"></button>`).join('')}</div>` : ''}
+        ${renderBannerDots(banners, index)}
       </section>
     `;
+  }
+
+  function updateBannerCarouselOnly(ui = normalizeMiniAppUi(state.miniappUi || state.miniappui || {})) {
+    const current = root.querySelector('#promoBanners');
+    if (!current || state.page !== 'home') return;
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = renderBannerCarousel(ui).trim();
+    const next = wrapper.firstElementChild;
+    if (!next) return;
+    current.replaceWith(next);
+    bindBannerControls(next);
+    scheduleBannerAutoSlide(ui);
   }
 
   function scheduleBannerAutoSlide(ui = normalizeMiniAppUi(state.miniappUi || state.miniappui || {})) {
@@ -431,8 +450,10 @@ export function createRenderer(state) {
     const banners = activeBanners(ui);
     if (state.page !== 'home' || banners.length < 2 || ui.bannerCarousel?.autoplay === false) return;
     state.__bannerAutoTimer = window.setTimeout(() => {
-      state.bannerIndex = (Number(state.bannerIndex || 0) + 1) % banners.length;
-      render();
+      const nextUi = normalizeMiniAppUi(state.miniappUi || state.miniappui || {});
+      const nextBanners = activeBanners(nextUi);
+      state.bannerIndex = (Number(state.bannerIndex || 0) + 1) % nextBanners.length;
+      updateBannerCarouselOnly(nextUi);
     }, clampBannerIntervalMs(ui.bannerCarousel?.intervalMs));
   }
 
@@ -464,16 +485,22 @@ export function createRenderer(state) {
     return `
       <header class="market-hero" id="marketHero">
         <div class="hero-top">
-          <img src="${logoSrc(state)}" alt="Mercadinho M&J" class="brand-logo">
+          <div class="hero-brand-block">
+            <img src="${logoSrc(state)}" alt="Mercadinho M&J" class="brand-logo">
+            <div class="hero-copy">
+              <p class="greeting" id="customerGreeting">${escapeHtml(greeting)}, <span class="customer-name">${escapeHtml(name)}</span></p>
+              <h1>${escapeHtml(title || 'O que vamos comprar hoje?')}</h1>
+            </div>
+          </div>
           <button class="icon-button" data-page="cart" aria-label="Ver carrinho">
             🛒
             <b>${cartCount(state)}</b>
           </button>
         </div>
-        <p class="greeting" id="customerGreeting">${escapeHtml(greeting)}, <span class="customer-name">${escapeHtml(name)}</span></p>
-        <h1>${escapeHtml(title || 'O que vamos comprar hoje?')}</h1>
-        <p class="points-line">⭐ ${points} pontos</p>
-        <div class="store-status ${status.className}" id="storeStatus">${escapeHtml(status.text)}</div>
+        <div class="hero-status-row">
+          <p class="points-line">⭐ ${points} pontos</p>
+          <div class="store-status ${status.className}" id="storeStatus">${escapeHtml(status.text)}</div>
+        </div>
       </header>
     `;
   }
@@ -535,39 +562,38 @@ export function createRenderer(state) {
     const description = String(product.descricao || product.description || '').trim();
     return `
       <article class="product-card mini-product-card durger-card" data-product-id="${escapeHtml(product.id)}">
-        <button class="product-image" data-product-open="${escapeHtml(product.id)}" aria-label="Abrir ${escapeHtml(product.name)}">
-          ${productThumb(product)}
-          ${renderProductOverlayStack(product, badges)}
-        </button>
+        <div class="product-media-frame">
+          <button class="product-image" data-product-open="${escapeHtml(product.id)}" aria-label="Abrir ${escapeHtml(product.name)}">
+            ${productThumb(product)}
+            ${renderProductOverlayStack(product, badges)}
+          </button>
+        </div>
         <div class="product-info">
           <h3>${escapeHtml(product.name)}</h3>
           ${brand ? `<span class="product-brand">${escapeHtml(brand)}</span>` : ''}
           ${description ? `<p class="product-description">${escapeHtml(description)}</p>` : ''}
-          ${productPriceBlock(product)}
         </div>
-        <div class="product-actions">
-          ${quantity ? `
-            <button data-qty-minus="${escapeHtml(product.id)}" aria-label="Diminuir quantidade">-</button>
-            <b>${quantity}</b>
-            <button data-qty-plus="${escapeHtml(product.id)}" aria-label="Adicionar ao carrinho">+</button>
-          ` : `
-            <button class="add-button" data-qty-plus="${escapeHtml(product.id)}" aria-label="Adicionar ao carrinho">
-              +
-            </button>
-          `}
+        <div class="product-buy-row">
+          <div class="product-price-block">${productPriceBlock(product)}</div>
+          <div class="product-actions">
+            ${quantity ? `
+              <button data-qty-minus="${escapeHtml(product.id)}" aria-label="Diminuir quantidade">-</button>
+              <b>${quantity}</b>
+              <button class="product-quick-add" data-qty-plus="${escapeHtml(product.id)}" aria-label="Adicionar ao carrinho: ${escapeHtml(product.name)}">+</button>
+            ` : `
+              <button class="add-button product-quick-add" data-qty-plus="${escapeHtml(product.id)}" aria-label="Adicionar ao carrinho: ${escapeHtml(product.name)}">
+                +
+              </button>
+            `}
+          </div>
         </div>
       </article>
     `;
   }
 
-  function sectionIconImage(section = {}) {
-    return String(section.iconImage || section.icon_image || section.image || section.imagem || section.icone || '').trim();
-  }
-
   function renderSectionMenuIcon(section = {}) {
-    const image = sectionIconImage(section);
-    if (!image) return '<span class="section-menu-icon-placeholder" aria-hidden="true"></span>';
-    return `<img class="section-menu-icon-image" src="${escapeHtml(resolveAssetUrl(image, ''))}" alt="" loading="lazy" referrerpolicy="no-referrer">`;
+    const emoji = String(section.icon || section.emoji || '🧺').trim() || '🧺';
+    return `<span class="section-menu-icon-emoji" aria-hidden="true">${escapeHtml(emoji)}</span>`;
   }
 
   function renderSectionMenu() {
@@ -950,6 +976,18 @@ export function createRenderer(state) {
     } catch {}
   }
 
+  function bindBannerControls(scope = root) {
+    scope.querySelectorAll('[data-banner-action]').forEach(button => {
+      button.addEventListener('click', () => runBannerAction(button));
+    });
+    scope.querySelectorAll('[data-banner-jump]').forEach(button => {
+      button.addEventListener('click', () => {
+        state.bannerIndex = Number(button.dataset.bannerJump || 0) || 0;
+        updateBannerCarouselOnly();
+      });
+    });
+  }
+
   function bind() {
     root.querySelectorAll('button[data-page], a[data-page]').forEach(button => {
       button.addEventListener('click', () => navigateTo(button.dataset.page));
@@ -965,15 +1003,7 @@ export function createRenderer(state) {
         navigateTo('product');
       });
     });
-    root.querySelectorAll('[data-banner-action]').forEach(button => {
-      button.addEventListener('click', () => runBannerAction(button));
-    });
-    root.querySelectorAll('[data-banner-jump]').forEach(button => {
-      button.addEventListener('click', () => {
-        state.bannerIndex = Number(button.dataset.bannerJump || 0) || 0;
-        render();
-      });
-    });
+    bindBannerControls(root);
     root.querySelectorAll('[data-qty-plus]').forEach(button => {
       button.addEventListener('click', () => {
         const product = state.products.find(item => item.id === button.dataset.qtyPlus);
