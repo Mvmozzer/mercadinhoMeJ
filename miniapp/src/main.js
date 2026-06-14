@@ -1,5 +1,5 @@
 import { initTelegram, telegramUserName } from './telegram.js';
-import { carregarRuntimeConfigPages, authenticateBridge, loadBootstrap, loadCatalogWithFallback, loadHealth } from './api.js';
+import { carregarRuntimeConfigPages, authenticateBridge, loadBootstrap, loadCatalogWithFallback, loadHealth, loadCustomer } from './api.js';
 import { createRenderer } from './render.js';
 import { createState, applySnapshot, normalizeMiniAppUi } from './state.js';
 import { normalizeCatalog } from './catalog.js';
@@ -24,6 +24,7 @@ function miniappRefreshSignature(state = {}) {
   return stableStringify({
     pollingMs: state.pollingMs || 0,
     store: state.store || {},
+    cliente: state.cliente || {},
     miniappUi: state.miniappUi || {}
   });
 }
@@ -37,6 +38,8 @@ async function refreshMiniAppVisualConfig(state) {
   const health = await loadHealth(state);
   if (health?.checkout?.pollingMs) state.pollingMs = health.checkout.pollingMs;
   sincronizarStatusLoja(state, health);
+  const customer = await loadCustomer(state);
+  if (customer?.cliente) state.cliente = { ...state.cliente, ...customer.cliente };
   const ui = miniappUiFromPayload(health);
   if (ui) state.miniappUi = normalizeMiniAppUi(ui);
   if (!ui) {
@@ -54,6 +57,43 @@ function pollMiniApp(renderer, state) {
     .catch(() => null);
 }
 function startPolling(renderer, state) { return window.setInterval(() => pollMiniApp(renderer, state), miniappPollingMs(state)); }
+function applyBridgeSnapshot(renderer, state, snapshot = {}) {
+  const before = miniappRefreshSignature(state);
+  applySnapshot(state, snapshot);
+  if (miniappRefreshSignature(state) !== before) renderer?.render?.();
+}
+function bindBridgeCustomerSync(renderer, state) {
+  const bridge = globalThis.window?.MJMiniAppBridge;
+  if (!bridge?.state) return false;
+  if (!bridge.state.sessionToken || !bridge.state.apiBase) return false;
+  const previousSnapshot = bridge.state.onSnapshot;
+  const previousEvents = bridge.state.onEvents;
+  const previousError = bridge.state.onError;
+  bridge.state.onSnapshot = snapshot => {
+    if (typeof previousSnapshot === 'function') previousSnapshot(snapshot);
+    applyBridgeSnapshot(renderer, state, snapshot);
+  };
+  bridge.state.onEvents = eventos => {
+    if (typeof previousEvents === 'function') previousEvents(eventos);
+    const before = miniappRefreshSignature(state);
+    loadCustomer(state)
+      .then(customer => {
+        if (customer?.cliente) state.cliente = { ...state.cliente, ...customer.cliente };
+        if (miniappRefreshSignature(state) !== before) renderer?.render?.();
+      })
+      .catch(error => bridge.state.onError?.(error));
+  };
+  bridge.state.onError = error => {
+    if (typeof previousError === 'function') previousError(error);
+  };
+  bridge.loadEvents?.({ snapshot: true }).catch(error => bridge.state.onError?.(error));
+  if (bridge.startStream?.() === true) return true;
+  if (typeof bridge.startPolling === 'function') {
+    bridge.startPolling(Math.min(2000, miniappPollingMs(state)));
+    return true;
+  }
+  return false;
+}
 
 async function init() {
   initTelegram();
@@ -92,6 +132,7 @@ async function init() {
   const renderer = createRenderer(state);
   window.__mjMiniApp = { state, renderer };
   // Checkout marker: cart handoff stays in Telegram.
+  bindBridgeCustomerSync(renderer, state);
   renderer.render();
   startPolling(renderer, state);
 }

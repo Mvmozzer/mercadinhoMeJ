@@ -4,6 +4,7 @@ export const TELEGRAM_AUTH_PATH = '/api/telegram/auth';
 export const MINIAPP_API_PATHS = {
   bootstrap: '/api/miniapp/bootstrap',
   health: '/api/miniapp/health',
+  customer: '/api/miniapp/me',
   catalog: '/api/miniapp/catalogo',
   cartSync: '/api/miniapp/carrinho/sync',
   checkoutCreate: '/api/miniapp/checkout/create',
@@ -123,6 +124,7 @@ export async function authenticateBridge(state) {
 
 export async function loadBootstrap(state) { return retryApiFetchWithFreshRuntimeConfig(state, MINIAPP_API_PATHS.bootstrap); }
 export async function loadHealth(state) { return retryApiFetchWithFreshRuntimeConfig(state, MINIAPP_API_PATHS.health).catch(() => null); }
+export async function loadCustomer(state) { return retryApiFetchWithFreshRuntimeConfig(state, MINIAPP_API_PATHS.customer).catch(() => null); }
 export async function loadCatalog(state) { return retryApiFetchWithFreshRuntimeConfig(state, MINIAPP_API_PATHS.catalog); }
 export async function loadStaticCatalog() {
   const candidates = ['./catalogo.json', '../catalogo.json'];
