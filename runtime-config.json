@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-06-14T17:57:48.568-03:00",
-  "webBuild": "2026.06.14.668",
-  "apiBaseUrl": "",
-  "allowTemporaryApiBase": false,
-  "apiBaseKind": ""
+  "updatedAt": "2026-06-17T19:32:16.340-03:00",
+  "webBuild": "2026.06.17.536",
+  "apiBaseUrl": "https://a8656f7eddf251.lhr.life",
+  "allowTemporaryApiBase": true,
+  "apiBaseKind": "temporary_tunnel"
 }

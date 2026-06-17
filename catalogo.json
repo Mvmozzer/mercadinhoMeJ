@@ -161,25 +161,25 @@
         "logo": "https://github.com/Mvmozzer/mercadinhoMeJ/blob/main/miniapp/assets/copa-splash.png?raw=true"
       },
       "theme": {
-        "primary": "#5bad29",
-        "primarySoft": "#ffffff",
-        "bg": "#f4f5f9",
+        "primary": "#10853f",
+        "primarySoft": "#ddf7e8",
+        "bg": "#f5f7f6",
         "card": "#ffffff",
-        "text": "#14161d",
-        "muted": "#6a6e82",
-        "border": "#ffffff",
-        "heroFrom": "#fddd00",
-        "heroTo": "#21a400"
+        "text": "#132017",
+        "muted": "#66736a",
+        "border": "#e2ebe6",
+        "heroFrom": "#dff7e9",
+        "heroTo": "#f5f7f6"
       },
       "splash": {
         "logo": "https://github.com/Mvmozzer/mercadinhoMeJ/blob/main/miniapp/assets/copa-splash.png?raw=true",
         "mode": "logo",
         "mediaUrl": "",
         "animation": "zoom",
-        "background": "#00aa00",
-        "gradientFrom": "#bdcc02",
-        "gradientTo": "#009b00",
-        "durationMs": 7000
+        "background": "#10853f",
+        "gradientFrom": "#22c55e",
+        "gradientTo": "#087333",
+        "durationMs": 5000
       },
       "bannerCarousel": {
         "autoplay": true,

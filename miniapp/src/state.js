@@ -5,24 +5,24 @@ export const MINIAPP_UI_DEFAULTS = {
     logo: '/assets/logo-mj-mercadinho.png'
   },
   theme: {
-    primary: '#ed000b',
-    primarySoft: '#ffefef',
-    bg: '#f4f5f9',
+    primary: '#10853f',
+    primarySoft: '#ddf7e8',
+    bg: '#f5f7f6',
     card: '#ffffff',
-    text: '#14161d',
-    muted: '#6a6e82',
-    border: '#e8ebf3',
-    heroFrom: '#ff3b4b',
-    heroTo: '#ed000b'
+    text: '#132017',
+    muted: '#66736a',
+    border: '#e2ebe6',
+    heroFrom: '#dff7e9',
+    heroTo: '#f5f7f6'
   },
   splash: {
     logo: '/assets/logo-mj-mercadinho.png',
     mode: 'logo',
     mediaUrl: '',
     animation: 'fade',
-    background: '#ed000b',
-    gradientFrom: '#ff3b4b',
-    gradientTo: '#ed000b',
+    background: '#10853f',
+    gradientFrom: '#22c55e',
+    gradientTo: '#087333',
     durationMs: 5000
   },
   bannerCarousel: {

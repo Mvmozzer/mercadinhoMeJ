@@ -18,24 +18,24 @@ const RUNTIME_LOGO_BUILD = String(globalThis?.__MJ_LOGO_BUILD || '').trim();
 const MINIAPP_UI_DEFAULTS = {
   header: { logo: '/assets/logo-mj-mercadinho.png' },
   theme: {
-    primary: '#ed000b',
-    primarySoft: '#ffefef',
-    bg: '#f4f5f9',
+    primary: '#10853f',
+    primarySoft: '#ddf7e8',
+    bg: '#f5f7f6',
     card: '#ffffff',
-    text: '#14161d',
-    muted: '#6a6e82',
-    border: '#e8ebf3',
-    heroFrom: '#ff3b4b',
-    heroTo: '#ed000b'
+    text: '#132017',
+    muted: '#66736a',
+    border: '#e2ebe6',
+    heroFrom: '#dff7e9',
+    heroTo: '#f5f7f6'
   },
   splash: {
     logo: '/assets/logo-mj-mercadinho.png',
     mode: 'logo',
     mediaUrl: '',
     animation: 'fade',
-    background: '#ed000b',
-    gradientFrom: '#ff3b4b',
-    gradientTo: '#ed000b',
+    background: '#10853f',
+    gradientFrom: '#22c55e',
+    gradientTo: '#087333',
     durationMs: 5000
   },
   bannerCarousel: {
@@ -295,6 +295,41 @@ function productPriceBlock(product = {}) {
   return `<strong>${formatMoney(precoAtual)}</strong><small>${formatMoney(precoOriginal)}</small>`;
 }
 
+function svgIcon(name, size = 20) {
+  const attrs = `width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"`;
+  const icons = {
+    store: '<path d="m3 9 1.2-5h15.6L21 9"/><path d="M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/><path d="M9 20v-6h6v6"/><path d="M3 9h18"/><path d="M7 9v3"/><path d="M12 9v3"/><path d="M17 9v3"/>',
+    bag: '<path d="M6 8h12l-1 12H7L6 8Z"/><path d="M9 8a3 3 0 0 1 6 0"/>',
+    search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+    menu: '<path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/>',
+    x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    grid: '<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/>',
+    leaf: '<path d="M5 21c8 0 14-6 14-14V5h-2C9 5 3 11 3 19v2h2Z"/><path d="M3 21c4-6 8-10 14-14"/>',
+    bread: '<path d="M4 13a6 6 0 0 1 12 0v7H4v-7Z"/><path d="M16 13a4 4 0 0 1 4 4v3h-4"/><path d="M8 12v3"/><path d="M12 11v4"/>',
+    cup: '<path d="M5 8h11v7a5 5 0 0 1-10 0V8Z"/><path d="M16 10h2a3 3 0 0 1 0 6h-2"/><path d="M6 3h10"/>',
+    package: '<path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5"/><path d="M12 12v9"/>',
+    spray: '<path d="M9 3h6v4H9z"/><path d="M10 7h4l1 4v10H9V11l1-4Z"/><path d="M9 13h6"/>',
+    home: '<path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/>',
+    clipboard: '<rect x="6" y="4" width="12" height="16" rx="2"/><path d="M9 4.5h6"/><path d="M9 10h6"/><path d="M9 14h5"/>',
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+    arrowLeft: '<path d="m15 18-6-6 6-6"/>',
+    trash: '<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/>',
+    receipt: '<path d="M5 3v18l2-1 2 1 2-1 2 1 2-1 2 1V3Z"/><path d="M8 7h8"/><path d="M8 11h8"/><path d="M8 15h5"/>',
+    check: '<path d="m5 12 4 4L19 6"/>'
+  };
+  return `<svg ${attrs}>${icons[name] || icons.package}</svg>`;
+}
+
+function sectionIconName(section = {}) {
+  const text = `${section.id || ''} ${section.name || section.nome || ''}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  if (/todos|all/.test(text)) return 'grid';
+  if (/hort|fruta|verd|ovo/.test(text)) return 'leaf';
+  if (/padaria|pao/.test(text)) return 'bread';
+  if (/bebida|suco|refri|agua/.test(text)) return 'cup';
+  if (/limp|higiene/.test(text)) return 'spray';
+  return 'package';
+}
+
 export function createRenderer(state) {
   const root = document.getElementById('miniapp-root') || document.body;
   const splashStartedAt = Date.now();
@@ -328,6 +363,7 @@ export function createRenderer(state) {
   function navigateTo(page, options = {}) {
     state.previousPage = state.page || 'home';
     state.page = page || 'home';
+    state.sectionsMenuOpen = false;
     if (options.sectionId !== undefined) state.sectionId = options.sectionId;
     if (options.query !== undefined) state.query = options.query;
     persistMiniAppUiState(state);
@@ -480,35 +516,36 @@ export function createRenderer(state) {
   function renderCustomerHeader(title = '') {
     const name = customerName(state);
     const greeting = customerGreetingPrefix(new Date());
-    const points = customerPoints(state);
     const status = normalizeStoreStatus(state);
+    const count = cartCount(state);
     return `
-      <header class="market-hero" id="marketHero">
-        <div class="hero-top">
-          <div class="hero-brand-block">
-            <img src="${logoSrc(state)}" alt="Mercadinho M&J" class="brand-logo">
-            <div class="hero-copy">
-              <p class="greeting" id="customerGreeting">${escapeHtml(greeting)}, <span class="customer-name">${escapeHtml(name)}</span></p>
-              <h1>${escapeHtml(title || 'O que vamos comprar hoje?')}</h1>
-            </div>
+      <header class="market-hero app-header" id="marketHero">
+        <div class="hero-brand-block">
+          <span class="brand-mark" aria-hidden="true">${svgIcon('store', 22)}</span>
+          <div class="hero-copy">
+            <p class="greeting" id="customerGreeting">${escapeHtml(greeting)}, <span class="customer-name">${escapeHtml(name)}</span></p>
+            <h1>${escapeHtml(title || 'Mercadinho M&J')}</h1>
           </div>
-          <button class="icon-button" data-page="cart" aria-label="Ver carrinho">
-            🛒
-            <b>${cartCount(state)}</b>
+        </div>
+        <div class="header-actions">
+          <button class="icon-button menu-button" type="button" data-open-sections aria-label="Abrir menu de secoes" aria-controls="sectionsDrawer" aria-expanded="${state.sectionsMenuOpen ? 'true' : 'false'}">
+            ${svgIcon('menu', 19)}
+          </button>
+          <button class="icon-button cart-pill" type="button" data-page="cart" aria-label="Ver carrinho" ${count ? '' : 'disabled'}>
+            ${svgIcon('bag', 18)}
+            <b>${count}</b>
           </button>
         </div>
-        <div class="hero-status-row">
-          <p class="points-line">⭐ ${points} pontos</p>
-          <div class="store-status ${status.className}" id="storeStatus">${escapeHtml(status.text)}</div>
-        </div>
+        <div class="store-status ${status.className}" id="storeStatus" ${status.className === 'open' ? 'hidden' : ''}>${escapeHtml(status.text)}</div>
       </header>
+      ${renderSectionsDrawer()}
     `;
   }
 
   function searchBox(placeholder = 'Buscar produtos') {
     return `
       <label class="search-box">
-        <span aria-hidden="true">🔍</span>
+        <span aria-hidden="true">${svgIcon('search', 18)}</span>
         <input id="search" type="search" value="${escapeHtml(state.query)}" placeholder="${escapeHtml(placeholder)}">
       </label>
     `;
@@ -559,23 +596,16 @@ export function createRenderer(state) {
     const quantity = cartQty(state, product.id);
     const badges = productBadges(product).slice(0, 2);
     const brand = String(product.marca || product.brand || '').trim();
-    const description = String(product.descricao || product.description || '').trim();
+    const description = String(product.descricao || product.description || product.unit || '').trim();
+    const unit = String(product.unit || product.unidade || '').trim() || description || brand || 'un';
     return `
       <article class="product-card mini-product-card durger-card" data-product-id="${escapeHtml(product.id)}">
-        <div class="product-media-frame">
+        <div class="product-media-frame product-media">
           <button class="product-image" data-product-open="${escapeHtml(product.id)}" aria-label="Abrir ${escapeHtml(product.name)}">
             ${productThumb(product)}
             ${renderProductOverlayStack(product, badges)}
           </button>
-        </div>
-        <div class="product-info">
-          <h3>${escapeHtml(product.name)}</h3>
-          ${brand ? `<span class="product-brand">${escapeHtml(brand)}</span>` : ''}
-          ${description ? `<p class="product-description">${escapeHtml(description)}</p>` : ''}
-        </div>
-        <div class="product-buy-row${quantity ? ' product-buy-row--quantity' : ''}">
-          <div class="product-price-block">${productPriceBlock(product)}</div>
-          <div class="product-actions${quantity ? ' product-actions--quantity' : ''}">
+          <div class="product-actions${quantity ? ' product-actions--quantity product-stepper' : ''}">
             ${quantity ? `
               <button data-qty-minus="${escapeHtml(product.id)}" aria-label="Diminuir quantidade">-</button>
               <b>${quantity}</b>
@@ -587,22 +617,73 @@ export function createRenderer(state) {
             `}
           </div>
         </div>
+        <div class="product-info">
+          <h3>${escapeHtml(product.name)}</h3>
+          ${brand ? `<span class="product-brand">${escapeHtml(brand)}</span>` : ''}
+          ${unit ? `<p class="product-description product-unit">${escapeHtml(unit)}</p>` : ''}
+          <div class="product-buy-row${quantity ? ' product-buy-row--quantity' : ''}">
+            <div class="product-price-block">${productPriceBlock(product)}</div>
+          </div>
+        </div>
       </article>
     `;
   }
 
   function renderSectionMenuIcon(section = {}) {
-    const emoji = String(section.icon || section.emoji || '🧺').trim() || '🧺';
-    return `<span class="section-menu-icon-emoji" aria-hidden="true">${escapeHtml(emoji)}</span>`;
+    return `<span class="section-menu-icon-emoji" aria-hidden="true">${svgIcon(sectionIconName(section), 18)}</span>`;
+  }
+
+  function renderDrawerSectionItem(section = {}, active = false) {
+    const sectionId = section.id || '';
+    return `
+      <button class="drawer-section-item${active ? ' active' : ''}" type="button" data-section-open="${escapeHtml(sectionId)}">
+        ${renderSectionMenuIcon(section)}
+        <span>${escapeHtml(section.name || 'Secao')}</span>
+        <small>${(section.products?.length || 0)} itens</small>
+      </button>
+    `;
+  }
+
+  function renderSectionsDrawer() {
+    const open = Boolean(state.sectionsMenuOpen);
+    return `
+      <nav class="section-menu" id="categoryRail" aria-label="Seções" hidden></nav>
+      <div class="sections-menu-overlay${open ? ' open' : ''}" data-close-sections ${open ? '' : 'hidden'}>
+        <aside class="sections-drawer" id="sectionsDrawer" role="dialog" aria-modal="true" aria-labelledby="sectionsDrawerTitle">
+          <div class="sections-drawer-header">
+            <div>
+              <h2 id="sectionsDrawerTitle">Secoes</h2>
+              <p>Escolha uma secao</p>
+            </div>
+            <button class="icon-button" type="button" data-close-sections aria-label="Fechar menu de secoes">${svgIcon('x', 18)}</button>
+          </div>
+          <div class="sections-drawer-list">
+            <button class="drawer-section-item${!state.sectionId ? ' active' : ''}" type="button" data-all-products>
+              ${renderSectionMenuIcon({ id: 'todos', name: 'Todos' })}
+              <span>Todos</span>
+              <small>${state.products.length} itens</small>
+            </button>
+            ${state.sections.map(section => renderDrawerSectionItem(section, state.sectionId === section.id)).join('')}
+          </div>
+        </aside>
+      </div>
+    `;
   }
 
   function renderSectionMenu() {
+    const allCount = state.products.length;
     return `
       <nav class="section-menu" id="categoryRail" aria-label="Seções">
+        <button class="${state.page === 'home' && !state.sectionId ? 'active' : ''}" data-all-products>
+          ${renderSectionMenuIcon({ id: 'todos', name: 'Todos' })}
+          <span>Todos</span>
+          <strong>${allCount} itens</strong>
+        </button>
         ${state.sections.map(section => `
-          <button data-section-open="${escapeHtml(section.id)}">
+          <button class="${state.sectionId === section.id ? 'active' : ''}" data-section-open="${escapeHtml(section.id)}">
             ${renderSectionMenuIcon(section)}
-            ${escapeHtml(section.name)}
+            <span>${escapeHtml(section.name)}</span>
+            <strong>${(section.products?.length || 0)} itens</strong>
           </button>
         `).join('')}
       </nav>
@@ -611,12 +692,12 @@ export function createRenderer(state) {
 
   function renderHomeSectionCarousel(section = {}) {
     return `
-      <section class="product-rail">
-        <div class="section-title">
-          <h2>${escapeHtml(section.icon || '🧺')} ${escapeHtml(section.name || 'Seção')}</h2>
-          <button data-section-open="${escapeHtml(section.id)}">Ver todos</button>
+      <section class="product-section">
+        <div class="product-section-header section-title">
+          <h2>${escapeHtml(section.name || 'Seção')}</h2>
+          <span>${(section.products?.length || 0)} itens</span>
         </div>
-        <div class="rail-scroll">
+        <div class="product-rail" aria-label="${escapeHtml(section.name || 'Seção')}">
           ${section.products?.slice(0, 12).map(productCard).join('') || ''}
         </div>
       </section>
@@ -634,7 +715,7 @@ export function createRenderer(state) {
     }
     return `
       <section class="product-grid-section">
-        <div class="section-title">
+        <div class="product-section-header section-title">
           <h2>${escapeHtml(title)}</h2>
         </div>
         <div class="product-grid">
@@ -646,13 +727,10 @@ export function createRenderer(state) {
 
   function renderHome() {
     const filtered = state.query ? filterProducts(state.products, state.query) : null;
-    const ui = normalizeMiniAppUi(state.miniappUi || state.miniappui || {});
     return `
       ${renderCustomerHeader()}
       <main class="page home-page" data-page="home">
         ${searchBox('Buscar produtos')}
-        ${renderBannerCarousel(ui)}
-        ${renderSectionMenu()}
         ${filtered ? renderSearchResults(filtered, 'Resultados da busca') : state.sections.map(renderHomeSectionCarousel).join('')}
       </main>
     `;
@@ -713,9 +791,9 @@ export function createRenderer(state) {
       ${renderCustomerHeader(product?.name || 'Produto')}
       <main class="page product-page" data-page="product">
         <div class="topbar">
-          <button data-page="${state.previousPage || 'home'}">←</button>
+          <button data-page="${state.previousPage || 'home'}" aria-label="Voltar">${svgIcon('arrowLeft', 20)}</button>
           <strong>Detalhes</strong>
-          <button data-page="cart">🛒</button>
+          <button data-page="cart" aria-label="Ver carrinho">${svgIcon('bag', 18)}</button>
         </div>
         <div class="detail-image">
           ${productThumb(product)}
@@ -740,19 +818,18 @@ export function createRenderer(state) {
   function renderCart() {
     const items = cartItems(state);
     return `
-      ${renderCustomerHeader('Carrinho')}
       <main class="page cart-page" data-page="cart" id="cartDrawer">
         <div class="topbar">
-          <button data-page="${state.previousPage || 'home'}">←</button>
+          <button data-page="${state.previousPage || 'home'}" aria-label="Voltar">${svgIcon('arrowLeft', 20)}</button>
           <strong>Carrinho</strong>
-          <button data-clear-cart>Limpar</button>
+          <button data-clear-cart aria-label="Limpar carrinho">${svgIcon('trash', 18)}</button>
         </div>
         ${items.length ? `
           <section class="cart-list">
             ${items.map(item => `
               <article class="cart-item">
               <div class="cart-thumb">
-                  ${item.image ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}">` : escapeHtml(String(item.name || 'P').slice(0, 1).toUpperCase())}
+                  ${item.image ? `<span class="cart-thumb-fallback" aria-hidden="true">${escapeHtml(String(item.name || 'P').slice(0, 1).toUpperCase())}</span><img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}" referrerpolicy="no-referrer" onload="this.previousElementSibling.hidden=true" onerror="this.remove()">` : `<span class="cart-thumb-fallback" aria-hidden="true">${escapeHtml(String(item.name || 'P').slice(0, 1).toUpperCase())}</span>`}
                 </div>
                 <div class="cart-item-text">
                   <strong>${escapeHtml(item.name)}</strong>
@@ -769,7 +846,8 @@ export function createRenderer(state) {
             `).join('')}
           </section>
           <section class="total-card">
-            <div><span>Total</span><strong>${formatMoney(cartTotal(state))}</strong></div>
+            <div><span>Subtotal</span><strong>${formatMoney(cartTotal(state))}</strong></div>
+            <div class="summary-total"><span>Total</span><strong>${formatMoney(cartTotal(state))}</strong></div>
             <p class="telegram-checkout-note">Entrega, retirada, pontos e Pix continuam no Telegram.</p>
             <div class="card-actions">
               <button id="continueShopping" data-page="${state.previousPage || 'home'}">Continuar comprando</button>
@@ -785,18 +863,41 @@ export function createRenderer(state) {
   }
 
   function renderTelegramCheckout() {
+    const handoff = state.lastTelegramHandoff || {};
+    const carrinho = handoff.carrinho || {};
+    const itens = Array.isArray(carrinho.itens) && carrinho.itens.length ? carrinho.itens : cartItems(state);
+    const total = Number(carrinho.total ?? cartTotal(state) ?? 0);
+    const orderId = String(handoff.orderId || handoff.pedidoId || `MJ-${new Date().getFullYear()}-${String(Math.abs(Math.round(total * 100))).padStart(4, '0')}`).trim();
     return `
-      ${renderCustomerHeader('Finalizar pedido')}
-      <main class="page telegram-checkout-panel" id="telegramCheckoutPanel" data-page="telegram-checkout">
+      <main class="page telegram-checkout-panel success-screen" id="telegramCheckoutPanel" data-page="telegram-checkout">
         <div class="topbar">
-          <button data-page="cart">←</button>
-          <strong>Telegram</strong>
+          <button data-page="cart" aria-label="Voltar">${svgIcon('arrowLeft', 20)}</button>
+          <strong>Pagamento</strong>
           <span></span>
         </div>
-        <section class="checkout-card telegram-handoff-card">
-          <img src="${logoSrc(state)}" alt="Mercadinho M&J">
-          <h2>Continue pelo Telegram</h2>
-          <p>${escapeHtml(state.checkoutMessage || 'Seu pedido foi enviado para o Telegram. Defina entrega, pontos e pagamento diretamente no chat.')}</p>
+        <section class="success-card telegram-handoff-card">
+          <span class="success-icon" aria-hidden="true">${svgIcon('check', 44)}</span>
+          <p class="greeting">Continue no Telegram</p>
+          <h1>Pedido enviado ao Telegram</h1>
+          <strong class="order-id">${escapeHtml(orderId)}</strong>
+          <p>${escapeHtml(state.checkoutMessage || `Total de ${formatMoney(total)} enviado para o Telegram. O Telegram conclui entrega e pagamento.`)}</p>
+        </section>
+        <section class="receipt">
+          <h2>${svgIcon('receipt', 18)} Resumo</h2>
+          ${itens.map(item => {
+            const quantidade = Number(item.quantidade || item.quantity || 1);
+            const preco = Number(item.price || item.preco || item.preco_unitario || 0);
+            const subtotal = Number(item.subtotal ?? (preco * quantidade));
+            return `
+              <div>
+                <span>${escapeHtml(quantidade)}x ${escapeHtml(item.nome || item.name || 'Produto')}</span>
+                <strong>${formatMoney(subtotal)}</strong>
+              </div>
+            `;
+          }).join('')}
+        </section>
+        <section class="telegram-success-actions">
+          <button class="primary-wide" data-page="orders">Acompanhar pedido</button>
           <button id="retryTelegramHandoff">Enviar carrinho novamente</button>
           <button data-page="cart">Voltar ao carrinho</button>
         </section>
@@ -910,14 +1011,18 @@ export function createRenderer(state) {
     const count = cartCount(state);
     if (!count || ['cart', 'delivery', 'payment', 'telegram-checkout'].includes(state.page)) return '';
     return `
-      <div class="sticky-cart" id="stickyCartBar">
-        <span>🛒 ${count} itens • ${formatMoney(cartTotal(state))}</span>
-        <button id="reviewCart" data-page="cart">Ver carrinho</button>
+      <div class="catalog-checkout-bar sticky-cart" id="stickyCartBar">
+        <div>
+          <span>${count} ${count === 1 ? 'item' : 'itens'}</span>
+          <strong>${formatMoney(cartTotal(state))}</strong>
+        </div>
+        <button id="reviewCart" data-page="cart">Checkout</button>
       </div>
     `;
   }
 
   function bottomNav() {
+    if (['home', 'categories', 'products', 'product', 'cart', 'telegram-checkout'].includes(state.page)) return '';
     const item = (page, icon, label) => `
       <button class="${state.page === page ? 'active' : ''}" data-page="${page}">
         <span aria-hidden="true">${icon}</span>
@@ -926,11 +1031,11 @@ export function createRenderer(state) {
     `;
     return `
       <nav class="miniapp-bottom-nav">
-        ${item('home', '🏠', 'Início')}
-        ${item('categories', '🔍', 'Buscar')}
-        ${item('cart', '🛒', 'Carrinho')}
-        ${item('orders', '📦', 'Pedidos')}
-        ${item('profile', '👤', 'Conta')}
+        ${item('home', svgIcon('home', 20), 'Início')}
+        ${item('categories', svgIcon('search', 20), 'Buscar')}
+        ${item('cart', svgIcon('bag', 20), 'Carrinho')}
+        ${item('orders', svgIcon('package', 20), 'Pedidos')}
+        ${item('profile', svgIcon('user', 20), 'Conta')}
       </nav>
     `;
   }
@@ -957,6 +1062,7 @@ export function createRenderer(state) {
     state.sending = true;
     sendMiniAppEvent(state, 'checkout_telegram_handoff_start', { itemCount: cartCount(state), total: cartTotal(state) });
     const result = await telegramHandoff(state);
+    state.lastTelegramHandoff = result || {};
     state.checkoutMessage = result?.telegram?.mensagem || result?.mensagem || result?.message || 'Carrinho enviado ao Telegram. Termine entrega, retirada e Pix pelo chat.';
     state.sending = false;
     renderer.navigateTo('telegram-checkout');
@@ -997,6 +1103,22 @@ export function createRenderer(state) {
         navigateTo('products', { sectionId: button.dataset.sectionOpen, query: '' });
       });
     });
+    root.querySelectorAll('[data-all-products]').forEach(button => {
+      button.addEventListener('click', () => navigateTo('home', { sectionId: '', query: '' }));
+    });
+    root.querySelectorAll('[data-open-sections]').forEach(button => {
+      button.addEventListener('click', () => {
+        state.sectionsMenuOpen = true;
+        render();
+      });
+    });
+    root.querySelectorAll('[data-close-sections]').forEach(element => {
+      element.addEventListener('click', () => {
+        state.sectionsMenuOpen = false;
+        render();
+      });
+    });
+    root.querySelector('#sectionsDrawer')?.addEventListener('click', event => event.stopPropagation());
     root.querySelectorAll('[data-product-open]').forEach(button => {
       button.addEventListener('click', () => {
         state.productId = button.dataset.productOpen;
