@@ -78,13 +78,43 @@ function num(value) {
 }
 
 export function productImage(product = {}) {
-  return product.imagem || product.image || product.foto || product.urlImagem || '';
+  return [
+    product.imagem,
+    product.imagem_url,
+    product.imagemUrl,
+    product.image,
+    product.image_url,
+    product.imageUrl,
+    product.foto,
+    product.foto_url,
+    product.fotoUrl,
+    product.urlImagem,
+    product.photoUrl,
+    product.mediaUrl
+  ].map(value => String(value || '').trim()).find(Boolean) || '';
 }
 
 export function productPrice(product = {}) {
   const promo = num(product.preco_promocional || product.precoPromocional);
   const base = num(product.preco || product.price || product.preco_normal || product.precoVendaAtual);
   return product.promocao === true && promo > 0 ? promo : base;
+}
+
+function productPoints(product = {}, fallbackPrice = 0) {
+  const candidates = [
+    product.points_preview,
+    product.pointsPreview,
+    product.product_point_offer_points,
+    product.productPointOfferPoints,
+    product.product_point_offer?.points,
+    product.productPointOffer?.points,
+    product.pontos,
+    product.points,
+    product.pontos_ganhos
+  ];
+  const configured = candidates.find(value => value !== undefined && value !== null && String(value).trim() !== '');
+  if (configured !== undefined) return num(configured);
+  return Math.max(1, Math.floor(fallbackPrice));
 }
 
 export function emojiForSection(name = '') {
@@ -170,7 +200,7 @@ export function normalizeProduct(raw = {}, sectionName = '', index = 0) {
     normalPrice: num(raw.preco_normal || raw.normalPrice || price),
     stock: num(raw.estoque ?? raw.stock ?? 999),
     unit: raw.unidade || raw.unidadeVenda || raw.tamanho || raw.medida || 'un',
-    points: num(raw.pontos || raw.points || raw.pontos_ganhos || Math.max(1, Math.floor(price)))
+    points: productPoints(raw, price)
   };
 }
 

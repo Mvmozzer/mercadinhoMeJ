@@ -354,7 +354,7 @@ export function createRenderer(state) {
     const splashAnimation = String(ui.splash?.animation || MINIAPP_UI_DEFAULTS.splash.animation).toLowerCase();
     if (Date.now() - splashStartedAt > splashDuration + 400) return '';
     return `
-      <section class="miniapp-splash" id="miniappSplash" data-splash-animation="${escapeHtml(splashAnimation)}" aria-label="Carregando Mercadinho M&J">
+      <section class="miniapp-splash" id="miniappSplash" data-splash-animation="${escapeHtml(splashAnimation)}" aria-label="Inicializando Mercadinho M&J">
         ${splashMedia(ui)}
       </section>
     `;
@@ -517,7 +517,6 @@ export function createRenderer(state) {
     const name = customerName(state);
     const greeting = customerGreetingPrefix(new Date());
     const status = normalizeStoreStatus(state);
-    const count = cartCount(state);
     return `
       <header class="market-hero app-header" id="marketHero">
         <div class="hero-brand-block">
@@ -530,10 +529,6 @@ export function createRenderer(state) {
         <div class="header-actions">
           <button class="icon-button menu-button" type="button" data-open-sections aria-label="Abrir menu de secoes" aria-controls="sectionsDrawer" aria-expanded="${state.sectionsMenuOpen ? 'true' : 'false'}">
             ${svgIcon('menu', 19)}
-          </button>
-          <button class="icon-button cart-pill" type="button" data-page="cart" aria-label="Ver carrinho" ${count ? '' : 'disabled'}>
-            ${svgIcon('bag', 18)}
-            <b>${count}</b>
           </button>
         </div>
         <div class="store-status ${status.className}" id="storeStatus" ${status.className === 'open' ? 'hidden' : ''}>${escapeHtml(status.text)}</div>
@@ -580,8 +575,7 @@ export function createRenderer(state) {
   function renderProductPointsChip(product = {}) {
     const points = Number(product.points || 0);
     if (!points) return '';
-    const label = points === 1 ? 'ponto' : 'pontos';
-    return `<span class="product-points-chip">+ ${points} ${label}</span>`;
+    return `<span class="product-points-chip">+ ${points} ⭐</span>`;
   }
 
   function renderProductOverlayStack(product = {}, badges = productBadges(product).slice(0, 2)) {
