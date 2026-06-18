@@ -830,6 +830,18 @@ button{
   font-size:12px;
 }
 
+.product-price-block small,
+.product-old-price{
+  display:block;
+  color:#747b76;
+  font-size:11px;
+  line-height:1.1;
+  font-weight:700;
+  text-decoration:line-through;
+  text-decoration-thickness:1.5px;
+  text-decoration-color:#747b76;
+}
+
 .product-actions{
   display:flex;
   align-items:center;
@@ -976,8 +988,8 @@ button{
   z-index:1;
   width:100%;
   height:100%;
-  object-fit:contain;
-  padding:12px;
+  object-fit:cover;
+  padding:0;
   display:block;
   background:#f6fff9;
 }
@@ -1005,6 +1017,11 @@ button{
   min-height:22px;
   max-width:150px;
   padding:4px 8px;
+}
+
+.detail-image .detail-product-actions{
+  right:12px;
+  bottom:12px;
 }
 
 .detail-content{
@@ -1056,30 +1073,17 @@ button{
   overflow-wrap:anywhere;
 }
 
-.product-price-line{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+.product-price-line{display:flex;align-items:baseline;gap:8px;margin:12px 0 8px}
 
-.detail-buy{
-  display:grid;
-  grid-template-columns:1fr auto;
-  gap:12px;
-  align-items:center;
-  margin-top:10px;
+.product-price-block--detail strong{
+  font-size:28px;
+  font-weight:900;
+  line-height:1.05;
 }
 
-.detail-buy strong{font-size:24px;color:var(--mj-primary)}
-
-.detail-buy button{
-  min-height:52px;
-  min-width:56px;
-  border-radius:14px;
-  background:var(--mj-primary);
-  color:#fff;
-  padding:0 14px;
-  font-weight:700;
-  display:inline-grid;
-  place-items:center;
-  line-height:1;
-  text-align:center;
+.product-price-block--detail small{
+  margin-bottom:4px;
+  font-size:14px;
 }
 
 .cart-list{
@@ -1920,6 +1924,11 @@ body{
 .product-price-block small{
   display:block;
   font-size:11px;
+  color:#747b76;
+  font-weight:700;
+  text-decoration:line-through;
+  text-decoration-thickness:1.5px;
+  text-decoration-color:#747b76;
 }
 
 .product-actions{
@@ -2357,6 +2366,10 @@ body{
   box-shadow:none;
 }
 
+.app-header .section-menu-trigger{
+  flex:0 0 40px;
+}
+
 .app-header .store-status{
   flex-basis:100%;
   width:max-content;
@@ -2733,9 +2746,13 @@ body{
 
 .product-price-block small{
   display:block;
-  color:var(--mj-muted);
+  color:#747b76;
   font-size:11px;
   line-height:1.1;
+  font-weight:700;
+  text-decoration:line-through;
+  text-decoration-thickness:1.5px;
+  text-decoration-color:#747b76;
 }
 
 .product-actions{

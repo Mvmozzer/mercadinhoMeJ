@@ -1,4 +1,4 @@
-import { slugify } from './utils.js?v=2026.06.18.656';
+import { slugify } from './utils.js?v=2026.06.18.224';
 
 const WEIGHTED_CATALOG_MARKERS = ['item.tarjas'];
 export const STATIC_CATALOG_FALLBACKS = ['./catalogo.json', '../catalogo.json'];
@@ -97,7 +97,14 @@ export function productImage(product = {}) {
 export function productPrice(product = {}) {
   const promo = num(product.preco_promocional || product.precoPromocional);
   const base = num(product.preco || product.price || product.preco_normal || product.precoVendaAtual);
-  return product.promocao === true && promo > 0 ? promo : base;
+  const promotionActive = product.promocao === true || product.promocao_ativa === true || product.promocaoAtiva === true;
+  return promotionActive && promo > 0 ? promo : base;
+}
+
+export function productNormalPrice(product = {}) {
+  const current = productPrice(product);
+  const base = num(product.preco_normal || product.normalPrice || product.preco || product.price || product.precoVendaAtual || current);
+  return base > current ? base : current;
 }
 
 function productPoints(product = {}, fallbackPrice = 0) {
@@ -168,6 +175,26 @@ function sectionEmoji(section = {}, name = '') {
   return section.emoji || emojiForSection(name);
 }
 
+function sectionIsActive(section = {}) {
+  return section.ativo !== false && section.active !== false && section.enabled !== false;
+}
+
+function sectionOrder(section = {}, fallback = 0) {
+  const value = section.ordem ?? section.order ?? section.sortOrder ?? section.position ?? fallback;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function sectionIds(section = {}, name = '') {
+  return [
+    section.id,
+    section.secao,
+    section.sectionId,
+    section.section_id,
+    name ? slugify(name) : ''
+  ].map(value => String(value || '').trim()).filter(Boolean);
+}
+
 export function normalizeProduct(raw = {}, sectionName = '', index = 0) {
   const name = raw.nome || raw.name || raw.titulo || 'Produto';
   const rawSectionId = raw.secao_id || raw.sectionId || raw.section_id || raw.secao || '';
@@ -197,7 +224,7 @@ export function normalizeProduct(raw = {}, sectionName = '', index = 0) {
     badges,
     price,
     preco: price,
-    normalPrice: num(raw.preco_normal || raw.normalPrice || price),
+    normalPrice: productNormalPrice(raw),
     stock: num(raw.estoque ?? raw.stock ?? 999),
     unit: raw.unidade || raw.unidadeVenda || raw.tamanho || raw.medida || 'un',
     points: productPoints(raw, price)
@@ -230,11 +257,18 @@ export function normalizeCatalog(payload = {}) {
     : fromObject).filter(product => product && product.name && product.stock >= 0 && product.price > 0 && product.ativo !== false);
 
   const map = new Map();
+  const inactiveSectionIds = new Set();
 
   rawSections.forEach((section, index) => {
     const name = section.nome || section.name || section.titulo || `Seção ${index + 1}`;
-    const id = String(section.id || slugify(name));
+    const ids = sectionIds(section, name);
+    const id = String(ids[0] || slugify(name));
+    if (!sectionIsActive(section)) {
+      ids.forEach(item => inactiveSectionIds.add(item));
+      return;
+    }
     const iconImage = sectionImage(section);
+    const ordem = sectionOrder(section, index);
     map.set(id, {
       id,
       name,
@@ -243,12 +277,19 @@ export function normalizeCatalog(payload = {}) {
       emoji: section.emoji || '',
       iconImage,
       image: iconImage,
+      ativo: true,
+      active: true,
+      ordem,
+      order: ordem,
       products: []
     });
   });
 
-  products.forEach(product => {
+  const visibleProducts = products.filter(product => !inactiveSectionIds.has(product.sectionId));
+
+  visibleProducts.forEach(product => {
     if (!map.has(product.sectionId)) {
+      const ordem = rawSections.length + map.size;
       map.set(product.sectionId, {
         id: product.sectionId,
         name: product.section,
@@ -257,15 +298,23 @@ export function normalizeCatalog(payload = {}) {
         emoji: '',
         iconImage: '',
         image: '',
+        ativo: true,
+        active: true,
+        ordem,
+        order: ordem,
         products: []
       });
     }
     map.get(product.sectionId).products.push(product);
   });
 
+  const sections = Array.from(map.values())
+    .filter(section => section.products.length && sectionIsActive(section))
+    .sort((a, b) => (sectionOrder(a) - sectionOrder(b)) || String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR'));
+
   return {
-    sections: Array.from(map.values()).filter(section => section.products.length),
-    products
+    sections,
+    products: visibleProducts
   };
 }
 
