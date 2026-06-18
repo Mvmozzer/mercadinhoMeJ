@@ -1,6 +1,6 @@
-import { cartPayload } from './cart.js?v=2026.06.18.897';
-import { fallbackSendData } from './telegram.js?v=2026.06.18.897';
-import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.06.18.897';
+import { cartPayload } from './cart.js?v=2026.06.18.056';
+import { fallbackSendData } from './telegram.js?v=2026.06.18.056';
+import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.06.18.056';
 
 function normalizeTelegramCartItem(item = {}) {
   const quantity = Number(item.quantidade || item.quantity || 0);
