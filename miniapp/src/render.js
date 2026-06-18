@@ -72,14 +72,14 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.18.224';
-import { filterProducts, productBadges } from './catalog.js?v=2026.06.18.224';
-import { telegramHandoff } from './checkout.js?v=2026.06.18.224';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.18.224';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.18.224';
-import { persistMiniAppUiState } from './storage.js?v=2026.06.18.224';
-import { updateMainButton } from './telegram.js?v=2026.06.18.224';
-import { loadTracking } from './tracking.js?v=2026.06.18.224';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.18.602';
+import { filterProducts, productBadges } from './catalog.js?v=2026.06.18.602';
+import { telegramHandoff } from './checkout.js?v=2026.06.18.602';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.18.602';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.18.602';
+import { persistMiniAppUiState } from './storage.js?v=2026.06.18.602';
+import { updateMainButton } from './telegram.js?v=2026.06.18.602';
+import { loadTracking } from './tracking.js?v=2026.06.18.602';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 
@@ -1056,7 +1056,7 @@ export function createRenderer(state) {
           <span>${count} ${count === 1 ? 'item' : 'itens'}</span>
           <strong>${formatMoney(cartTotal(state))}</strong>
         </div>
-        <button id="reviewCart" data-page="cart">Meu carrinho</button>
+        <button id="reviewCart" data-page="cart">Carrinho</button>
       </div>
     `;
   }
