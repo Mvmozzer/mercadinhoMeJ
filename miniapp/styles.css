@@ -2676,15 +2676,13 @@ body{
 }
 
 .product-actions{
-  position:static;
-  right:auto;
-  bottom:auto;
+  position:absolute;
+  right:8px;
+  bottom:8px;
   min-height:0;
   display:grid;
   place-items:center;
-  justify-self:end;
-  align-self:end;
-  z-index:3;
+  z-index:4;
 }
 
 .product-actions button,
@@ -2707,6 +2705,15 @@ body{
   font-weight:800;
   line-height:1;
   box-shadow:0 8px 18px rgba(21,128,61,.24);
+}
+
+.product-action-symbol{
+  width:100%;
+  height:100%;
+  display:grid;
+  place-items:center;
+  line-height:1;
+  font-family:Arial,sans-serif;
 }
 
 .product-actions--quantity,

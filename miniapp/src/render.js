@@ -72,14 +72,14 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.18.078';
-import { filterProducts, productBadges } from './catalog.js?v=2026.06.18.078';
-import { telegramHandoff } from './checkout.js?v=2026.06.18.078';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.18.078';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.18.078';
-import { persistMiniAppUiState } from './storage.js?v=2026.06.18.078';
-import { updateMainButton } from './telegram.js?v=2026.06.18.078';
-import { loadTracking } from './tracking.js?v=2026.06.18.078';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.18.065';
+import { filterProducts, productBadges } from './catalog.js?v=2026.06.18.065';
+import { telegramHandoff } from './checkout.js?v=2026.06.18.065';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.18.065';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.18.065';
+import { persistMiniAppUiState } from './storage.js?v=2026.06.18.065';
+import { updateMainButton } from './telegram.js?v=2026.06.18.065';
+import { loadTracking } from './tracking.js?v=2026.06.18.065';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 
@@ -594,6 +594,17 @@ export function createRenderer(state) {
             ${productThumb(product)}
             ${renderProductOverlayStack(product, badges)}
           </button>
+          <div class="product-actions${quantity ? ' product-actions--quantity product-stepper' : ''}">
+            ${quantity ? `
+              <button data-qty-minus="${escapeHtml(product.id)}" aria-label="Diminuir quantidade"><span class="product-action-symbol" aria-hidden="true">-</span></button>
+              <b>${quantity}</b>
+              <button class="product-quick-add" data-qty-plus="${escapeHtml(product.id)}" aria-label="Adicionar ao carrinho: ${escapeHtml(product.name)}"><span class="product-action-symbol" aria-hidden="true">+</span></button>
+            ` : `
+              <button class="add-button product-quick-add" data-qty-plus="${escapeHtml(product.id)}" aria-label="Adicionar ao carrinho: ${escapeHtml(product.name)}">
+                <span class="product-action-symbol" aria-hidden="true">+</span>
+              </button>
+            `}
+          </div>
         </div>
         <div class="product-info">
           <h3>${escapeHtml(product.name)}</h3>
@@ -601,17 +612,6 @@ export function createRenderer(state) {
           ${unit ? `<p class="product-description product-unit">${escapeHtml(unit)}</p>` : ''}
           <div class="product-buy-row${quantity ? ' product-buy-row--quantity' : ''}">
             <div class="product-price-block">${productPriceBlock(product)}</div>
-            <div class="product-actions${quantity ? ' product-actions--quantity product-stepper' : ''}">
-              ${quantity ? `
-                <button data-qty-minus="${escapeHtml(product.id)}" aria-label="Diminuir quantidade">-</button>
-                <b>${quantity}</b>
-                <button class="product-quick-add" data-qty-plus="${escapeHtml(product.id)}" aria-label="Adicionar ao carrinho: ${escapeHtml(product.name)}">+</button>
-              ` : `
-                <button class="add-button product-quick-add" data-qty-plus="${escapeHtml(product.id)}" aria-label="Adicionar ao carrinho: ${escapeHtml(product.name)}">
-                  +
-                </button>
-              `}
-            </div>
           </div>
         </div>
       </article>
