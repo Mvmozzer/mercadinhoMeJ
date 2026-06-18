@@ -72,14 +72,14 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.18.276';
-import { filterProducts, productBadges } from './catalog.js?v=2026.06.18.276';
-import { telegramHandoff } from './checkout.js?v=2026.06.18.276';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.18.276';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.18.276';
-import { persistMiniAppUiState } from './storage.js?v=2026.06.18.276';
-import { updateMainButton } from './telegram.js?v=2026.06.18.276';
-import { loadTracking } from './tracking.js?v=2026.06.18.276';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.18.078';
+import { filterProducts, productBadges } from './catalog.js?v=2026.06.18.078';
+import { telegramHandoff } from './checkout.js?v=2026.06.18.078';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.18.078';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.18.078';
+import { persistMiniAppUiState } from './storage.js?v=2026.06.18.078';
+import { updateMainButton } from './telegram.js?v=2026.06.18.078';
+import { loadTracking } from './tracking.js?v=2026.06.18.078';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 
@@ -525,11 +525,6 @@ export function createRenderer(state) {
             <p class="greeting" id="customerGreeting">${escapeHtml(greeting)}, <span class="customer-name">${escapeHtml(name)}</span></p>
             <h1>${escapeHtml(title || 'Mercadinho M&J')}</h1>
           </div>
-        </div>
-        <div class="header-actions">
-          <button class="icon-button menu-button" type="button" data-open-sections aria-label="Abrir menu de secoes" aria-controls="sectionsDrawer" aria-expanded="${state.sectionsMenuOpen ? 'true' : 'false'}">
-            ${svgIcon('menu', 19)}
-          </button>
         </div>
         <div class="store-status ${status.className}" id="storeStatus" ${status.className === 'open' ? 'hidden' : ''}>${escapeHtml(status.text)}</div>
       </header>
@@ -1100,12 +1095,6 @@ export function createRenderer(state) {
     });
     root.querySelectorAll('[data-all-products]').forEach(button => {
       button.addEventListener('click', () => navigateTo('home', { sectionId: '', query: '' }));
-    });
-    root.querySelectorAll('[data-open-sections]').forEach(button => {
-      button.addEventListener('click', () => {
-        state.sectionsMenuOpen = true;
-        render();
-      });
     });
     root.querySelectorAll('[data-close-sections]').forEach(element => {
       element.addEventListener('click', () => {

@@ -2280,12 +2280,6 @@ body{
   letter-spacing:0;
 }
 
-.header-actions{
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
-
 .app-header .icon-button{
   width:40px;
   height:40px;
@@ -2298,12 +2292,6 @@ body{
   display:inline-grid;
   place-items:center;
   box-shadow:none;
-}
-
-.app-header .menu-button{
-  color:#0f6b32;
-  background:rgba(255,255,255,.92);
-  box-shadow:0 10px 24px rgba(15,23,42,.08);
 }
 
 .app-header .store-status{
