@@ -599,17 +599,6 @@ export function createRenderer(state) {
             ${productThumb(product)}
             ${renderProductOverlayStack(product, badges)}
           </button>
-          <div class="product-actions${quantity ? ' product-actions--quantity product-stepper' : ''}">
-            ${quantity ? `
-              <button data-qty-minus="${escapeHtml(product.id)}" aria-label="Diminuir quantidade">-</button>
-              <b>${quantity}</b>
-              <button class="product-quick-add" data-qty-plus="${escapeHtml(product.id)}" aria-label="Adicionar ao carrinho: ${escapeHtml(product.name)}">+</button>
-            ` : `
-              <button class="add-button product-quick-add" data-qty-plus="${escapeHtml(product.id)}" aria-label="Adicionar ao carrinho: ${escapeHtml(product.name)}">
-                +
-              </button>
-            `}
-          </div>
         </div>
         <div class="product-info">
           <h3>${escapeHtml(product.name)}</h3>
@@ -617,6 +606,17 @@ export function createRenderer(state) {
           ${unit ? `<p class="product-description product-unit">${escapeHtml(unit)}</p>` : ''}
           <div class="product-buy-row${quantity ? ' product-buy-row--quantity' : ''}">
             <div class="product-price-block">${productPriceBlock(product)}</div>
+            <div class="product-actions${quantity ? ' product-actions--quantity product-stepper' : ''}">
+              ${quantity ? `
+                <button data-qty-minus="${escapeHtml(product.id)}" aria-label="Diminuir quantidade">-</button>
+                <b>${quantity}</b>
+                <button class="product-quick-add" data-qty-plus="${escapeHtml(product.id)}" aria-label="Adicionar ao carrinho: ${escapeHtml(product.name)}">+</button>
+              ` : `
+                <button class="add-button product-quick-add" data-qty-plus="${escapeHtml(product.id)}" aria-label="Adicionar ao carrinho: ${escapeHtml(product.name)}">
+                  +
+                </button>
+              `}
+            </div>
           </div>
         </div>
       </article>

@@ -2532,8 +2532,8 @@ body{
 }
 
 .product-rail .product-card{
-  flex:0 0 134px;
-  width:134px;
+  flex:0 0 178px;
+  width:178px;
   min-height:176px;
   scroll-snap-align:start;
 }
@@ -2656,7 +2656,17 @@ body{
 .product-buy-row--quantity{
   width:100%;
   padding:0;
-  display:block;
+  min-width:0;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:end;
+  gap:8px;
+}
+
+.product-price-block{
+  min-width:0;
+  justify-self:start;
+  align-self:end;
 }
 
 .product-price-block strong{
@@ -2678,12 +2688,14 @@ body{
 }
 
 .product-actions{
-  position:absolute;
-  right:7px;
-  bottom:7px;
+  position:static;
+  right:auto;
+  bottom:auto;
   min-height:0;
   display:grid;
   place-items:center;
+  justify-self:end;
+  align-self:end;
   z-index:3;
 }
 
