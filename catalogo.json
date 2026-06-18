@@ -91,23 +91,23 @@
         "productObservation": "",
         "tarjas": [
           {
-            "texto": "Produto fresquinho",
+            "texto": "fresco",
             "cor": "#ffffff",
-            "fundo": "#2baa6d"
+            "fundo": "#76dc6d"
           }
         ],
         "etiquetas": [
           {
-            "texto": "Produto fresquinho",
+            "texto": "fresco",
             "cor": "#ffffff",
-            "fundo": "#2baa6d"
+            "fundo": "#76dc6d"
           }
         ],
         "labels": [
           {
-            "texto": "Produto fresquinho",
+            "texto": "fresco",
             "cor": "#ffffff",
-            "fundo": "#2baa6d"
+            "fundo": "#76dc6d"
           }
         ],
         "product_point_offer": {
@@ -147,7 +147,7 @@
         "product_point_offer_ends_at": "",
         "points_label_text": "+20 pontos em compras acima de R$ 0,00",
         "pointsLabelText": "+20 pontos em compras acima de R$ 0,00",
-        "points_preview": 0,
+        "points_preview": 20,
         "secao": "ovos",
         "secao_nome": "Ovos",
         "secao_ordem": 5,

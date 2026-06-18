@@ -71,23 +71,23 @@
       "productObservation": "",
       "tarjas": [
         {
-          "texto": "Produto fresquinho",
+          "texto": "fresco",
           "cor": "#ffffff",
-          "fundo": "#2baa6d"
+          "fundo": "#76dc6d"
         }
       ],
       "etiquetas": [
         {
-          "texto": "Produto fresquinho",
+          "texto": "fresco",
           "cor": "#ffffff",
-          "fundo": "#2baa6d"
+          "fundo": "#76dc6d"
         }
       ],
       "labels": [
         {
-          "texto": "Produto fresquinho",
+          "texto": "fresco",
           "cor": "#ffffff",
-          "fundo": "#2baa6d"
+          "fundo": "#76dc6d"
         }
       ],
       "product_point_offer": {
