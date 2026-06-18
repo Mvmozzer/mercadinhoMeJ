@@ -1,11 +1,11 @@
-import { initTelegram, telegramUserName } from './telegram.js';
-import { carregarRuntimeConfigPages, authenticateBridge, loadBootstrap, loadCatalogWithFallback, loadHealth, loadCustomer } from './api.js';
-import { createRenderer } from './render.js';
-import { createState, applySnapshot, normalizeMiniAppUi } from './state.js';
-import { normalizeCatalog } from './catalog.js';
-import { restoreCart } from './cart.js';
-import { loadLoyalty } from './loyalty.js';
-import { loadOrders } from './orders.js';
+import { initTelegram, telegramUserName } from './telegram.js?v=2026.06.18.217';
+import { carregarRuntimeConfigPages, authenticateBridge, loadBootstrap, loadCatalogWithFallback, loadHealth, loadCustomer } from './api.js?v=2026.06.18.217';
+import { createRenderer } from './render.js?v=2026.06.18.217';
+import { createState, applySnapshot, normalizeMiniAppUi } from './state.js?v=2026.06.18.217';
+import { normalizeCatalog } from './catalog.js?v=2026.06.18.217';
+import { restoreCart } from './cart.js?v=2026.06.18.217';
+import { loadLoyalty } from './loyalty.js?v=2026.06.18.217';
+import { loadOrders } from './orders.js?v=2026.06.18.217';
 
 function sincronizarStatusLoja(state, health) {
   if (health?.loja) state.store = { ...state.store, ...health.loja };

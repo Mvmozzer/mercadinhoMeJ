@@ -72,14 +72,14 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js';
-import { filterProducts, productBadges } from './catalog.js';
-import { telegramHandoff } from './checkout.js';
-import { sendMiniAppEvent, syncCart } from './api.js';
-import { escapeHtml, greetingFor, money } from './utils.js';
-import { persistMiniAppUiState } from './storage.js';
-import { updateMainButton } from './telegram.js';
-import { loadTracking } from './tracking.js';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.18.217';
+import { filterProducts, productBadges } from './catalog.js?v=2026.06.18.217';
+import { telegramHandoff } from './checkout.js?v=2026.06.18.217';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.18.217';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.18.217';
+import { persistMiniAppUiState } from './storage.js?v=2026.06.18.217';
+import { updateMainButton } from './telegram.js?v=2026.06.18.217';
+import { loadTracking } from './tracking.js?v=2026.06.18.217';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 
