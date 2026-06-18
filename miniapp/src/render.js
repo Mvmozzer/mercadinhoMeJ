@@ -72,14 +72,14 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.18.065';
-import { filterProducts, productBadges } from './catalog.js?v=2026.06.18.065';
-import { telegramHandoff } from './checkout.js?v=2026.06.18.065';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.18.065';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.18.065';
-import { persistMiniAppUiState } from './storage.js?v=2026.06.18.065';
-import { updateMainButton } from './telegram.js?v=2026.06.18.065';
-import { loadTracking } from './tracking.js?v=2026.06.18.065';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.18.394';
+import { filterProducts, productBadges } from './catalog.js?v=2026.06.18.394';
+import { telegramHandoff } from './checkout.js?v=2026.06.18.394';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.18.394';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.18.394';
+import { persistMiniAppUiState } from './storage.js?v=2026.06.18.394';
+import { updateMainButton } from './telegram.js?v=2026.06.18.394';
+import { loadTracking } from './tracking.js?v=2026.06.18.394';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 
@@ -281,7 +281,7 @@ function productThumb(product) {
   if (!product?.image) {
     return fallback;
   }
-  return `${fallback}<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name || 'Produto')}" loading="lazy" referrerpolicy="no-referrer" onload="this.previousElementSibling.hidden=true" onerror="this.remove()">`;
+  return `<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name || 'Produto')}" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`;
 }
 
 function productPriceBlock(product = {}) {
@@ -818,7 +818,7 @@ export function createRenderer(state) {
             ${items.map(item => `
               <article class="cart-item">
               <div class="cart-thumb">
-                  ${item.image ? `<span class="cart-thumb-fallback" aria-hidden="true">${escapeHtml(String(item.name || 'P').slice(0, 1).toUpperCase())}</span><img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}" referrerpolicy="no-referrer" onload="this.previousElementSibling.hidden=true" onerror="this.remove()">` : `<span class="cart-thumb-fallback" aria-hidden="true">${escapeHtml(String(item.name || 'P').slice(0, 1).toUpperCase())}</span>`}
+                  ${item.image ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}" referrerpolicy="no-referrer" onerror="this.remove()">` : `<span class="cart-thumb-fallback" aria-hidden="true">${escapeHtml(String(item.name || 'P').slice(0, 1).toUpperCase())}</span>`}
                 </div>
                 <div class="cart-item-text">
                   <strong>${escapeHtml(item.name)}</strong>
