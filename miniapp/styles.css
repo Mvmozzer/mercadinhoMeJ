@@ -2690,35 +2690,37 @@ body{
 .product-actions button,
 .product-actions .product-quick-add,
 .product-actions .add-button{
-  width:30px;
-  min-width:30px;
-  height:30px;
-  min-height:30px;
+  width:32px;
+  min-width:32px;
+  height:32px;
+  min-height:32px;
   padding:0;
   border:0;
-  border-radius:9px;
+  border-radius:999px;
   color:#fff;
-  background:linear-gradient(135deg,var(--mj-primary),#12a456);
+  background:linear-gradient(135deg,#087333 0%, var(--mj-primary) 48%, #16b565 100%);
   display:grid;
   place-items:center;
+  place-content:center;
+  text-align:center;
   font-size:20px;
   font-weight:800;
   line-height:1;
-  box-shadow:none;
+  box-shadow:0 8px 18px rgba(21,128,61,.24);
 }
 
 .product-actions--quantity,
 .product-stepper{
-  width:90px;
-  height:30px;
-  border-radius:9px;
+  width:98px;
+  height:32px;
+  border-radius:999px;
   color:#fff;
-  background:linear-gradient(135deg,var(--mj-primary),#12a456);
+  background:linear-gradient(135deg,#087333 0%, var(--mj-primary) 48%, #16b565 100%);
   display:grid;
-  grid-template-columns:30px 1fr 30px;
+  grid-template-columns:32px 1fr 32px;
   align-items:center;
   text-align:center;
-  box-shadow:0 8px 18px rgba(21,128,61,.22);
+  box-shadow:0 10px 22px rgba(21,128,61,.26);
 }
 
 .product-actions--quantity button,
@@ -2728,10 +2730,13 @@ body{
 }
 
 .product-actions--quantity b{
+  display:grid;
+  place-items:center;
   min-width:0;
   color:#fff;
   font-size:13px;
   font-weight:900;
+  line-height:1;
 }
 
 .catalog-checkout-bar{
