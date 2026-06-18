@@ -1,4 +1,4 @@
-import { isTemporaryPublicApiBase } from './utils.js?v=2026.06.18.056';
+import { isTemporaryPublicApiBase } from './utils.js?v=2026.06.18.695';
 
 export const TELEGRAM_AUTH_PATH = '/api/telegram/auth';
 export const MINIAPP_API_PATHS = {
@@ -8,7 +8,6 @@ export const MINIAPP_API_PATHS = {
   catalog: '/api/miniapp/catalogo',
   cartSync: '/api/miniapp/carrinho/sync',
   checkoutCreate: '/api/miniapp/checkout/create',
-  checkoutTelegramHandoff: '/api/miniapp/checkout/telegram-handoff',
 };
 
 function currentLocation() {

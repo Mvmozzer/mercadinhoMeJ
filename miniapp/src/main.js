@@ -1,11 +1,11 @@
-import { initTelegram, telegramUserName } from './telegram.js?v=2026.06.18.056';
-import { carregarRuntimeConfigPages, authenticateBridge, loadBootstrap, loadCatalogWithFallback, loadHealth, loadCustomer } from './api.js?v=2026.06.18.056';
-import { createRenderer } from './render.js?v=2026.06.18.056';
-import { createState, applySnapshot, normalizeMiniAppUi } from './state.js?v=2026.06.18.056';
-import { normalizeCatalog } from './catalog.js?v=2026.06.18.056';
-import { restoreCart } from './cart.js?v=2026.06.18.056';
-import { loadLoyalty } from './loyalty.js?v=2026.06.18.056';
-import { loadOrders } from './orders.js?v=2026.06.18.056';
+import { initTelegram, telegramUserName } from './telegram.js?v=2026.06.18.695';
+import { carregarRuntimeConfigPages, authenticateBridge, loadBootstrap, loadCatalogWithFallback, loadHealth, loadCustomer } from './api.js?v=2026.06.18.695';
+import { createRenderer } from './render.js?v=2026.06.18.695';
+import { createState, applySnapshot, normalizeMiniAppUi } from './state.js?v=2026.06.18.695';
+import { normalizeCatalog } from './catalog.js?v=2026.06.18.695';
+import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.06.18.695';
+import { loadLoyalty } from './loyalty.js?v=2026.06.18.695';
+import { loadOrders } from './orders.js?v=2026.06.18.695';
 
 function sincronizarStatusLoja(state, health) {
   if (health?.loja) state.store = { ...state.store, ...health.loja };
@@ -116,12 +116,14 @@ async function init() {
     const normalized = normalizeCatalog({ catalogo: { secoes: boot.secoes, produtos: boot.produtos } });
     state.sections = normalized.sections;
     state.products = normalized.products;
+    reconcileCartWithCatalog(state);
   } catch {
     const catalog = await loadCatalogWithFallback(state);
     if (miniappUiFromPayload(catalog)) state.miniappUi = normalizeMiniAppUi(miniappUiFromPayload(catalog));
     const normalized = normalizeCatalog(catalog);
     state.sections = normalized.sections;
     state.products = normalized.products;
+    reconcileCartWithCatalog(state);
   }
   const loyalty = await loadLoyalty(state);
   if (loyalty?.ok !== false) state.loyalty = { ...state.loyalty, ...loyalty };

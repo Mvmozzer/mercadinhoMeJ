@@ -1,6 +1,5 @@
-import { cartPayload } from './cart.js?v=2026.06.18.056';
-import { fallbackSendData } from './telegram.js?v=2026.06.18.056';
-import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.06.18.056';
+import { cartPayload } from './cart.js?v=2026.06.18.695';
+import { fallbackSendData } from './telegram.js?v=2026.06.18.695';
 
 function normalizeTelegramCartItem(item = {}) {
   const quantity = Number(item.quantidade || item.quantity || 0);
@@ -27,28 +26,21 @@ function telegramCartPayload(state) {
 
 export async function telegramHandoff(state) {
   const payload = telegramCartPayload(state);
-  try {
-    return await retryApiFetchWithFreshRuntimeConfig(state, '/api/miniapp/checkout/telegram-handoff', {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
-  } catch (error) {
-    const enviado = fallbackSendData(payload);
-    if (!enviado) {
-      return {
-        ok: false,
-        fallback: false,
-        erro: error.message,
-        mensagem: 'Nao foi possivel enviar ao Telegram. Abra a lojinha pelo botao Abrir lojinha dentro da conversa do bot e tente novamente.'
-      };
-    }
+  const enviado = fallbackSendData(payload);
+  if (!enviado) {
     return {
       ok: false,
-      fallback: true,
-      erro: error.message,
-      mensagem: 'Carrinho enviado ao Telegram. Termine entrega, retirada e Pix pelo chat.'
+      fallback: false,
+      mensagem: 'Nao foi possivel enviar ao Telegram. Abra a lojinha pelo botao Abrir lojinha dentro da conversa do bot. O menu do Telegram nao envia carrinho em Mini App estatico.'
     };
   }
+  return {
+    ok: true,
+    fallback: true,
+    telegram: {
+      mensagem: 'Carrinho enviado ao bot. Termine entrega, retirada, Pix e comprovante pelo Telegram.'
+    }
+  };
 }
 
 export async function checkoutCreate(state) {

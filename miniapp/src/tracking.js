@@ -1,2 +1,2 @@
-﻿import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.06.18.056';
+﻿import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.06.18.695';
 export async function loadTracking(state, pedidoId) { return retryApiFetchWithFreshRuntimeConfig(state, `/api/miniapp/pedidos/${encodeURIComponent(pedidoId)}/tracking`).catch(() => ({ ok: false, tracking: null, path: '/tracking' })); }
