@@ -72,14 +72,14 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.18.394';
-import { filterProducts, productBadges } from './catalog.js?v=2026.06.18.394';
-import { telegramHandoff } from './checkout.js?v=2026.06.18.394';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.18.394';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.18.394';
-import { persistMiniAppUiState } from './storage.js?v=2026.06.18.394';
-import { updateMainButton } from './telegram.js?v=2026.06.18.394';
-import { loadTracking } from './tracking.js?v=2026.06.18.394';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.18.151';
+import { filterProducts, productBadges } from './catalog.js?v=2026.06.18.151';
+import { telegramHandoff } from './checkout.js?v=2026.06.18.151';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.18.151';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.18.151';
+import { persistMiniAppUiState } from './storage.js?v=2026.06.18.151';
+import { updateMainButton } from './telegram.js?v=2026.06.18.151';
+import { loadTracking } from './tracking.js?v=2026.06.18.151';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 
@@ -581,6 +581,55 @@ export function createRenderer(state) {
     return items.length ? `<div class="product-overlay-stack">${items.join('')}</div>` : '';
   }
 
+  function cleanProductDetail(value = '') {
+    const text = String(value ?? '').trim();
+    if (!text || text === '0') return '';
+    return text;
+  }
+
+  function renderProductDetailInfo(product = {}, sectionName = '') {
+    const unit = cleanProductDetail(product.unit || product.unidadeVenda || product.unidadeMedida || product.tamanho);
+    const stock = Number(product.stock ?? product.estoque_pronta_entrega ?? product.estoque_atual ?? product.estoque ?? 0);
+    const points = Number(product.points || product.product_point_offer_points || product.productPointOffer?.points || 0);
+    const group = cleanProductDetail(product.grupoNome || product.grupo_nome || product.nome_principal || product.produtoPaiNome);
+    const code = cleanProductDetail(product.codigoInterno || product.codigo_interno || product.sku || product.codigoBarras || product.codigo_barras);
+    const observation = cleanProductDetail(product.productObservation || product.observacaoProduto || product.observacao_produto);
+    const size = cleanProductDetail(product.tamanho || product.peso);
+    const flavor = cleanProductDetail(product.sabor);
+    const saleMode = cleanProductDetail(product.modoVenda || product.saleMode);
+    const validity = cleanProductDetail(product.validade);
+    const stockText = stock > 0
+      ? `${stock} ${unit || 'un'} disponiveis`
+      : '';
+    const rows = [
+      ['Marca', product.marca || product.brand],
+      ['Categoria', sectionName || product.section || product.secao],
+      ['Grupo', group],
+      ['Unidade', unit],
+      ['Disponibilidade', stockText],
+      ['Pontos', points > 0 ? `Ganhe +${points} pontos` : ''],
+      ['Tamanho', size && size !== unit ? size : ''],
+      ['Sabor', flavor],
+      ['Venda', saleMode && !['unit', 'unidade'].includes(saleMode.toLowerCase()) ? saleMode : ''],
+      ['Validade', validity],
+      ['Codigo', code],
+      ['Observacao', observation]
+    ].map(([label, value]) => [label, cleanProductDetail(value)])
+      .filter(([, value]) => value);
+
+    if (!rows.length) return '';
+    return `
+      <div class="product-detail-info" aria-label="Informacoes do produto">
+        ${rows.map(([label, value]) => `
+          <div>
+            <span>${escapeHtml(label)}</span>
+            <strong>${escapeHtml(value)}</strong>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
   function productCard(product) {
     const quantity = cartQty(state, product.id);
     const badges = productBadges(product).slice(0, 2);
@@ -774,10 +823,10 @@ export function createRenderer(state) {
     const product = state.products.find(item => item.id === state.productId) || state.products[0];
     if (!product) return renderHome();
     const badges = productBadges(product).slice(0, 3);
-    const brand = String(product.marca || product.brand || '').trim();
-    const description = String(product.descricao || product.description || product.unit || '').trim();
+    const section = state.sections.find(item => item.id === product.sectionId || item.id === product.secao || item.name === product.section);
+    const description = String(product.descricao || product.description || product.detalhes || '').trim();
     return `
-      ${renderCustomerHeader(product?.name || 'Produto')}
+      ${renderCustomerHeader()}
       <main class="page product-page" data-page="product">
         <div class="topbar">
           <button data-page="${state.previousPage || 'home'}" aria-label="Voltar">${svgIcon('arrowLeft', 20)}</button>
@@ -790,8 +839,8 @@ export function createRenderer(state) {
         </div>
         <section class="detail-content">
           <h1>${escapeHtml(product.name)}</h1>
-          ${brand ? `<span class="product-brand detail-brand">Marca: ${escapeHtml(brand)}</span>` : ''}
           ${description ? `<p class="product-description">${escapeHtml(description)}</p>` : ''}
+          ${renderProductDetailInfo(product, section?.name || section?.nome || '')}
           <div class="product-price-line">
             ${productPriceBlock(product)}
           </div>
