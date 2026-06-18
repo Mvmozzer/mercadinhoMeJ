@@ -1,6 +1,6 @@
-import { cartPayload } from './cart.js?v=2026.06.18.217';
-import { fallbackSendData } from './telegram.js?v=2026.06.18.217';
-import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.06.18.217';
+import { cartPayload } from './cart.js?v=2026.06.18.897';
+import { fallbackSendData } from './telegram.js?v=2026.06.18.897';
+import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.06.18.897';
 
 function normalizeTelegramCartItem(item = {}) {
   const quantity = Number(item.quantidade || item.quantity || 0);
@@ -33,7 +33,15 @@ export async function telegramHandoff(state) {
       body: JSON.stringify(payload)
     });
   } catch (error) {
-    fallbackSendData(payload);
+    const enviado = fallbackSendData(payload);
+    if (!enviado) {
+      return {
+        ok: false,
+        fallback: false,
+        erro: error.message,
+        mensagem: 'Nao foi possivel enviar ao Telegram. Abra a lojinha pelo botao Abrir lojinha dentro da conversa do bot e tente novamente.'
+      };
+    }
     return {
       ok: false,
       fallback: true,

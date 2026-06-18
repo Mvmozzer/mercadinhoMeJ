@@ -72,14 +72,14 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.18.217';
-import { filterProducts, productBadges } from './catalog.js?v=2026.06.18.217';
-import { telegramHandoff } from './checkout.js?v=2026.06.18.217';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.18.217';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.18.217';
-import { persistMiniAppUiState } from './storage.js?v=2026.06.18.217';
-import { updateMainButton } from './telegram.js?v=2026.06.18.217';
-import { loadTracking } from './tracking.js?v=2026.06.18.217';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.18.897';
+import { filterProducts, productBadges } from './catalog.js?v=2026.06.18.897';
+import { telegramHandoff } from './checkout.js?v=2026.06.18.897';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.18.897';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.18.897';
+import { persistMiniAppUiState } from './storage.js?v=2026.06.18.897';
+import { updateMainButton } from './telegram.js?v=2026.06.18.897';
+import { loadTracking } from './tracking.js?v=2026.06.18.897';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 
@@ -858,6 +858,7 @@ export function createRenderer(state) {
 
   function renderTelegramCheckout() {
     const handoff = state.lastTelegramHandoff || {};
+    const handoffFailed = handoff.ok === false && handoff.fallback !== true;
     const carrinho = handoff.carrinho || {};
     const itens = Array.isArray(carrinho.itens) && carrinho.itens.length ? carrinho.itens : cartItems(state);
     const total = Number(carrinho.total ?? cartTotal(state) ?? 0);
@@ -872,7 +873,7 @@ export function createRenderer(state) {
         <section class="success-card telegram-handoff-card">
           <span class="success-icon" aria-hidden="true">${svgIcon('check', 44)}</span>
           <p class="greeting">Continue no Telegram</p>
-          <h1>Pedido enviado ao Telegram</h1>
+          <h1>${handoffFailed ? 'Nao enviado ao Telegram' : 'Pedido enviado ao Telegram'}</h1>
           <strong class="order-id">${escapeHtml(orderId)}</strong>
           <p>${escapeHtml(state.checkoutMessage || `Total de ${formatMoney(total)} enviado para o Telegram. O Telegram conclui entrega e pagamento.`)}</p>
         </section>
