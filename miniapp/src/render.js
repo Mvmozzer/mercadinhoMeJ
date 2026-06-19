@@ -72,14 +72,14 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.18.602';
-import { filterProducts, productBadges } from './catalog.js?v=2026.06.18.602';
-import { telegramHandoff } from './checkout.js?v=2026.06.18.602';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.18.602';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.18.602';
-import { persistMiniAppUiState } from './storage.js?v=2026.06.18.602';
-import { updateMainButton } from './telegram.js?v=2026.06.18.602';
-import { loadTracking } from './tracking.js?v=2026.06.18.602';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.19.077';
+import { filterProducts, productBadges } from './catalog.js?v=2026.06.19.077';
+import { telegramHandoff } from './checkout.js?v=2026.06.19.077';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.19.077';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.19.077';
+import { persistMiniAppUiState } from './storage.js?v=2026.06.19.077';
+import { updateMainButton } from './telegram.js?v=2026.06.19.077';
+import { loadTracking } from './tracking.js?v=2026.06.19.077';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 
@@ -292,7 +292,7 @@ function productPriceBlock(product = {}) {
   if (!isPromocao) {
     return `<strong>${formatMoney(precoAtual)}</strong>`;
   }
-  return `<small class="product-old-price">${formatMoney(precoOriginal)}</small><strong>${formatMoney(precoAtual)}</strong>`;
+  return `<strong>${formatMoney(precoAtual)}</strong><small>${formatMoney(precoOriginal)}</small>`;
 }
 
 function svgIcon(name, size = 20) {
@@ -526,7 +526,6 @@ export function createRenderer(state) {
             <h1>${escapeHtml(title || 'Mercadinho M&J')}</h1>
           </div>
         </div>
-        <button class="section-menu-trigger icon-button" type="button" data-open-sections aria-label="Abrir menu de secoes">${svgIcon('menu', 20)}</button>
         <div class="store-status ${status.className}" id="storeStatus" ${status.className === 'open' ? 'hidden' : ''}>${escapeHtml(status.text)}</div>
       </header>
       ${renderSectionsDrawer()}
@@ -837,18 +836,17 @@ export function createRenderer(state) {
         <div class="detail-image">
           ${productThumb(product)}
           ${renderProductOverlayStack(product, badges)}
-          <div class="product-actions detail-product-actions">
-            <button class="add-button product-quick-add" data-qty-plus="${escapeHtml(product.id)}" aria-label="Adicionar ao carrinho: ${escapeHtml(product.name)}">
-              <span class="product-action-symbol" aria-hidden="true">+</span>
-            </button>
-          </div>
         </div>
         <section class="detail-content">
           <h1>${escapeHtml(product.name)}</h1>
           ${description ? `<p class="product-description">${escapeHtml(description)}</p>` : ''}
           ${renderProductDetailInfo(product, section?.name || section?.nome || '')}
           <div class="product-price-line">
-            <div class="product-price-block product-price-block--detail">${productPriceBlock(product)}</div>
+            ${productPriceBlock(product)}
+          </div>
+          <div class="detail-buy">
+            <strong>${formatMoney(product.price || 0)}</strong>
+            <button data-qty-plus="${escapeHtml(product.id)}" aria-label="Adicionar ao carrinho">+</button>
           </div>
         </section>
       </main>
@@ -891,6 +889,7 @@ export function createRenderer(state) {
             <p class="telegram-checkout-note">Entrega, retirada, pontos e Pix continuam no Telegram.</p>
             <div class="card-actions">
               <button id="continueShopping" data-page="${state.previousPage || 'home'}">Continuar comprando</button>
+              <button id="finishInTelegram">Finalizar no Telegram</button>
             </div>
           </section>
         ` : `
@@ -1056,7 +1055,7 @@ export function createRenderer(state) {
           <span>${count} ${count === 1 ? 'item' : 'itens'}</span>
           <strong>${formatMoney(cartTotal(state))}</strong>
         </div>
-        <button id="reviewCart" data-page="cart">Carrinho</button>
+        <button id="reviewCart" data-page="cart">Meu carrinho</button>
       </div>
     `;
   }
@@ -1138,12 +1137,6 @@ export function createRenderer(state) {
     root.querySelectorAll('button[data-page], a[data-page]').forEach(button => {
       button.addEventListener('click', () => navigateTo(button.dataset.page));
     });
-    root.querySelectorAll('[data-open-sections]').forEach(button => {
-      button.addEventListener('click', () => {
-        state.sectionsMenuOpen = true;
-        render();
-      });
-    });
     root.querySelectorAll('[data-section-open]').forEach(button => {
       button.addEventListener('click', () => {
         navigateTo('products', { sectionId: button.dataset.sectionOpen, query: '' });
@@ -1189,6 +1182,7 @@ export function createRenderer(state) {
       render();
     });
     root.querySelector('#continueShopping')?.addEventListener('click', () => navigateTo(state.previousPage || 'home'));
+    root.querySelector('#finishInTelegram')?.addEventListener('click', finishInTelegram);
     root.querySelector('#retryTelegramHandoff')?.addEventListener('click', finishInTelegram);
     root.querySelector('#search')?.addEventListener('input', event => {
       state.query = event.target.value;
