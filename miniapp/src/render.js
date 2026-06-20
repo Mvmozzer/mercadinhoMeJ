@@ -75,14 +75,14 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.20.371';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productBadges } from './catalog.js?v=2026.06.20.371';
-import { telegramHandoff } from './checkout.js?v=2026.06.20.371';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.20.371';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.20.371';
-import { persistMiniAppUiState } from './storage.js?v=2026.06.20.371';
-import { updateMainButton } from './telegram.js?v=2026.06.20.371';
-import { loadTracking } from './tracking.js?v=2026.06.20.371';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.20.441';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productBadges } from './catalog.js?v=2026.06.20.441';
+import { telegramHandoff } from './checkout.js?v=2026.06.20.441';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.20.441';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.20.441';
+import { persistMiniAppUiState } from './storage.js?v=2026.06.20.441';
+import { updateMainButton } from './telegram.js?v=2026.06.20.441';
+import { loadTracking } from './tracking.js?v=2026.06.20.441';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 
@@ -527,6 +527,10 @@ export function createRenderer(state) {
     }
   }
 
+  function hasTelegramMainButton() {
+    return Boolean(globalThis?.Telegram?.WebApp?.MainButton || globalThis?.window?.Telegram?.WebApp?.MainButton);
+  }
+
   function renderCustomerHeader(title = '') {
     const name = customerName(state);
     const greeting = customerGreetingPrefix(new Date());
@@ -872,6 +876,7 @@ export function createRenderer(state) {
 
   function renderCart() {
     const items = cartItems(state);
+    const useNativeTelegramButton = hasTelegramMainButton();
     return `
       <main class="page cart-page" data-page="cart" id="cartDrawer">
         <div class="topbar">
@@ -906,7 +911,7 @@ export function createRenderer(state) {
             <p class="telegram-checkout-note">Entrega, retirada, pontos e Pix continuam no Telegram.</p>
             <div class="card-actions">
               <button id="continueShopping" data-page="${state.previousPage || 'home'}">Continuar comprando</button>
-              <button id="finishInTelegram">Finalizar no Telegram</button>
+              ${useNativeTelegramButton ? '' : '<button id="finishInTelegram">Finalizar no Telegram</button>'}
             </div>
           </section>
         ` : `
