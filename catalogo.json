@@ -155,31 +155,31 @@
     ],
     "miniappUi": {
       "header": {
-        "logo": "/assets/logo-mj-mercadinho.png"
+        "logo": "https://github.com/Mvmozzer/mercadinhoMeJ/blob/main/assets/logo-mj-mercadinho.png?raw=true"
       },
       "theme": {
-        "primary": "#10853f",
+        "primary": "#000000",
         "primarySoft": "#ddf7e8",
         "bg": "#f5f7f6",
         "card": "#ffffff",
-        "text": "#132017",
-        "muted": "#66736a",
+        "text": "#afafaf",
+        "muted": "#5f5f5f",
         "border": "#e2ebe6",
         "heroFrom": "#dff7e9",
         "heroTo": "#f5f7f6"
       },
       "splash": {
-        "logo": "/assets/logo-mj-mercadinho.png",
+        "logo": "https://github.com/Mvmozzer/mercadinhoMeJ/blob/main/assets/logo-mj-mercadinho.png?raw=true",
         "mode": "logo",
-        "mediaUrl": "",
-        "animation": "fade",
-        "background": "#10853f",
-        "gradientFrom": "#22c55e",
-        "gradientTo": "#087333",
+        "mediaUrl": "https://github.com/Mvmozzer/mercadinhoMeJ/blob/main/assets/logo-mj-mercadinho.png?raw=true",
+        "animation": "zoom",
+        "background": "#000000",
+        "gradientFrom": "#000000",
+        "gradientTo": "#000000",
         "durationMs": 5000
       },
       "bannerCarousel": {
-        "autoplay": true,
+        "autoplay": false,
         "intervalMs": 5000,
         "animation": "slide"
       },
@@ -188,7 +188,7 @@
       },
       "banners": [
         {
-          "id": "banner-1781966099049-0",
+          "id": "banner-1781966126889-0",
           "title": "Ofertas para o seu mercado",
           "subtitle": "Produtos por peso, ofertas e itens essenciais com entrega rapida.",
           "eyebrow": "Mercadinho M&J",

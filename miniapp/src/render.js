@@ -75,14 +75,14 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.20.106';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productBadges } from './catalog.js?v=2026.06.20.106';
-import { telegramHandoff } from './checkout.js?v=2026.06.20.106';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.20.106';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.20.106';
-import { persistMiniAppUiState } from './storage.js?v=2026.06.20.106';
-import { updateMainButton } from './telegram.js?v=2026.06.20.106';
-import { loadTracking } from './tracking.js?v=2026.06.20.106';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.20.371';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productBadges } from './catalog.js?v=2026.06.20.371';
+import { telegramHandoff } from './checkout.js?v=2026.06.20.371';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.20.371';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.20.371';
+import { persistMiniAppUiState } from './storage.js?v=2026.06.20.371';
+import { updateMainButton } from './telegram.js?v=2026.06.20.371';
+import { loadTracking } from './tracking.js?v=2026.06.20.371';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 
