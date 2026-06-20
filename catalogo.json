@@ -166,7 +166,9 @@
         "muted": "#6c6c6c",
         "border": "#e2ebe6",
         "heroFrom": "#dff7e9",
-        "heroTo": "#f5f7f6"
+        "heroTo": "#f5f7f6",
+        "buttonGradientFrom": "#000000",
+        "buttonGradientTo": "#504714"
       },
       "splash": {
         "logo": "/assets/logo-mj-mercadinho.png",

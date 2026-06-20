@@ -3,6 +3,8 @@
   --mj-primary-soft:#ddf7e8;
   --mj-header-gradient-from:#dff7e9;
   --mj-header-gradient-to:#f5f7f6;
+  --mj-button-gradient-from:#087333;
+  --mj-button-gradient-to:#16b565;
   --mj-splash-background:#10853f;
   --mj-splash-gradient-from:#22c55e;
   --mj-splash-gradient-to:#087333;
@@ -1072,7 +1074,7 @@ button{
   min-height:52px;
   min-width:56px;
   border-radius:14px;
-  background:var(--mj-primary);
+  background:linear-gradient(135deg,var(--mj-button-gradient-from),var(--mj-button-gradient-to));
   color:#fff;
   padding:0 14px;
   font-weight:700;
@@ -1932,7 +1934,7 @@ body{
   min-width:30px;
   min-height:30px;
   border-radius:9px;
-  background:var(--mj-primary);
+  background:linear-gradient(135deg,var(--mj-button-gradient-from),var(--mj-button-gradient-to));
   color:#fff;
   font-size:20px;
   box-shadow:none;
@@ -1941,7 +1943,7 @@ body{
 .product-actions--quantity{
   min-height:34px;
   border-radius:9px;
-  background:linear-gradient(135deg,var(--mj-primary),#12a456);
+  background:linear-gradient(135deg,var(--mj-button-gradient-from),var(--mj-button-gradient-to));
   color:#fff;
 }
 
@@ -2759,7 +2761,7 @@ body{
   border:0;
   border-radius:999px;
   color:#fff;
-  background:linear-gradient(135deg,#087333 0%, var(--mj-primary) 48%, #16b565 100%);
+  background:linear-gradient(135deg,var(--mj-button-gradient-from) 0%, var(--mj-button-gradient-to) 100%);
   display:grid;
   place-items:center;
   place-content:center;
@@ -2785,7 +2787,7 @@ body{
   height:32px;
   border-radius:999px;
   color:#fff;
-  background:linear-gradient(135deg,#087333 0%, var(--mj-primary) 48%, #16b565 100%);
+  background:linear-gradient(135deg,var(--mj-button-gradient-from) 0%, var(--mj-button-gradient-to) 100%);
   display:grid;
   grid-template-columns:32px 1fr 32px;
   align-items:center;
@@ -2853,7 +2855,7 @@ body{
   border:0;
   border-radius:12px;
   color:#fff;
-  background:linear-gradient(135deg,var(--mj-primary),#087333);
+  background:linear-gradient(135deg,var(--mj-button-gradient-from),var(--mj-button-gradient-to));
   font-size:15px;
   font-weight:900;
   box-shadow:none;

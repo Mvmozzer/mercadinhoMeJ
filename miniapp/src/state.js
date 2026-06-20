@@ -1,4 +1,4 @@
-﻿import { restoreMiniAppUiState } from './storage.js?v=2026.06.20.441';
+﻿import { restoreMiniAppUiState } from './storage.js?v=2026.06.20.455';
 
 export const MINIAPP_UI_DEFAULTS = {
   header: {
@@ -13,7 +13,9 @@ export const MINIAPP_UI_DEFAULTS = {
     muted: '#66736a',
     border: '#e2ebe6',
     heroFrom: '#dff7e9',
-    heroTo: '#f5f7f6'
+    heroTo: '#f5f7f6',
+    buttonGradientFrom: '#087333',
+    buttonGradientTo: '#16b565'
   },
   splash: {
     logo: '/assets/logo-mj-mercadinho.png',

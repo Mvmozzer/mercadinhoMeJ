@@ -26,7 +26,9 @@ const MINIAPP_UI_DEFAULTS = {
     muted: '#66736a',
     border: '#e2ebe6',
     heroFrom: '#dff7e9',
-    heroTo: '#f5f7f6'
+    heroTo: '#f5f7f6',
+    buttonGradientFrom: '#087333',
+    buttonGradientTo: '#16b565'
   },
   splash: {
     logo: '/assets/logo-mj-mercadinho.png',
@@ -75,14 +77,14 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.20.441';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productBadges } from './catalog.js?v=2026.06.20.441';
-import { telegramHandoff } from './checkout.js?v=2026.06.20.441';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.20.441';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.20.441';
-import { persistMiniAppUiState } from './storage.js?v=2026.06.20.441';
-import { updateMainButton } from './telegram.js?v=2026.06.20.441';
-import { loadTracking } from './tracking.js?v=2026.06.20.441';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.20.455';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productBadges } from './catalog.js?v=2026.06.20.455';
+import { telegramHandoff } from './checkout.js?v=2026.06.20.455';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.20.455';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.20.455';
+import { persistMiniAppUiState } from './storage.js?v=2026.06.20.455';
+import { updateMainButton } from './telegram.js?v=2026.06.20.455';
+import { loadTracking } from './tracking.js?v=2026.06.20.455';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 
@@ -207,6 +209,8 @@ function applyThemeVariables(uiState = {}) {
   root.style.setProperty('--mj-border', theme.border || MINIAPP_UI_DEFAULTS.theme.border);
   root.style.setProperty('--mj-header-gradient-from', theme.heroFrom || MINIAPP_UI_DEFAULTS.theme.heroFrom);
   root.style.setProperty('--mj-header-gradient-to', theme.heroTo || MINIAPP_UI_DEFAULTS.theme.heroTo);
+  root.style.setProperty('--mj-button-gradient-from', theme.buttonGradientFrom || MINIAPP_UI_DEFAULTS.theme.buttonGradientFrom);
+  root.style.setProperty('--mj-button-gradient-to', theme.buttonGradientTo || MINIAPP_UI_DEFAULTS.theme.buttonGradientTo);
   root.style.setProperty('--mj-splash-background', splash.background || MINIAPP_UI_DEFAULTS.splash.background);
   root.style.setProperty('--mj-splash-gradient-from', splash.gradientFrom || MINIAPP_UI_DEFAULTS.splash.gradientFrom);
   root.style.setProperty('--mj-splash-gradient-to', splash.gradientTo || MINIAPP_UI_DEFAULTS.splash.gradientTo);
@@ -536,10 +540,12 @@ export function createRenderer(state) {
     const greeting = customerGreetingPrefix(new Date());
     const status = normalizeStoreStatus(state);
     const showSectionsMenu = sectionsMenuEnabled() && state.sections.length > 0;
+    const headerLogo = logoSrc(state);
     return `
       <header class="market-hero app-header" id="marketHero">
         <div class="hero-brand-block">
-          <span class="brand-mark" aria-hidden="true">${svgIcon('store', 22)}</span>
+          <img class="brand-logo" src="${escapeHtml(headerLogo)}" alt="Mercadinho M&J" referrerpolicy="no-referrer" onerror="this.hidden=true;this.nextElementSibling.hidden=false">
+          <span class="brand-mark brand-logo-fallback" aria-hidden="true" hidden>${svgIcon('store', 22)}</span>
           <div class="hero-copy">
             <p class="greeting" id="customerGreeting">${escapeHtml(greeting)}, <span class="customer-name">${escapeHtml(name)}</span></p>
             <h1>${escapeHtml(title || 'Mercadinho M&J')}</h1>
