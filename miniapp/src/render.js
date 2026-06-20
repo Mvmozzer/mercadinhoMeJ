@@ -43,6 +43,9 @@ const MINIAPP_UI_DEFAULTS = {
     intervalMs: 5000,
     animation: 'slide'
   },
+  sectionsMenu: {
+    enabled: true
+  },
   banners: [
     {
       id: 'ofertas-mercadinho',
@@ -72,14 +75,14 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.19.077';
-import { filterProducts, productBadges } from './catalog.js?v=2026.06.19.077';
-import { telegramHandoff } from './checkout.js?v=2026.06.19.077';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.19.077';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.19.077';
-import { persistMiniAppUiState } from './storage.js?v=2026.06.19.077';
-import { updateMainButton } from './telegram.js?v=2026.06.19.077';
-import { loadTracking } from './tracking.js?v=2026.06.19.077';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.20.106';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productBadges } from './catalog.js?v=2026.06.20.106';
+import { telegramHandoff } from './checkout.js?v=2026.06.20.106';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.20.106';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.20.106';
+import { persistMiniAppUiState } from './storage.js?v=2026.06.20.106';
+import { updateMainButton } from './telegram.js?v=2026.06.20.106';
+import { loadTracking } from './tracking.js?v=2026.06.20.106';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 
@@ -131,6 +134,12 @@ function normalizeMiniAppUi(raw = {}) {
   const bannerCarousel = cfg.bannerCarousel && typeof cfg.bannerCarousel === 'object' ? cfg.bannerCarousel : {};
   const bannerAnimation = String(bannerCarousel.animation || MINIAPP_UI_DEFAULTS.bannerCarousel.animation).trim().toLowerCase();
   const banners = Array.isArray(cfg.banners) && cfg.banners.length ? cfg.banners : MINIAPP_UI_DEFAULTS.banners;
+  const sectionsMenuEnabled = [
+    cfg.sectionsMenu?.enabled,
+    cfg.sections_menu?.enabled,
+    cfg.mostrarMenuSecoes,
+    cfg.showSectionsMenu
+  ].find(value => typeof value === 'boolean');
   return {
     header: {
       logo: String((cfg.header && cfg.header.logo) || MINIAPP_UI_DEFAULTS.header.logo).trim() || MINIAPP_UI_DEFAULTS.header.logo
@@ -150,6 +159,11 @@ function normalizeMiniAppUi(raw = {}) {
       autoplay: bannerCarousel.autoplay !== false,
       intervalMs: clampBannerIntervalMs(bannerCarousel.intervalMs),
       animation: BANNER_ANIMATIONS.has(bannerAnimation) ? bannerAnimation : MINIAPP_UI_DEFAULTS.bannerCarousel.animation
+    },
+    sectionsMenu: {
+      enabled: sectionsMenuEnabled === undefined
+        ? MINIAPP_UI_DEFAULTS.sectionsMenu.enabled
+        : sectionsMenuEnabled === true
     },
     banners: banners.map(normalizeBanner).sort((a, b) => Number(a.order || 0) - Number(b.order || 0) || String(a.title).localeCompare(String(b.title), 'pt-BR'))
   };
@@ -320,14 +334,10 @@ function svgIcon(name, size = 20) {
   return `<svg ${attrs}>${icons[name] || icons.package}</svg>`;
 }
 
-function sectionIconName(section = {}) {
-  const text = `${section.id || ''} ${section.name || section.nome || ''}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  if (/todos|all/.test(text)) return 'grid';
-  if (/hort|fruta|verd|ovo/.test(text)) return 'leaf';
-  if (/padaria|pao/.test(text)) return 'bread';
-  if (/bebida|suco|refri|agua/.test(text)) return 'cup';
-  if (/limp|higiene/.test(text)) return 'spray';
-  return 'package';
+function sectionEmoji(section = {}) {
+  const configured = String(section.emoji || section.icon || '').trim();
+  if (looksLikeSectionEmoji(configured)) return configured;
+  return emojiForSection(section.name || section.nome || section.id || '');
 }
 
 export function createRenderer(state) {
@@ -374,6 +384,10 @@ export function createRenderer(state) {
   function activeBanners(ui = normalizeMiniAppUi(state.miniappUi || state.miniappui || {})) {
     const banners = (ui.banners || []).filter(item => item.active !== false);
     return banners.length ? banners : MINIAPP_UI_DEFAULTS.banners;
+  }
+
+  function sectionsMenuEnabled(ui = normalizeMiniAppUi(state.miniappUi || state.miniappui || {})) {
+    return ui.sectionsMenu?.enabled === true;
   }
 
   function bannerTargetSectionId(value = '') {
@@ -517,6 +531,7 @@ export function createRenderer(state) {
     const name = customerName(state);
     const greeting = customerGreetingPrefix(new Date());
     const status = normalizeStoreStatus(state);
+    const showSectionsMenu = sectionsMenuEnabled() && state.sections.length > 0;
     return `
       <header class="market-hero app-header" id="marketHero">
         <div class="hero-brand-block">
@@ -526,6 +541,7 @@ export function createRenderer(state) {
             <h1>${escapeHtml(title || 'Mercadinho M&J')}</h1>
           </div>
         </div>
+        ${showSectionsMenu ? `<button class="icon-button menu-button" type="button" data-open-sections aria-label="Abrir menu de secoes">${svgIcon('menu', 20)}</button>` : ''}
         <div class="store-status ${status.className}" id="storeStatus" ${status.className === 'open' ? 'hidden' : ''}>${escapeHtml(status.text)}</div>
       </header>
       ${renderSectionsDrawer()}
@@ -668,7 +684,7 @@ export function createRenderer(state) {
   }
 
   function renderSectionMenuIcon(section = {}) {
-    return `<span class="section-menu-icon-emoji" aria-hidden="true">${svgIcon(sectionIconName(section), 18)}</span>`;
+    return `<span class="section-menu-icon-emoji" aria-hidden="true">${escapeHtml(sectionEmoji(section))}</span>`;
   }
 
   function renderDrawerSectionItem(section = {}, active = false) {
@@ -683,6 +699,7 @@ export function createRenderer(state) {
   }
 
   function renderSectionsDrawer() {
+    if (!sectionsMenuEnabled()) return '';
     const open = Boolean(state.sectionsMenuOpen);
     return `
       <nav class="section-menu" id="categoryRail" aria-label="Seções" hidden></nav>
@@ -1136,6 +1153,12 @@ export function createRenderer(state) {
   function bind() {
     root.querySelectorAll('button[data-page], a[data-page]').forEach(button => {
       button.addEventListener('click', () => navigateTo(button.dataset.page));
+    });
+    root.querySelectorAll('[data-open-sections]').forEach(button => {
+      button.addEventListener('click', () => {
+        state.sectionsMenuOpen = true;
+        render();
+      });
     });
     root.querySelectorAll('[data-section-open]').forEach(button => {
       button.addEventListener('click', () => {

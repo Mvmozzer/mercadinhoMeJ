@@ -12,9 +12,6 @@
         "nome": "Ovos",
         "emoji": "🥚",
         "icon": "🥚",
-        "iconImage": "assets/secoes/ovos.png",
-        "imagem": "assets/secoes/ovos.png",
-        "image": "assets/secoes/ovos.png",
         "ativo": true,
         "ordem": 5
       }
@@ -43,8 +40,8 @@
         "preco_original": 20,
         "preco_promocional": 0,
         "precoPromocional": 0,
-        "estoque": 20,
-        "estoque_pronta_entrega": 20,
+        "estoque": 17,
+        "estoque_pronta_entrega": 17,
         "ativo": true,
         "tipo": "sku",
         "produto_principal": false,
@@ -158,7 +155,7 @@
     ],
     "miniappUi": {
       "header": {
-        "logo": "https://github.com/Mvmozzer/mercadinhoMeJ/blob/main/miniapp/assets/copa-splash.png?raw=true"
+        "logo": "/assets/logo-mj-mercadinho.png"
       },
       "theme": {
         "primary": "#10853f",
@@ -172,10 +169,10 @@
         "heroTo": "#f5f7f6"
       },
       "splash": {
-        "logo": "https://github.com/Mvmozzer/mercadinhoMeJ/blob/main/miniapp/assets/copa-splash.png?raw=true",
+        "logo": "/assets/logo-mj-mercadinho.png",
         "mode": "logo",
         "mediaUrl": "",
-        "animation": "zoom",
+        "animation": "fade",
         "background": "#10853f",
         "gradientFrom": "#22c55e",
         "gradientTo": "#087333",
@@ -186,76 +183,23 @@
         "intervalMs": 5000,
         "animation": "slide"
       },
+      "sectionsMenu": {
+        "enabled": true
+      },
       "banners": [
         {
-          "id": "bem-vindo-mercadinho",
-          "title": "Seja bem-vindo",
-          "subtitle": "Comece pelas secoes do mercado",
+          "id": "banner-1781966099049-0",
+          "title": "Ofertas para o seu mercado",
+          "subtitle": "Produtos por peso, ofertas e itens essenciais com entrega rapida.",
           "eyebrow": "Mercadinho M&J",
-          "image": "assets/banners/bem-vindo-mercadinho.png",
+          "image": "",
           "emoji": "🎁",
-          "imageOnly": true,
-          "buttonText": "Comecar compras",
+          "imageOnly": false,
+          "buttonText": "Ver produtos",
           "targetType": "page",
-          "targetValue": "categories",
-          "active": true,
+          "targetValue": "home",
+          "active": false,
           "order": 0
-        },
-        {
-          "id": "cartela-ovos",
-          "title": "Cartela de Ovos",
-          "subtitle": "Oferta especial para hoje",
-          "eyebrow": "Oferta",
-          "image": "assets/banners/cartela-ovos.png",
-          "emoji": "🎁",
-          "imageOnly": true,
-          "buttonText": "Pedir ovos",
-          "targetType": "product",
-          "targetValue": "ovos_1",
-          "active": true,
-          "order": 1
-        },
-        {
-          "id": "clima-copa",
-          "title": "Clima de Copa",
-          "subtitle": "Ofertas especiais",
-          "eyebrow": "Ofertas",
-          "image": "assets/banners/clima-copa.png",
-          "emoji": "🎁",
-          "imageOnly": true,
-          "buttonText": "Conferir ofertas",
-          "targetType": "section",
-          "targetValue": "ofertas",
-          "active": true,
-          "order": 2
-        },
-        {
-          "id": "clique-retire",
-          "title": "Clique e Retire",
-          "subtitle": "Pague com seguranca e retire no local",
-          "eyebrow": "Retirada",
-          "image": "assets/banners/clique-retire.png",
-          "emoji": "🎁",
-          "imageOnly": true,
-          "buttonText": "Ver carrinho",
-          "targetType": "page",
-          "targetValue": "cart",
-          "active": true,
-          "order": 3
-        },
-        {
-          "id": "clube-pontos",
-          "title": "Clube M&J",
-          "subtitle": "Ganhe pontos nas compras",
-          "eyebrow": "Fidelidade",
-          "image": "assets/banners/clube-pontos.png",
-          "emoji": "🎁",
-          "imageOnly": true,
-          "buttonText": "Saiba mais",
-          "targetType": "page",
-          "targetValue": "loyalty",
-          "active": true,
-          "order": 4
         }
       ]
     },

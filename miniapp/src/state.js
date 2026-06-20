@@ -1,4 +1,4 @@
-﻿import { restoreMiniAppUiState } from './storage.js?v=2026.06.19.077';
+﻿import { restoreMiniAppUiState } from './storage.js?v=2026.06.20.106';
 
 export const MINIAPP_UI_DEFAULTS = {
   header: {
@@ -29,6 +29,9 @@ export const MINIAPP_UI_DEFAULTS = {
     autoplay: true,
     intervalMs: 5000,
     animation: 'slide'
+  },
+  sectionsMenu: {
+    enabled: true
   },
   banners: [
     {
@@ -92,6 +95,12 @@ export function normalizeMiniAppUi(raw = {}) {
   const bannerCarousel = cfg.bannerCarousel && typeof cfg.bannerCarousel === 'object' ? cfg.bannerCarousel : {};
   const bannerAnimation = String(bannerCarousel.animation || MINIAPP_UI_DEFAULTS.bannerCarousel.animation).trim().toLowerCase();
   const banners = Array.isArray(cfg.banners) && cfg.banners.length ? cfg.banners : MINIAPP_UI_DEFAULTS.banners;
+  const sectionsMenuEnabled = [
+    cfg.sectionsMenu?.enabled,
+    cfg.sections_menu?.enabled,
+    cfg.mostrarMenuSecoes,
+    cfg.showSectionsMenu
+  ].find(value => typeof value === 'boolean');
   return {
     header: {
       logo: String((cfg.header && cfg.header.logo) || '').trim() || MINIAPP_UI_DEFAULTS.header.logo
@@ -108,6 +117,11 @@ export function normalizeMiniAppUi(raw = {}) {
       autoplay: bannerCarousel.autoplay !== false,
       intervalMs: clampIntervalMs(bannerCarousel.intervalMs),
       animation: BANNER_ANIMATIONS.has(bannerAnimation) ? bannerAnimation : MINIAPP_UI_DEFAULTS.bannerCarousel.animation
+    },
+    sectionsMenu: {
+      enabled: sectionsMenuEnabled === undefined
+        ? MINIAPP_UI_DEFAULTS.sectionsMenu.enabled
+        : sectionsMenuEnabled === true
     },
     banners: banners.map(normalizeBanner).sort((a, b) => Number(a.order || 0) - Number(b.order || 0) || String(a.title).localeCompare(String(b.title), 'pt-BR'))
   };

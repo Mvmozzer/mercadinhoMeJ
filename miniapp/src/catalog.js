@@ -1,47 +1,7 @@
-import { slugify } from './utils.js?v=2026.06.19.077';
+import { slugify } from './utils.js?v=2026.06.20.106';
 
 const WEIGHTED_CATALOG_MARKERS = ['item.tarjas'];
 export const STATIC_CATALOG_FALLBACKS = ['./catalogo.json', '../catalogo.json'];
-const DEFAULT_SECTION_ICON_IMAGES = {
-  ofertas: 'assets/secoes/ofertas.png',
-  hortifruti: 'assets/secoes/hortifruti.png',
-  padaria: 'assets/secoes/padaria.png',
-  frios_laticinios: 'assets/secoes/frios_laticinios.png',
-  frios_e_laticinios: 'assets/secoes/frios_laticinios.png',
-  ovos: 'assets/secoes/ovos.png',
-  acougue: 'assets/secoes/acougue.png',
-  peixaria: 'assets/secoes/peixaria.png',
-  congelados: 'assets/secoes/congelados.png',
-  mercearia: 'assets/secoes/mercearia.png',
-  cafe_matinais: 'assets/secoes/cafe_matinais.png',
-  cafe_e_matinais: 'assets/secoes/cafe_matinais.png',
-  biscoitos: 'assets/secoes/biscoitos.png',
-  doces: 'assets/secoes/doces.png',
-  snacks: 'assets/secoes/snacks.png',
-  bebidas: 'assets/secoes/bebidas.png',
-  gelo: 'assets/secoes/gelo.png',
-  bebe: 'assets/secoes/bebe.png',
-  pet_shop: 'assets/secoes/pet_shop.png',
-  higiene: 'assets/secoes/higiene.png',
-  limpeza: 'assets/secoes/limpeza.png',
-  descartaveis: 'assets/secoes/descartaveis.png',
-  utilidades: 'assets/secoes/utilidades.png',
-  festas: 'assets/secoes/festas.png',
-  papelaria: 'assets/secoes/papelaria.png',
-  eletrica: 'assets/secoes/eletrica.png',
-  pilhas_baterias: 'assets/secoes/pilhas_baterias.png',
-  pilhas_e_baterias: 'assets/secoes/pilhas_baterias.png',
-  ferramentas: 'assets/secoes/ferramentas.png',
-  jardinagem: 'assets/secoes/jardinagem.png',
-  farmacinha: 'assets/secoes/farmacinha.png',
-  presentes_sazonais: 'assets/secoes/presentes_sazonais.png',
-  presentes_e_sazonais: 'assets/secoes/presentes_sazonais.png',
-  tabacaria: 'assets/secoes/tabacaria.png',
-  delivery_retirada: 'assets/secoes/delivery_retirada.png',
-  delivery_e_retirada: 'assets/secoes/delivery_retirada.png',
-  servicos_frente_caixa: 'assets/secoes/servicos_frente_caixa.png',
-  servicos_e_frente_de_caixa: 'assets/secoes/servicos_frente_caixa.png'
-};
 
 export function isWeightedProduct(item = {}) {
   return item.vendidoPorPeso === true || item.pesavel === true || item.tipoVenda === 'granel' || item.modo_venda === 'granel' || item.saleMode === 'weighted';
@@ -119,15 +79,40 @@ function productPoints(product = {}, fallbackPrice = 0) {
 
 export function emojiForSection(name = '') {
   const text = slugify(name);
-  if (/hort|feira|fruta|verd/.test(text)) return 'H';
-  if (/bebida|suco|refri|agua/.test(text)) return 'B';
-  if (/limp/.test(text)) return 'L';
-  if (/padaria|pao/.test(text)) return 'P';
-  if (/carne|acougue/.test(text)) return 'C';
-  if (/pet/.test(text)) return 'Pet';
-  if (/higiene/.test(text)) return 'Hig';
-  if (/congel/.test(text)) return 'F';
-  return 'M&J';
+  if (/todos|all/.test(text)) return '🧺';
+  if (/oferta|promocao|promo/.test(text)) return '🏷️';
+  if (/hort|feira|fruta|verd/.test(text)) return '🥬';
+  if (/padaria|pao/.test(text)) return '🥖';
+  if (/frio|laticinio|queijo|leite/.test(text)) return '🧀';
+  if (/ovo/.test(text)) return '🥚';
+  if (/carne|acougue/.test(text)) return '🥩';
+  if (/peixe|peixaria/.test(text)) return '🐟';
+  if (/congel|sorvete/.test(text)) return '🥶';
+  if (/mercearia|arroz|feijao|cesta/.test(text)) return '🛒';
+  if (/cafe|matinal/.test(text)) return '☕';
+  if (/biscoito|bolacha/.test(text)) return '🍪';
+  if (/doce|chocolate/.test(text)) return '🍫';
+  if (/snack|salgadinho/.test(text)) return '🍿';
+  if (/bebida|suco|refri|agua/.test(text)) return '🥤';
+  if (/gelo/.test(text)) return '🧊';
+  if (/bebe|infantil/.test(text)) return '🍼';
+  if (/pet/.test(text)) return '🐾';
+  if (/higiene/.test(text)) return '🧴';
+  if (/limp/.test(text)) return '🧼';
+  if (/descart/.test(text)) return '📦';
+  if (/utilidade|cozinha/.test(text)) return '🍳';
+  if (/festa/.test(text)) return '🎉';
+  if (/papelaria/.test(text)) return '📚';
+  if (/eletric/.test(text)) return '💡';
+  if (/pilha|bateria/.test(text)) return '🔋';
+  if (/ferramenta/.test(text)) return '🧰';
+  if (/jardin/.test(text)) return '🪴';
+  if (/farmac|remedio/.test(text)) return '💊';
+  if (/presente|sazonal/.test(text)) return '🎁';
+  if (/tabac/.test(text)) return '🚬';
+  if (/delivery|retirada|entrega/.test(text)) return '🚚';
+  if (/servico|caixa|pagamento/.test(text)) return '💳';
+  return '🛒';
 }
 
 function looksLikeSectionImage(value = '') {
@@ -136,36 +121,16 @@ function looksLikeSectionImage(value = '') {
     || /\.(png|jpe?g|gif|webp|svg)(\?|#|$)/i.test(text);
 }
 
-function sectionIconKey(value = '') {
-  return slugify(value).replace(/-/g, '_');
-}
-
-function defaultSectionImage(section = {}, name = '') {
-  const candidates = [section.id, section.secao, section.sectionId, section.nome, section.name, name]
-    .map(sectionIconKey)
-    .filter(Boolean);
-  const key = candidates.find(item => DEFAULT_SECTION_ICON_IMAGES[item]);
-  return key ? DEFAULT_SECTION_ICON_IMAGES[key] : '';
-}
-
-function sectionImage(section = {}) {
-  const configured = [
-    section.iconImage,
-    section.icon_image,
-    section.imagem,
-    section.image,
-    section.imageUrl,
-    section.image_url,
-    section.icone,
-    section.icon
-  ].find(looksLikeSectionImage);
-  return String(configured || defaultSectionImage(section, section.nome || section.name || '') || '').trim();
+export function looksLikeSectionEmoji(value = '') {
+  const text = String(value || '').trim();
+  return /[\p{Extended_Pictographic}\u2600-\u27BF]/u.test(text);
 }
 
 function sectionEmoji(section = {}, name = '') {
-  const icon = String(section.icon || '').trim();
-  if (icon && !looksLikeSectionImage(icon)) return icon;
-  return section.emoji || emojiForSection(name);
+  const configured = [section.emoji, section.icon, section.icone]
+    .map(value => String(value || '').trim())
+    .find(value => value && !looksLikeSectionImage(value) && looksLikeSectionEmoji(value));
+  return configured || emojiForSection(name || section.nome || section.name || section.id);
 }
 
 export function normalizeProduct(raw = {}, sectionName = '', index = 0) {
@@ -234,15 +199,12 @@ export function normalizeCatalog(payload = {}) {
   rawSections.forEach((section, index) => {
     const name = section.nome || section.name || section.titulo || `Seção ${index + 1}`;
     const id = String(section.id || slugify(name));
-    const iconImage = sectionImage(section);
     map.set(id, {
       id,
       name,
       nome: name,
       icon: sectionEmoji(section, name),
       emoji: section.emoji || '',
-      iconImage,
-      image: iconImage,
       products: []
     });
   });
@@ -255,8 +217,6 @@ export function normalizeCatalog(payload = {}) {
         nome: product.section,
         icon: emojiForSection(product.section),
         emoji: '',
-        iconImage: '',
-        image: '',
         products: []
       });
     }
