@@ -75,14 +75,14 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.22.617';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productBadges } from './catalog.js?v=2026.06.22.617';
-import { telegramHandoff } from './checkout.js?v=2026.06.22.617';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.22.617';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.22.617';
-import { persistMiniAppUiState } from './storage.js?v=2026.06.22.617';
-import { updateMainButton } from './telegram.js?v=2026.06.22.617';
-import { loadTracking } from './tracking.js?v=2026.06.22.617';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.22.643';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productBadges } from './catalog.js?v=2026.06.22.643';
+import { telegramHandoff } from './checkout.js?v=2026.06.22.643';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.22.643';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.22.643';
+import { persistMiniAppUiState } from './storage.js?v=2026.06.22.643';
+import { updateMainButton } from './telegram.js?v=2026.06.22.643';
+import { loadTracking } from './tracking.js?v=2026.06.22.643';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -1275,7 +1275,7 @@ export function createRenderer(state) {
   }
 
   function bottomNav() {
-    if (['home', 'categories', 'products', 'product', 'cart', 'telegram-checkout'].includes(state.page)) return '';
+    if (['home', 'categories', 'products', 'product', 'cart', 'telegram-checkout', 'loyalty'].includes(state.page)) return '';
     const item = (page, icon, label) => `
       <button class="${state.page === page ? 'active' : ''}" data-page="${page}">
         <span aria-hidden="true">${icon}</span>
