@@ -4,40 +4,38 @@
   'function productBadges'
 ];
 const STORE_STATUS_LABELS = ['Pedidos pausados', 'Fechado para pedidos'];
-const DURGER_COMPATIBILITY_MARKERS = [
-  'durger-catalog',
-  'durger-card',
-  'durger-badge',
-  'SEU PEDIDO',
-  'Finalizar no Telegram',
-  'escapeHtml(item.image)',
-  'referrerpolicy="no-referrer"'
-];
 
 const RUNTIME_LOGO_BUILD = String(globalThis?.__MJ_LOGO_BUILD || '').trim();
 const MINIAPP_UI_DEFAULTS = {
-  header: { logo: '/assets/logo-mj-mercadinho.png' },
+  header: {
+    logo: '/assets/logo-mj-mercadinho.png',
+    logoEnabled: true,
+    greetingEnabled: true,
+    titleEnabled: true,
+    greetingText: '',
+    titleText: 'Mercadinho M&J'
+  },
   theme: {
-    primary: '#10853f',
-    primarySoft: '#ddf7e8',
-    bg: '#f5f7f6',
+    primary: '#006CFF',
+    primarySoft: '#EAF3FF',
+    bg: '#F5F8FC',
     card: '#ffffff',
-    text: '#132017',
-    muted: '#66736a',
-    border: '#e2ebe6',
-    heroFrom: '#dff7e9',
-    heroTo: '#f5f7f6',
-    buttonGradientFrom: '#087333',
-    buttonGradientTo: '#16b565'
+    text: '#142033',
+    muted: '#60718A',
+    border: '#D9E2EF',
+    heroFrom: '#006CFF',
+    heroTo: '#087BFF',
+    buttonGradientFrom: '#006CFF',
+    buttonGradientTo: '#0049B8'
   },
   splash: {
     logo: '/assets/logo-mj-mercadinho.png',
     mode: 'logo',
     mediaUrl: '',
     animation: 'fade',
-    background: '#10853f',
-    gradientFrom: '#22c55e',
-    gradientTo: '#087333',
+    background: '#006CFF',
+    gradientFrom: '#087BFF',
+    gradientTo: '#0049B8',
     durationMs: 5000
   },
   bannerCarousel: {
@@ -77,16 +75,38 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.20.455';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productBadges } from './catalog.js?v=2026.06.20.455';
-import { telegramHandoff } from './checkout.js?v=2026.06.20.455';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.20.455';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.20.455';
-import { persistMiniAppUiState } from './storage.js?v=2026.06.20.455';
-import { updateMainButton } from './telegram.js?v=2026.06.20.455';
-import { loadTracking } from './tracking.js?v=2026.06.20.455';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.22.617';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productBadges } from './catalog.js?v=2026.06.22.617';
+import { telegramHandoff } from './checkout.js?v=2026.06.22.617';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.22.617';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.22.617';
+import { persistMiniAppUiState } from './storage.js?v=2026.06.22.617';
+import { updateMainButton } from './telegram.js?v=2026.06.22.617';
+import { loadTracking } from './tracking.js?v=2026.06.22.617';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
+const SECTION_MENU_IMAGE_ASSETS = {
+  ofertas: '../assets/secoes/ofertas.png',
+  hortifruti: '../assets/secoes/hortifruti.png',
+  padaria: '../assets/secoes/padaria.png',
+  frios_laticinios: '../assets/secoes/frios_laticinios.png',
+  frios_e_laticinios: '../assets/secoes/frios_laticinios.png',
+  laticinios: '../assets/secoes/frios_laticinios.png',
+  ovos: '../assets/secoes/ovos.png',
+  acougue: '../assets/secoes/acougue.png',
+  açougue: '../assets/secoes/acougue.png',
+  peixaria: '../assets/secoes/peixaria.png',
+  congelados: '../assets/secoes/congelados.png',
+  mercearia: '../assets/secoes/mercearia.png',
+  cafe_matinais: '../assets/secoes/cafe_matinais.png',
+  cafe_e_matinais: '../assets/secoes/cafe_matinais.png',
+  cafe_da_manha: '../assets/secoes/cafe_matinais.png',
+  higiene: '../assets/secoes/higiene.png',
+  limpeza: '../assets/secoes/limpeza.png',
+  descartaveis: '../assets/secoes/descartaveis.png',
+  biscoitos: '../assets/secoes/biscoitos.png',
+  doces: '../assets/secoes/doces.png'
+};
 
 function clampMs(value, fallback) {
   const parsed = Number(value);
@@ -102,6 +122,11 @@ function clampBannerIntervalMs(value) {
 
 function cleanBannerText(value, fallback = '', max = 180) {
   return String(value ?? fallback ?? '').replace(/[\u0000-\u001f<>`]/g, '').replace(/\s+/g, ' ').trim().slice(0, max);
+}
+
+function firstBoolean(values = [], fallback = true) {
+  const value = values.find(item => typeof item === 'boolean');
+  return typeof value === 'boolean' ? value : fallback === true;
 }
 
 function normalizeBannerTarget(type, value) {
@@ -132,6 +157,7 @@ function normalizeBanner(raw = {}, index = 0) {
 
 function normalizeMiniAppUi(raw = {}) {
   const cfg = raw && typeof raw === 'object' ? raw : {};
+  const header = cfg.header && typeof cfg.header === 'object' ? cfg.header : {};
   const animation = String(cfg.splash?.animation || MINIAPP_UI_DEFAULTS.splash.animation).toLowerCase();
   const bannerCarousel = cfg.bannerCarousel && typeof cfg.bannerCarousel === 'object' ? cfg.bannerCarousel : {};
   const bannerAnimation = String(bannerCarousel.animation || MINIAPP_UI_DEFAULTS.bannerCarousel.animation).trim().toLowerCase();
@@ -144,7 +170,30 @@ function normalizeMiniAppUi(raw = {}) {
   ].find(value => typeof value === 'boolean');
   return {
     header: {
-      logo: String((cfg.header && cfg.header.logo) || MINIAPP_UI_DEFAULTS.header.logo).trim() || MINIAPP_UI_DEFAULTS.header.logo
+      ...header,
+      logo: String(header.logo || MINIAPP_UI_DEFAULTS.header.logo).trim() || MINIAPP_UI_DEFAULTS.header.logo,
+      logoEnabled: firstBoolean(
+        [header.logoEnabled, header.showLogo, header.mostrarLogo, header.iconeAtivo],
+        MINIAPP_UI_DEFAULTS.header.logoEnabled
+      ),
+      greetingEnabled: firstBoolean(
+        [header.greetingEnabled, header.showGreeting, header.mostrarSaudacao, header.saudacaoAtiva],
+        MINIAPP_UI_DEFAULTS.header.greetingEnabled
+      ),
+      titleEnabled: firstBoolean(
+        [header.titleEnabled, header.showTitle, header.mostrarTitulo, header.tituloAtivo],
+        MINIAPP_UI_DEFAULTS.header.titleEnabled
+      ),
+      greetingText: cleanBannerText(
+        header.greetingText || header.saudacao || header.fraseSaudacao,
+        MINIAPP_UI_DEFAULTS.header.greetingText,
+        90
+      ),
+      titleText: cleanBannerText(
+        header.titleText || header.titulo || header.fraseTitulo,
+        MINIAPP_UI_DEFAULTS.header.titleText,
+        90
+      )
     },
     theme: {
       ...MINIAPP_UI_DEFAULTS.theme,
@@ -199,7 +248,7 @@ function applyThemeVariables(uiState = {}) {
   const root = document.documentElement;
   const theme = uiState.theme || {};
   const splash = uiState.splash || {};
-  document.body.dataset.miniappTheme = 'verde_fresco';
+  document.body.dataset.miniappTheme = 'mj_blue';
   root.style.setProperty('--mj-primary', theme.primary || MINIAPP_UI_DEFAULTS.theme.primary);
   root.style.setProperty('--mj-primary-soft', theme.primarySoft || MINIAPP_UI_DEFAULTS.theme.primarySoft);
   root.style.setProperty('--mj-bg', theme.bg || MINIAPP_UI_DEFAULTS.theme.bg);
@@ -228,6 +277,25 @@ function customerPoints(state = {}) {
   ) || 0;
 }
 
+function loyaltyPointsAvailable(state = {}) {
+  const value = state.loyalty?.pontosDisponiveis ??
+    state.loyalty?.saldoPontos ??
+    state.loyalty?.pontos ??
+    state.cliente?.pontosFidelidade ??
+    state.cliente?.saldoFidelidade ??
+    0;
+  const points = Math.floor(Number(value) || 0);
+  return Math.max(0, points);
+}
+
+function loyaltyChallenges(state = {}) {
+  const items = state.loyalty?.desafios ||
+    state.loyalty?.challenges ||
+    state.loyalty?.programa?.desafios ||
+    [];
+  return Array.isArray(items) ? items : [];
+}
+
 function customerName(state = {}) {
   const nameFromClient =
     state.cliente?.nome ||
@@ -252,6 +320,15 @@ function customerGreetingPrefix(date = new Date()) {
 
 function customerGreetingLine(state = {}) {
   return `${customerGreetingPrefix(new Date())}, ${customerName(state)}`;
+}
+
+function formatHeaderText(template = '', fallback = '', values = {}) {
+  const raw = String(template || fallback || '').trim();
+  return raw
+    .replace(/\{saudacao\}/gi, values.greeting || '')
+    .replace(/\{nome\}/gi, values.name || '')
+    .replace(/\{titulo\}/gi, values.title || '')
+    .replace(/\{loja\}/gi, values.store || values.title || '');
 }
 
 function customerTelegramId(state = {}) {
@@ -287,10 +364,12 @@ function customerAddressSummary(state = {}) {
 }
 
 function normalizeStoreStatus(state = {}) {
-  const isClosed = state.store?.status === 'fechada' || state.store?.aceitaPedidos === false;
+  const status = String(state.store?.status || '').toLowerCase();
+  const isPaused = status === 'pausada';
+  const isClosed = status === 'fechada' || status === 'fechado' || state.store?.aceitaPedidos === false;
   return {
-    className: isClosed ? 'closed' : 'open',
-    text: state.store?.mensagem || (isClosed ? 'Fechado para pedidos' : 'Aberto agora')
+    className: isPaused ? 'paused' : (isClosed ? 'closed' : 'open'),
+    text: state.store?.mensagem || (isPaused ? 'Pedidos pausados' : (isClosed ? 'Fechado para pedidos' : 'Loja aberta. Pode fazer seu pedido.'))
   };
 }
 
@@ -342,6 +421,30 @@ function sectionEmoji(section = {}) {
   const configured = String(section.emoji || section.icon || '').trim();
   if (looksLikeSectionEmoji(configured)) return configured;
   return emojiForSection(section.name || section.nome || section.id || '');
+}
+
+function sectionImageKey(value = '') {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/&/g, 'e')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+}
+
+function sectionImageSrc(section = {}) {
+  const keys = [
+    section.id,
+    section.slug,
+    section.name,
+    section.nome,
+    section.section,
+    section.secao
+  ].map(sectionImageKey).filter(Boolean);
+  const match = keys.find(key => SECTION_MENU_IMAGE_ASSETS[key]);
+  if (!match) return '';
+  return resolveAssetUrl(SECTION_MENU_IMAGE_ASSETS[match], '');
 }
 
 export function createRenderer(state) {
@@ -536,23 +639,47 @@ export function createRenderer(state) {
   }
 
   function renderCustomerHeader(title = '') {
+    const ui = normalizeMiniAppUi(state.miniappUi || state.miniappui || {});
+    const header = ui.header || {};
     const name = customerName(state);
     const greeting = customerGreetingPrefix(new Date());
     const status = normalizeStoreStatus(state);
     const showSectionsMenu = sectionsMenuEnabled() && state.sections.length > 0;
     const headerLogo = logoSrc(state);
+    const defaultTitle = 'Mercadinho M&J';
+    const explicitTitle = String(title || '').trim();
+    const titleText = explicitTitle ? formatHeaderText(explicitTitle, defaultTitle, {
+      greeting,
+      name,
+      title: defaultTitle,
+      store: state.store?.nome || defaultTitle
+    }) : '';
+    const greetingText = header.greetingText
+      ? escapeHtml(formatHeaderText(header.greetingText, `${greeting}, ${name}`, {
+        greeting,
+        name,
+        title: titleText || defaultTitle,
+        store: state.store?.nome || defaultTitle
+      }))
+      : `${escapeHtml(greeting)}, <span class="customer-name">${escapeHtml(name)}</span>.`;
+    const logoMarkup = header.logoEnabled === false ? '' : `
+          <img class="brand-logo" src="${escapeHtml(headerLogo)}" alt="Mercadinho M&J" referrerpolicy="no-referrer" onerror="this.hidden=true">`;
+    const greetingMarkup = header.greetingEnabled === false ? '' : `<p class="greeting" id="customerGreeting">${greetingText}</p>`;
+    const titleMarkup = title && header.titleEnabled !== false ? `<h1>${escapeHtml(titleText)}</h1>` : '';
     return `
       <header class="market-hero app-header" id="marketHero">
-        <div class="hero-brand-block">
-          <img class="brand-logo" src="${escapeHtml(headerLogo)}" alt="Mercadinho M&J" referrerpolicy="no-referrer" onerror="this.hidden=true;this.nextElementSibling.hidden=false">
-          <span class="brand-mark brand-logo-fallback" aria-hidden="true" hidden>${svgIcon('store', 22)}</span>
-          <div class="hero-copy">
-            <p class="greeting" id="customerGreeting">${escapeHtml(greeting)}, <span class="customer-name">${escapeHtml(name)}</span></p>
-            <h1>${escapeHtml(title || 'Mercadinho M&J')}</h1>
+        <div class="hero-top-row">
+          ${showSectionsMenu ? `<button class="icon-button menu-button" type="button" data-open-sections aria-label="Abrir menu de secoes">${svgIcon('menu', 22)}</button>` : '<span class="hero-spacer" aria-hidden="true"></span>'}
+          <div class="hero-brand-block">
+            ${logoMarkup}
+            <div class="hero-copy">
+              ${greetingMarkup}
+              ${titleMarkup}
+            </div>
           </div>
+          <button class="loyalty-shortcut" type="button" data-page="loyalty" aria-label="Abrir fidelidade. ${loyaltyPointsAvailable(state)} pontos disponiveis">⭐: ${loyaltyPointsAvailable(state)}</button>
         </div>
-        ${showSectionsMenu ? `<button class="icon-button menu-button" type="button" data-open-sections aria-label="Abrir menu de secoes">${svgIcon('menu', 20)}</button>` : ''}
-        <div class="store-status ${status.className}" id="storeStatus" ${status.className === 'open' ? 'hidden' : ''}>${escapeHtml(status.text)}</div>
+        <div class="store-status ${status.className}" id="storeStatus"><span class="store-status-dot" aria-hidden="true"></span><span>${escapeHtml(status.text)}</span></div>
       </header>
       ${renderSectionsDrawer()}
     `;
@@ -578,7 +705,7 @@ export function createRenderer(state) {
     const color = badgeColor(badge.color || badge.cor);
     const background = badgeColor(badge.background || badge.fundo || badge.bg);
     const style = [color ? `color:${color}` : '', background ? `background:${background}` : ''].filter(Boolean).join(';');
-    return `<span class="durger-badge"${style ? ` style="${escapeHtml(style)}"` : ''}>${escapeHtml(text)}</span>`;
+    return `<span class="product-badge"${style ? ` style="${escapeHtml(style)}"` : ''}>${escapeHtml(text)}</span>`;
   }
 
   function renderProductPhotoBadge(badge = {}) {
@@ -663,7 +790,7 @@ export function createRenderer(state) {
     const description = String(product.descricao || product.description || product.unit || '').trim();
     const unit = String(product.unit || product.unidade || '').trim() || description || brand || 'un';
     return `
-      <article class="product-card mini-product-card durger-card" data-product-id="${escapeHtml(product.id)}">
+      <article class="product-card mini-product-card" data-product-id="${escapeHtml(product.id)}">
         <div class="product-media-frame product-media">
           <button class="product-image" data-product-open="${escapeHtml(product.id)}" aria-label="Abrir ${escapeHtml(product.name)}">
             ${productThumb(product)}
@@ -694,7 +821,17 @@ export function createRenderer(state) {
   }
 
   function renderSectionMenuIcon(section = {}) {
-    return `<span class="section-menu-icon-emoji" aria-hidden="true">${escapeHtml(sectionEmoji(section))}</span>`;
+    const image = sectionImageSrc(section);
+    const fallback = sectionEmoji(section);
+    if (image) {
+      return `
+        <span class="section-menu-icon-image" aria-hidden="true">
+          <img src="${escapeHtml(image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove();this.nextElementSibling.hidden=false">
+          <span hidden>${escapeHtml(fallback)}</span>
+        </span>
+      `;
+    }
+    return `<span class="section-menu-icon-fallback" aria-hidden="true">${escapeHtml(fallback)}</span>`;
   }
 
   function renderDrawerSectionItem(section = {}, active = false) {
@@ -716,9 +853,12 @@ export function createRenderer(state) {
       <div class="sections-menu-overlay${open ? ' open' : ''}" data-close-sections ${open ? '' : 'hidden'}>
         <aside class="sections-drawer" id="sectionsDrawer" role="dialog" aria-modal="true" aria-labelledby="sectionsDrawerTitle">
           <div class="sections-drawer-header">
-            <div>
-              <h2 id="sectionsDrawerTitle">Secoes</h2>
-              <p>Escolha uma secao</p>
+            <div class="drawer-brand-lockup">
+              <img class="drawer-logo" src="${escapeHtml(logoSrc(state))}" alt="Mercadinho M&J" referrerpolicy="no-referrer">
+              <div>
+                <h2 id="sectionsDrawerTitle">Mercadinho M&J</h2>
+                <p>Menu de secoes</p>
+              </div>
             </div>
             <button class="icon-button" type="button" data-close-sections aria-label="Fechar menu de secoes">${svgIcon('x', 18)}</button>
           </div>
@@ -796,6 +936,7 @@ export function createRenderer(state) {
       ${renderCustomerHeader()}
       <main class="page home-page" data-page="home">
         ${searchBox('Buscar produtos')}
+        ${renderBannerCarousel()}
         ${filtered ? renderSearchResults(filtered, 'Resultados da busca') : state.sections.map(renderHomeSectionCarousel).join('')}
       </main>
     `;
@@ -885,9 +1026,13 @@ export function createRenderer(state) {
     const useNativeTelegramButton = hasTelegramMainButton();
     return `
       <main class="page cart-page" data-page="cart" id="cartDrawer">
-        <div class="topbar">
+        <div class="topbar page-brand-hero">
           <button data-page="${state.previousPage || 'home'}" aria-label="Voltar">${svgIcon('arrowLeft', 20)}</button>
-          <strong>Carrinho</strong>
+          <div>
+            <strong>Carrinho</strong>
+            <small>Revise antes de finalizar no Telegram</small>
+          </div>
+          <img class="topbar-logo" src="${escapeHtml(logoSrc(state))}" alt="Mercadinho M&J" referrerpolicy="no-referrer">
           <button data-clear-cart aria-label="Limpar carrinho">${svgIcon('trash', 18)}</button>
         </div>
         ${items.length ? `
@@ -914,7 +1059,7 @@ export function createRenderer(state) {
           <section class="total-card">
             <div><span>Subtotal</span><strong>${formatMoney(cartTotal(state))}</strong></div>
             <div class="summary-total"><span>Total</span><strong>${formatMoney(cartTotal(state))}</strong></div>
-            <p class="telegram-checkout-note">Entrega, retirada, pontos e Pix continuam no Telegram.</p>
+            <p class="telegram-checkout-note">Pix preservado: recebedor, valor e numero do pedido aparecem na confirmacao pelo Telegram.</p>
             <div class="card-actions">
               <button id="continueShopping" data-page="${state.previousPage || 'home'}">Continuar comprando</button>
               ${useNativeTelegramButton ? '' : '<button id="finishInTelegram">Finalizar no Telegram</button>'}
@@ -998,30 +1143,64 @@ export function createRenderer(state) {
   function renderTracking() {
     const tracking = state.tracking || {};
     const mapaUrl = tracking?.mapaUrl || tracking?.mapUrl || '';
+    const status = tracking?.status || 'Aguardando atualizacao do status.';
     return `
-      ${renderCustomerHeader('Acompanhar pedido')}
       <main class="page tracking-panel" id="trackingPanel" data-page="tracking">
-        <div class="topbar">
-          <button data-page="orders">←</button>
-          <strong>Acompanhar entrega</strong>
-          <span></span>
+        <div class="topbar page-brand-hero">
+          <button data-page="orders" aria-label="Voltar">${svgIcon('arrowLeft', 20)}</button>
+          <div>
+            <strong>Acompanhar pedido</strong>
+            <small>Acompanhamento publico seguro</small>
+          </div>
+          <img class="topbar-logo" src="${escapeHtml(logoSrc(state))}" alt="Mercadinho M&J" referrerpolicy="no-referrer">
         </div>
-        <section class="checkout-card">
-          <h2>Pedido em andamento</h2>
-          <p>${escapeHtml(tracking?.status || 'Aguardando atualização do status.')}</p>
-          ${mapaUrl ? `<a class="track-map" href="${escapeHtml(mapaUrl)}" target="_blank" rel="noopener">Abrir no Maps</a>` : '<div class="fake-map">Acompanhe aqui quando o pedido for confirmado.</div>'}
+        <section class="tracking-status-card">
+          <h2>${escapeHtml(status)}</h2>
+          <p>${escapeHtml(tracking?.previsao || tracking?.mensagem || 'Previsao atualizada pelo painel quando o pedido avanca.')}</p>
         </section>
-        <section class="loyalty-hero" id="loyaltyPanel">
-          <h2>Meus pontos</h2>
-          <strong>⭐ ${Number(state.loyalty?.saldoPontos || 0)} pontos</strong>
+        <section class="tracking-summary-card">
+          <h2>Resumo</h2>
+          <p>${escapeHtml(tracking?.resumo || 'Status, pagamento e entrega continuam sincronizados com o pedido real.')}</p>
+        </section>
+        <section class="tracking-timeline">
+          <div class="tracking-step done"><span>${svgIcon('check', 18)}</span><div><strong>Pedido recebido</strong><p>Carrinho enviado pelo Mini App</p></div></div>
+          <div class="tracking-step done"><span>${svgIcon('check', 18)}</span><div><strong>Pix aprovado</strong><p>Valor e recebedor conferidos</p></div></div>
+          <div class="tracking-step current"><span>3</span><div><strong>Em rota</strong><p>Cliente acompanha sem ver dados privados</p></div></div>
+          <div class="tracking-step"><span>4</span><div><strong>Entregue</strong><p>Finalizacao pelo painel</p></div></div>
+        </section>
+        <section class="tracking-map-card">
+          ${mapaUrl ? `<a class="track-map" href="${escapeHtml(mapaUrl)}" target="_blank" rel="noopener">Abrir rota no Maps</a>` : '<div class="map-road"></div><div class="map-pin"></div>'}
         </section>
       </main>
+    `;
+  }
+
+  function renderLoyaltyChallengeCard(challenge = {}) {
+    const name = challenge.nome || challenge.name || 'Desafio';
+    const description = challenge.descricao || challenge.description || '';
+    const progress = Math.max(0, Math.floor(Number(challenge.progresso ?? challenge.progress ?? challenge.progressValue ?? 0) || 0));
+    const goal = Math.max(1, Math.floor(Number(challenge.meta ?? challenge.goal ?? challenge.goalValue ?? 1) || 1));
+    const remaining = Math.max(0, Math.floor(Number(challenge.restante ?? (goal - progress)) || 0));
+    const reward = Math.max(0, Math.floor(Number(challenge.recompensaPontos ?? challenge.rewardPoints ?? challenge.pontos ?? 0) || 0));
+    const progressLabel = remaining > 0
+      ? `Faltam ${remaining} ${remaining === 1 ? 'produto' : 'produtos'}`
+      : 'Desafio concluido';
+    return `
+      <article class="loyalty-challenge-card">
+        <div>
+          <strong>${escapeHtml(name)}</strong>
+          ${description ? `<p>${escapeHtml(description)}</p>` : ''}
+        </div>
+        <span>${escapeHtml(progressLabel)}</span>
+        ${reward ? `<small>+${escapeHtml(reward)} pontos</small>` : ''}
+      </article>
     `;
   }
 
   function renderLoyalty() {
     const pontos = Number(state.loyalty?.saldoPontos || 0);
     const saldoReais = Number(state.loyalty?.saldoReais || 0);
+    const challenges = loyaltyChallenges(state);
     return `
       ${renderCustomerHeader('Fidelidade')}
       <main class="page loyalty-panel" id="loyaltyPanel" data-page="loyalty">
@@ -1035,6 +1214,13 @@ export function createRenderer(state) {
           <strong>⭐ ${pontos} pontos</strong>
           <p>Saldo convertido: ${formatMoney(saldoReais)} em vantagem de compra.</p>
           <button data-page="home">Ver produtos</button>
+        </section>
+        <section class="loyalty-challenges">
+          <div class="section-title">
+            <h2>Desafios</h2>
+            <span>${challenges.length} ativos</span>
+          </div>
+          ${challenges.length ? challenges.map(renderLoyaltyChallengeCard).join('') : '<div class="empty">Os desafios cadastrados no painel aparecem aqui.</div>'}
         </section>
       </main>
     `;
@@ -1083,7 +1269,7 @@ export function createRenderer(state) {
           <span>${count} ${count === 1 ? 'item' : 'itens'}</span>
           <strong>${formatMoney(cartTotal(state))}</strong>
         </div>
-        <button id="reviewCart" data-page="cart">Meu carrinho</button>
+        <button id="reviewCart" data-page="cart">Ver carrinho</button>
       </div>
     `;
   }
@@ -1098,8 +1284,8 @@ export function createRenderer(state) {
     `;
     return `
       <nav class="miniapp-bottom-nav">
-        ${item('home', svgIcon('home', 20), 'Início')}
-        ${item('categories', svgIcon('search', 20), 'Buscar')}
+        ${item('home', svgIcon('home', 20), 'Loja')}
+        ${item('categories', svgIcon('menu', 20), 'Seções')}
         ${item('cart', svgIcon('bag', 20), 'Carrinho')}
         ${item('orders', svgIcon('package', 20), 'Pedidos')}
         ${item('profile', svgIcon('user', 20), 'Conta')}

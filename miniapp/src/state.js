@@ -1,30 +1,35 @@
-﻿import { restoreMiniAppUiState } from './storage.js?v=2026.06.20.455';
+﻿import { restoreMiniAppUiState } from './storage.js?v=2026.06.22.617';
 
 export const MINIAPP_UI_DEFAULTS = {
   header: {
-    logo: '/assets/logo-mj-mercadinho.png'
+    logo: '/assets/logo-mj-mercadinho.png',
+    logoEnabled: true,
+    greetingEnabled: true,
+    titleEnabled: true,
+    greetingText: '',
+    titleText: 'Mercadinho M&J'
   },
   theme: {
-    primary: '#10853f',
-    primarySoft: '#ddf7e8',
-    bg: '#f5f7f6',
+    primary: '#006CFF',
+    primarySoft: '#EAF3FF',
+    bg: '#F5F8FC',
     card: '#ffffff',
-    text: '#132017',
-    muted: '#66736a',
-    border: '#e2ebe6',
-    heroFrom: '#dff7e9',
-    heroTo: '#f5f7f6',
-    buttonGradientFrom: '#087333',
-    buttonGradientTo: '#16b565'
+    text: '#142033',
+    muted: '#60718A',
+    border: '#D9E2EF',
+    heroFrom: '#006CFF',
+    heroTo: '#087BFF',
+    buttonGradientFrom: '#006CFF',
+    buttonGradientTo: '#0049B8'
   },
   splash: {
     logo: '/assets/logo-mj-mercadinho.png',
     mode: 'logo',
     mediaUrl: '',
     animation: 'fade',
-    background: '#10853f',
-    gradientFrom: '#22c55e',
-    gradientTo: '#087333',
+    background: '#006CFF',
+    gradientFrom: '#087BFF',
+    gradientTo: '#0049B8',
     durationMs: 5000
   },
   bannerCarousel: {
@@ -67,6 +72,11 @@ function cleanText(value, fallback = '', max = 180) {
   return String(value ?? fallback ?? '').replace(/[\u0000-\u001f<>`]/g, '').replace(/\s+/g, ' ').trim().slice(0, max);
 }
 
+function firstBoolean(values = [], fallback = true) {
+  const value = values.find(item => typeof item === 'boolean');
+  return typeof value === 'boolean' ? value : fallback === true;
+}
+
 function normalizeBannerTarget(type, value) {
   if (type === 'url') return /^https?:\/\//i.test(String(value || '').trim()) ? String(value || '').trim() : '';
   if (type === 'page') return BANNER_PAGES.has(String(value || '').trim()) ? String(value || '').trim() : 'home';
@@ -94,6 +104,7 @@ function normalizeBanner(banner = {}, index = 0) {
 
 export function normalizeMiniAppUi(raw = {}) {
   const cfg = raw && typeof raw === 'object' ? raw : {};
+  const header = cfg.header && typeof cfg.header === 'object' ? cfg.header : {};
   const bannerCarousel = cfg.bannerCarousel && typeof cfg.bannerCarousel === 'object' ? cfg.bannerCarousel : {};
   const bannerAnimation = String(bannerCarousel.animation || MINIAPP_UI_DEFAULTS.bannerCarousel.animation).trim().toLowerCase();
   const banners = Array.isArray(cfg.banners) && cfg.banners.length ? cfg.banners : MINIAPP_UI_DEFAULTS.banners;
@@ -105,7 +116,30 @@ export function normalizeMiniAppUi(raw = {}) {
   ].find(value => typeof value === 'boolean');
   return {
     header: {
-      logo: String((cfg.header && cfg.header.logo) || '').trim() || MINIAPP_UI_DEFAULTS.header.logo
+      ...header,
+      logo: String(header.logo || '').trim() || MINIAPP_UI_DEFAULTS.header.logo,
+      logoEnabled: firstBoolean(
+        [header.logoEnabled, header.showLogo, header.mostrarLogo, header.iconeAtivo],
+        MINIAPP_UI_DEFAULTS.header.logoEnabled
+      ),
+      greetingEnabled: firstBoolean(
+        [header.greetingEnabled, header.showGreeting, header.mostrarSaudacao, header.saudacaoAtiva],
+        MINIAPP_UI_DEFAULTS.header.greetingEnabled
+      ),
+      titleEnabled: firstBoolean(
+        [header.titleEnabled, header.showTitle, header.mostrarTitulo, header.tituloAtivo],
+        MINIAPP_UI_DEFAULTS.header.titleEnabled
+      ),
+      greetingText: cleanText(
+        header.greetingText || header.saudacao || header.fraseSaudacao,
+        MINIAPP_UI_DEFAULTS.header.greetingText,
+        90
+      ),
+      titleText: cleanText(
+        header.titleText || header.titulo || header.fraseTitulo,
+        MINIAPP_UI_DEFAULTS.header.titleText,
+        90
+      )
     },
     theme: {
       ...MINIAPP_UI_DEFAULTS.theme,

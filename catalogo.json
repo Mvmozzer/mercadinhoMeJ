@@ -155,29 +155,34 @@
     ],
     "miniappUi": {
       "header": {
-        "logo": "/assets/logo-mj-mercadinho.png"
+        "logo": "/assets/logo-mj-mercadinho.png",
+        "logoEnabled": true,
+        "greetingEnabled": true,
+        "titleEnabled": true,
+        "greetingText": "",
+        "titleText": "Mercadinho M&J"
       },
       "theme": {
-        "primary": "#000000",
-        "primarySoft": "#ddf7e8",
-        "bg": "#f5f7f6",
+        "primary": "#006CFF",
+        "primarySoft": "#EAF3FF",
+        "bg": "#F5F8FC",
         "card": "#ffffff",
-        "text": "#191919",
-        "muted": "#6c6c6c",
-        "border": "#e2ebe6",
-        "heroFrom": "#dff7e9",
-        "heroTo": "#f5f7f6",
-        "buttonGradientFrom": "#000000",
-        "buttonGradientTo": "#504714"
+        "text": "#142033",
+        "muted": "#60718A",
+        "border": "#D9E2EF",
+        "heroFrom": "#006CFF",
+        "heroTo": "#087BFF",
+        "buttonGradientFrom": "#006CFF",
+        "buttonGradientTo": "#0049B8"
       },
       "splash": {
         "logo": "/assets/logo-mj-mercadinho.png",
         "mode": "logo",
-        "mediaUrl": "https://github.com/Mvmozzer/mercadinhoMeJ/blob/main/assets/logo-mj-mercadinho.png?raw=true",
+        "mediaUrl": "",
         "animation": "zoom",
-        "background": "#000000",
-        "gradientFrom": "#000000",
-        "gradientTo": "#000000",
+        "background": "#006CFF",
+        "gradientFrom": "#087BFF",
+        "gradientTo": "#0049B8",
         "durationMs": 5000
       },
       "bannerCarousel": {
