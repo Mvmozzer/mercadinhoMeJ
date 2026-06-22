@@ -1,5 +1,5 @@
-import { cartPayload } from './cart.js?v=2026.06.22.301';
-import { fallbackSendData } from './telegram.js?v=2026.06.22.301';
+import { cartPayload } from './cart.js?v=2026.06.22.628';
+import { fallbackSendData } from './telegram.js?v=2026.06.22.628';
 
 function normalizeTelegramCartItem(item = {}) {
   const quantity = Number(item.quantidade || item.quantity || 0);
@@ -31,7 +31,7 @@ export async function telegramHandoff(state) {
     return {
       ok: false,
       fallback: false,
-      mensagem: 'Nao foi possivel enviar ao Telegram. Abra a lojinha pelo botao Abrir lojinha dentro da conversa do bot. O menu do Telegram nao envia carrinho em Mini App estatico.'
+      mensagem: 'Não foi possível enviar ao Telegram. Abra a lojinha pelo botão Abrir lojinha dentro da conversa do bot. O menu do Telegram não envia carrinho em Mini App estático.'
     };
   }
   return {

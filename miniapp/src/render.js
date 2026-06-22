@@ -75,14 +75,14 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.22.301';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productBadges } from './catalog.js?v=2026.06.22.301';
-import { telegramHandoff } from './checkout.js?v=2026.06.22.301';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.22.301';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.22.301';
-import { persistMiniAppUiState } from './storage.js?v=2026.06.22.301';
-import { updateMainButton } from './telegram.js?v=2026.06.22.301';
-import { loadTracking } from './tracking.js?v=2026.06.22.301';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.22.628';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productBadges } from './catalog.js?v=2026.06.22.628';
+import { telegramHandoff } from './checkout.js?v=2026.06.22.628';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.22.628';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.22.628';
+import { persistMiniAppUiState } from './storage.js?v=2026.06.22.628';
+import { updateMainButton } from './telegram.js?v=2026.06.22.628';
+import { loadTracking } from './tracking.js?v=2026.06.22.628';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -676,7 +676,7 @@ export function createRenderer(state) {
     return `
       <header class="market-hero app-header" id="marketHero">
         <div class="hero-top-row">
-          ${showSectionsMenu ? `<button class="icon-button menu-button" type="button" data-open-sections aria-label="Abrir menu de secoes">${svgIcon('menu', 22)}</button>` : '<span class="hero-spacer" aria-hidden="true"></span>'}
+          ${showSectionsMenu ? `<button class="icon-button menu-button" type="button" data-open-sections aria-label="Abrir menu de seções">${svgIcon('menu', 22)}</button>` : '<span class="hero-spacer" aria-hidden="true"></span>'}
           <div class="hero-brand-block">
             ${logoMarkup}
             <div class="hero-copy">
@@ -864,10 +864,10 @@ export function createRenderer(state) {
               <img class="drawer-logo" src="${escapeHtml(logoSrc(state))}" alt="Mercadinho M&J" referrerpolicy="no-referrer">
               <div>
                 <h2 id="sectionsDrawerTitle">Mercadinho M&J</h2>
-                <p>Menu de secoes</p>
+                <p>Menu de seções</p>
               </div>
             </div>
-            <button class="icon-button" type="button" data-close-sections aria-label="Fechar menu de secoes">${svgIcon('x', 18)}</button>
+            <button class="icon-button" type="button" data-close-sections aria-label="Fechar menu de seções">${svgIcon('x', 18)}</button>
           </div>
           <div class="sections-drawer-list">
             <button class="drawer-section-item${!state.sectionId ? ' active' : ''}" type="button" data-all-products>
@@ -1066,7 +1066,7 @@ export function createRenderer(state) {
           <section class="total-card">
             <div><span>Subtotal</span><strong>${formatMoney(cartTotal(state))}</strong></div>
             <div class="summary-total"><span>Total</span><strong>${formatMoney(cartTotal(state))}</strong></div>
-            <p class="telegram-checkout-note">Pix preservado: recebedor, valor e numero do pedido aparecem na confirmacao pelo Telegram.</p>
+            <p class="telegram-checkout-note">Pix preservado: recebedor, valor e número do pedido aparecem na confirmação pelo Telegram.</p>
             <div class="card-actions">
               <button id="continueShopping" data-page="${state.previousPage || 'home'}">Continuar comprando</button>
               ${useNativeTelegramButton ? '' : '<button id="finishInTelegram">Finalizar no Telegram</button>'}
@@ -1097,7 +1097,7 @@ export function createRenderer(state) {
         <section class="success-card telegram-handoff-card">
           <span class="success-icon" aria-hidden="true">${svgIcon('check', 44)}</span>
           <p class="greeting">Continue no Telegram</p>
-          <h1>${handoffFailed ? 'Nao enviado ao Telegram' : 'Pedido enviado ao Telegram'}</h1>
+          <h1>${handoffFailed ? 'Não enviado ao Telegram' : 'Pedido enviado ao Telegram'}</h1>
           <strong class="order-id">${escapeHtml(orderId)}</strong>
           <p>${escapeHtml(state.checkoutMessage || `Total de ${formatMoney(total)} enviado para o Telegram. O Telegram conclui entrega e pagamento.`)}</p>
         </section>
@@ -1150,7 +1150,7 @@ export function createRenderer(state) {
   function renderTracking() {
     const tracking = state.tracking || {};
     const mapaUrl = tracking?.mapaUrl || tracking?.mapUrl || '';
-    const status = tracking?.status || 'Aguardando atualizacao do status.';
+    const status = tracking?.status || 'Aguardando atualização do status.';
     return `
       <main class="page tracking-panel" id="trackingPanel" data-page="tracking">
         <div class="topbar page-brand-hero">
@@ -1239,7 +1239,7 @@ export function createRenderer(state) {
     const profileItem = (label, value) => `
       <div class="profile-detail-item">
         <span>${escapeHtml(label)}</span>
-        <strong>${escapeHtml(value || 'Nao informado')}</strong>
+        <strong>${escapeHtml(value || 'Não informado')}</strong>
       </div>
     `;
     const endereco = customerAddressSummary(state);
@@ -1253,12 +1253,12 @@ export function createRenderer(state) {
           <div class="profile-details">
             ${profileItem('Nome', name)}
             ${profileItem('Telegram ID', customerTelegramId(state))}
-            ${profileItem('Usuario Telegram', cliente.username || cliente.telegramUsername)}
-            ${profileItem('Codigo de indicacao', customerReferralCode(state))}
+            ${profileItem('Usuário Telegram', cliente.username || cliente.telegramUsername)}
+            ${profileItem('Código de indicação', customerReferralCode(state))}
             ${profileItem('Telefone', cliente.telefone || cliente.phone)}
             ${profileItem('CPF', cliente.cpf)}
             ${profileItem('Nascimento', cliente.dataNascimento)}
-            ${profileItem('Endereco', endereco)}
+            ${profileItem('Endereço', endereco)}
           </div>
           <button data-page="loyalty">Programa de fidelidade</button>
           <button data-page="home">Sair para produtos</button>

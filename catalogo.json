@@ -96,23 +96,23 @@
         "productObservation": "",
         "tarjas": [
           {
-            "texto": "fresco",
+            "texto": "Fresco",
             "cor": "#ffffff",
-            "fundo": "#2e875c"
+            "fundo": "#0072a8"
           }
         ],
         "etiquetas": [
           {
-            "texto": "fresco",
+            "texto": "Fresco",
             "cor": "#ffffff",
-            "fundo": "#2e875c"
+            "fundo": "#0072a8"
           }
         ],
         "labels": [
           {
-            "texto": "fresco",
+            "texto": "Fresco",
             "cor": "#ffffff",
-            "fundo": "#2e875c"
+            "fundo": "#0072a8"
           }
         ],
         "product_point_offer": {
