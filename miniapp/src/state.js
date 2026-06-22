@@ -1,4 +1,4 @@
-﻿import { restoreMiniAppUiState } from './storage.js?v=2026.06.22.322';
+﻿import { restoreMiniAppUiState } from './storage.js?v=2026.06.22.301';
 
 export const MINIAPP_UI_DEFAULTS = {
   header: {
