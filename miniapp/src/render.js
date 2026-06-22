@@ -3,7 +3,7 @@
   'data-action="set-weight"',
   'function productBadges'
 ];
-const STORE_STATUS_LABELS = ['Pedidos pausados', 'Fechado para pedidos'];
+const STORE_STATUS_LABELS = ['Pedidos pausados', 'Loja fechada.'];
 
 const RUNTIME_LOGO_BUILD = String(globalThis?.__MJ_LOGO_BUILD || '').trim();
 const MINIAPP_UI_DEFAULTS = {
@@ -369,7 +369,7 @@ function normalizeStoreStatus(state = {}) {
   const isClosed = status === 'fechada' || status === 'fechado' || state.store?.aceitaPedidos === false;
   return {
     className: isPaused ? 'paused' : (isClosed ? 'closed' : 'open'),
-    text: state.store?.mensagem || (isPaused ? 'Pedidos pausados' : (isClosed ? 'Fechado para pedidos' : 'Loja aberta. Pode fazer seu pedido.'))
+    text: isClosed ? 'Loja fechada.' : (state.store?.mensagem || (isPaused ? 'Pedidos pausados' : 'Loja aberta. Pode fazer seu pedido.'))
   };
 }
 
