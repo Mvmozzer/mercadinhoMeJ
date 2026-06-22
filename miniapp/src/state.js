@@ -1,4 +1,4 @@
-﻿import { restoreMiniAppUiState } from './storage.js?v=2026.06.22.791';
+﻿import { restoreMiniAppUiState } from './storage.js?v=2026.06.22.322';
 
 export const MINIAPP_UI_DEFAULTS = {
   header: {
@@ -171,6 +171,7 @@ export function createState() {
     sectionId: saved.sectionId || '',
     query: saved.query || '',
     apiBase: '',
+    telegramId: '',
     bridgeReady: false,
     authOk: false,
     pollingMs: 7000,
@@ -193,11 +194,65 @@ export function createState() {
   };
 }
 
+function cleanTelegramId(value) {
+  return String(value ?? '').trim();
+}
+
+function firstOrderTelegramId(snapshot = {}) {
+  const orders = Array.isArray(snapshot.pedidos)
+    ? snapshot.pedidos
+    : Array.isArray(snapshot.pedidosAtivos)
+      ? snapshot.pedidosAtivos
+      : [];
+  for (const order of orders) {
+    const id = cleanTelegramId(order?.telegramId || order?.telegram_id || order?.chatId || order?.cliente?.chatId);
+    if (id) return id;
+  }
+  return '';
+}
+
+function snapshotTelegramId(snapshot = {}) {
+  return cleanTelegramId(
+    snapshot.telegramId ||
+    snapshot.telegram_id ||
+    snapshot.chatId ||
+    snapshot.cliente?.telegramId ||
+    snapshot.cliente?.telegram_id ||
+    snapshot.cliente?.chatId ||
+    snapshot.programa?.telegramId ||
+    snapshot.programa?.telegram_id ||
+    snapshot.programa?.chatId ||
+    firstOrderTelegramId(snapshot)
+  );
+}
+
+function currentTelegramId(state = {}) {
+  return cleanTelegramId(
+    state.telegramId ||
+    state.cliente?.telegramId ||
+    state.cliente?.telegram_id ||
+    state.cliente?.chatId ||
+    globalThis.window?.Telegram?.WebApp?.initDataUnsafe?.user?.id
+  );
+}
+
+function hasPersonalSnapshot(snapshot = {}) {
+  return Boolean(snapshot.cliente || snapshot.programa || Array.isArray(snapshot.pedidos) || Array.isArray(snapshot.pedidosAtivos));
+}
+
+export function isPersonalSnapshotForCurrentSession(state = {}, snapshot = {}) {
+  if (!hasPersonalSnapshot(snapshot)) return true;
+  const currentId = currentTelegramId(state);
+  const incomingId = snapshotTelegramId(snapshot);
+  return Boolean(currentId && incomingId && currentId === incomingId);
+}
+
 export function applySnapshot(state, snapshot = {}) {
-  if (snapshot.cliente) state.cliente = { ...state.cliente, ...snapshot.cliente };
-  if (Array.isArray(snapshot.pedidos)) state.orders = snapshot.pedidos;
+  const canApplyPersonal = isPersonalSnapshotForCurrentSession(state, snapshot);
+  if (canApplyPersonal && snapshot.cliente) state.cliente = { ...state.cliente, ...snapshot.cliente };
+  if (canApplyPersonal && Array.isArray(snapshot.pedidos)) state.orders = snapshot.pedidos;
   if (snapshot.loja) state.store = { ...state.store, ...snapshot.loja };
-  if (snapshot.programa) state.loyalty = { ...state.loyalty, ...snapshot.programa };
+  if (canApplyPersonal && snapshot.programa) state.loyalty = { ...state.loyalty, ...snapshot.programa };
   if (snapshot.miniappUi) state.miniappUi = normalizeMiniAppUi(snapshot.miniappUi);
 }
 

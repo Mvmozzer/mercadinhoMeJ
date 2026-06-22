@@ -2,6 +2,10 @@ const TELEGRAM_WEBAPP_MARKER = 'Telegram.WebApp';
 export function getTelegram() { const telegramRoot = window.Telegram; return telegramRoot && telegramRoot.WebApp ? telegramRoot.WebApp : null; }
 export function initTelegram() { const app = getTelegram(); try { app?.ready?.(); app?.expand?.(); } catch {} return app; }
 export function telegramUserName() { const user = getTelegram()?.initDataUnsafe?.user || {}; return user.first_name || user.username || ''; }
+export function telegramUserId() {
+  const id = getTelegram()?.initDataUnsafe?.user?.id;
+  return id === undefined || id === null ? '' : String(id);
+}
 function canUseKeyboardSendData(app) {
   const init = app?.initDataUnsafe || {};
   return !init.query_id && !init.chat_type && !init.chat_instance && !init.start_param && !init.chat && !init.receiver;

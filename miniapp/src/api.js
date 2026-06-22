@@ -1,4 +1,5 @@
-import { isTemporaryPublicApiBase } from './utils.js?v=2026.06.22.791';
+import { isTemporaryPublicApiBase } from './utils.js?v=2026.06.22.322';
+import { applySnapshot } from './state.js?v=2026.06.22.322';
 
 export const TELEGRAM_AUTH_PATH = '/api/telegram/auth';
 export const MINIAPP_API_PATHS = {
@@ -114,7 +115,7 @@ export async function authenticateBridge(state) {
     });
     state.authOk = true;
     state.bridgeReady = true;
-    if (data.snapshot?.cliente) state.cliente = { ...state.cliente, ...data.snapshot.cliente };
+    if (data.snapshot) applySnapshot(state, data.snapshot);
     return data;
   } catch {
     return null;
