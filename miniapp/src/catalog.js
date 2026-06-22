@@ -1,4 +1,4 @@
-import { slugify } from './utils.js?v=2026.06.22.020';
+import { slugify } from './utils.js?v=2026.06.22.060';
 
 const WEIGHTED_CATALOG_MARKERS = ['item.tarjas'];
 export const STATIC_CATALOG_FALLBACKS = ['./catalogo.json', '../catalogo.json'];
