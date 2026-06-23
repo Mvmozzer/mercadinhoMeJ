@@ -1,2 +1,13 @@
-﻿import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.06.22.060';
-export async function loadLoyalty(state) { return retryApiFetchWithFreshRuntimeConfig(state, '/api/miniapp/loyalty').catch(() => ({ ok: false, saldoPontos: 0 })); }
+import { apiDiagnosticMessage, retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.06.23.304';
+
+export async function loadLoyalty(state) {
+  try {
+    return await retryApiFetchWithFreshRuntimeConfig(state, '/api/miniapp/loyalty');
+  } catch (error) {
+    return {
+      ok: false,
+      unavailable: true,
+      erro: apiDiagnosticMessage(error)
+    };
+  }
+}
