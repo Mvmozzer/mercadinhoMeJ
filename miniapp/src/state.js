@@ -1,5 +1,5 @@
-﻿import { restoreMiniAppUiState } from './storage.js?v=2026.06.26.570';
-import { normalizeWholesaleConfig } from './catalog.js?v=2026.06.26.570';
+﻿import { restoreMiniAppUiState } from './storage.js?v=2026.06.26.965';
+import { normalizeWholesaleConfig } from './catalog.js?v=2026.06.26.965';
 
 export const MINIAPP_UI_DEFAULTS = {
   header: {
