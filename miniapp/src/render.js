@@ -75,14 +75,14 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.06.26.167';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productBadges } from './catalog.js?v=2026.06.26.167';
-import { telegramHandoff } from './checkout.js?v=2026.06.26.167';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.26.167';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.26.167';
-import { persistMiniAppUiState } from './storage.js?v=2026.06.26.167';
-import { updateMainButton } from './telegram.js?v=2026.06.26.167';
-import { loadTracking } from './tracking.js?v=2026.06.26.167';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.06.26.346';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productBadges } from './catalog.js?v=2026.06.26.346';
+import { telegramHandoff } from './checkout.js?v=2026.06.26.346';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.26.346';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.26.346';
+import { persistMiniAppUiState } from './storage.js?v=2026.06.26.346';
+import { updateMainButton } from './telegram.js?v=2026.06.26.346';
+import { loadTracking } from './tracking.js?v=2026.06.26.346';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -296,6 +296,10 @@ function wholesaleSection(state = {}) {
 
 function wholesaleSectionId(state = {}) {
   return String(wholesaleConfig(state).secaoVirtualId || 'atacado');
+}
+
+function isWholesaleSection(section = {}, state = {}) {
+  return section.atacado === true || String(section.id || '') === wholesaleSectionId(state);
 }
 
 function productElement(root, productId) {
@@ -1045,12 +1049,13 @@ export function createRenderer(state) {
 
   function renderHome() {
     const filtered = state.query ? filterProducts(state.products, state.query) : null;
+    const homeSections = state.sections.filter(section => !isWholesaleSection(section, state));
     return `
       ${renderCustomerHeader()}
       <main class="page home-page" data-page="home">
         ${searchBox('Buscar produtos')}
         ${renderBannerCarousel()}
-        ${filtered ? renderSearchResults(filtered, 'Resultados da busca') : `${renderWholesaleSectionButton()}${state.sections.map(renderHomeSectionCarousel).join('')}`}
+        ${filtered ? renderSearchResults(filtered, 'Resultados da busca') : homeSections.map(renderHomeSectionCarousel).join('')}
       </main>
     `;
   }
@@ -1088,10 +1093,10 @@ export function createRenderer(state) {
     const section = state.sectionId
       ? state.sections.find(item => item.id === state.sectionId)
       : null;
-    const baseProducts = section?.atacado === true || String(section?.id || '') === wholesaleSectionId(state)
+    const baseProducts = isWholesaleSection(section, state)
       ? (section?.products?.length ? section.products : wholesaleProducts(state))
       : state.products;
-    const products = section?.atacado === true || String(section?.id || '') === wholesaleSectionId(state)
+    const products = isWholesaleSection(section, state)
       ? filterProducts(baseProducts, state.query, '')
       : filterProducts(baseProducts, state.query, section?.id || '');
     return `
