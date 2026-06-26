@@ -1,6 +1,22 @@
-import { slugify } from './utils.js?v=2026.06.23.304';
+import { slugify } from './utils.js?v=2026.06.26.581';
 
 const WEIGHTED_CATALOG_MARKERS = ['item.tarjas'];
+export const WHOLESALE_DEFAULTS = {
+  ativo: true,
+  barraProgressoAtiva: true,
+  mostrarBarraNoVarejo: true,
+  mostrarBotaoSecaoAtacado: true,
+  textoBotaoSecao: 'Compre em Atacado',
+  secaoVirtualId: 'atacado',
+  nomeSecaoVirtual: '💙 Compre em Atacado',
+  mensagemMetaAtingida: 'Parabéns, Você atingiu o desconto máximo.',
+  tipoAnimacao: 'fogos',
+  animacaoFogosAtiva: true,
+  duracaoAnimacaoMs: 1800,
+  corBarra: '#2563eb',
+  corBarraCompleta: '#16a34a',
+  corTextoBarra: '#ffffff'
+};
 export const STATIC_CATALOG_FALLBACKS = ['./catalogo.json', '../catalogo.json'];
 
 export function isWeightedProduct(item = {}) {
@@ -35,6 +51,54 @@ export function productBadges(item = {}) {
 
 function num(value) {
   return Number(String(value ?? 0).replace(',', '.')) || 0;
+}
+
+function bool(value, fallback = false) {
+  if (typeof value === 'boolean') return value;
+  if (value === undefined || value === null || value === '') return fallback;
+  return ['1', 'true', 'sim', 'yes', 'on'].includes(String(value).trim().toLowerCase());
+}
+
+function cleanHex(value, fallback) {
+  const text = String(value || '').trim();
+  return /^#[0-9a-f]{6}$/i.test(text) ? text : fallback;
+}
+
+export function normalizeWholesaleConfig(raw = {}) {
+  const cfg = raw?.atacado && typeof raw.atacado === 'object' ? raw.atacado : raw;
+  const animation = String(cfg?.tipoAnimacao || cfg?.animationType || WHOLESALE_DEFAULTS.tipoAnimacao).trim().toLowerCase();
+  return {
+    ativo: bool(cfg?.ativo ?? cfg?.enabled, WHOLESALE_DEFAULTS.ativo),
+    barraProgressoAtiva: bool(cfg?.barraProgressoAtiva ?? cfg?.progressBarEnabled, WHOLESALE_DEFAULTS.barraProgressoAtiva),
+    mostrarBarraNoVarejo: bool(cfg?.mostrarBarraNoVarejo ?? cfg?.showProgressInRetail, WHOLESALE_DEFAULTS.mostrarBarraNoVarejo),
+    mostrarBotaoSecaoAtacado: bool(cfg?.mostrarBotaoSecaoAtacado ?? cfg?.showWholesaleSectionButton, WHOLESALE_DEFAULTS.mostrarBotaoSecaoAtacado),
+    textoBotaoSecao: String(cfg?.textoBotaoSecao || cfg?.sectionButtonText || WHOLESALE_DEFAULTS.textoBotaoSecao).trim() || WHOLESALE_DEFAULTS.textoBotaoSecao,
+    secaoVirtualId: String(cfg?.secaoVirtualId || cfg?.virtualSectionId || WHOLESALE_DEFAULTS.secaoVirtualId).trim() || WHOLESALE_DEFAULTS.secaoVirtualId,
+    nomeSecaoVirtual: String(cfg?.nomeSecaoVirtual || cfg?.virtualSectionName || WHOLESALE_DEFAULTS.nomeSecaoVirtual).trim() || WHOLESALE_DEFAULTS.nomeSecaoVirtual,
+    mensagemMetaAtingida: String(cfg?.mensagemMetaAtingida || cfg?.goalReachedMessage || WHOLESALE_DEFAULTS.mensagemMetaAtingida).trim() || WHOLESALE_DEFAULTS.mensagemMetaAtingida,
+    tipoAnimacao: ['nenhuma', 'confete', 'fogos'].includes(animation) ? animation : WHOLESALE_DEFAULTS.tipoAnimacao,
+    animacaoFogosAtiva: bool(cfg?.animacaoFogosAtiva ?? cfg?.fireworksEnabled, WHOLESALE_DEFAULTS.animacaoFogosAtiva),
+    duracaoAnimacaoMs: Math.max(0, Math.min(8000, Math.round(num(cfg?.duracaoAnimacaoMs ?? cfg?.animationDurationMs) || WHOLESALE_DEFAULTS.duracaoAnimacaoMs))),
+    corBarra: cleanHex(cfg?.corBarra || cfg?.progressColor, WHOLESALE_DEFAULTS.corBarra),
+    corBarraCompleta: cleanHex(cfg?.corBarraCompleta || cfg?.completeColor, WHOLESALE_DEFAULTS.corBarraCompleta),
+    corTextoBarra: cleanHex(cfg?.corTextoBarra || cfg?.progressTextColor, WHOLESALE_DEFAULTS.corTextoBarra)
+  };
+}
+
+export function productWholesale(product = {}) {
+  const wholesaleActive = bool(product.atacado_ativo ?? product.atacadoAtivo ?? product.wholesaleActive ?? product.wholesaleEnabled, false);
+  const wholesalePrice = Math.max(0, num(product.preco_atacado ?? product.precoAtacado ?? product.wholesalePrice));
+  const wholesaleMinQuantity = Math.max(0, Math.floor(num(product.quantidade_atacado ?? product.quantidadeAtacado ?? product.wholesaleMinQuantity)));
+  return {
+    active: wholesaleActive && wholesalePrice > 0 && wholesaleMinQuantity >= 1,
+    wholesaleActive,
+    wholesalePrice,
+    wholesaleMinQuantity
+  };
+}
+
+export function isWholesaleProduct(product = {}) {
+  return productWholesale(product).active;
 }
 
 export function productImage(product = {}) {
@@ -144,6 +208,7 @@ export function normalizeProduct(raw = {}, sectionName = '', index = 0) {
   const description = String(raw.descricao || raw.description || raw.detalhes || '').trim();
   const brand = String(raw.marca || raw.brand || raw.fabricante || '').trim();
   const badges = productBadges(raw);
+  const wholesale = productWholesale(raw);
   return {
     ...raw,
     id,
@@ -163,6 +228,15 @@ export function normalizeProduct(raw = {}, sectionName = '', index = 0) {
     price,
     preco: price,
     normalPrice: num(raw.preco_normal || raw.normalPrice || price),
+    atacado_ativo: wholesale.active,
+    atacadoAtivo: wholesale.active,
+    wholesaleActive: wholesale.active,
+    preco_atacado: wholesale.active ? wholesale.wholesalePrice : 0,
+    precoAtacado: wholesale.active ? wholesale.wholesalePrice : 0,
+    wholesalePrice: wholesale.active ? wholesale.wholesalePrice : 0,
+    quantidade_atacado: wholesale.active ? wholesale.wholesaleMinQuantity : 0,
+    quantidadeAtacado: wholesale.active ? wholesale.wholesaleMinQuantity : 0,
+    wholesaleMinQuantity: wholesale.active ? wholesale.wholesaleMinQuantity : 0,
     stock: num(raw.estoque ?? raw.stock ?? 999),
     unit: raw.unidade || raw.unidadeVenda || raw.tamanho || raw.medida || 'un',
     points: productPoints(raw, price)
@@ -171,6 +245,7 @@ export function normalizeProduct(raw = {}, sectionName = '', index = 0) {
 
 export function normalizeCatalog(payload = {}) {
   const catalog = payload.catalogo || payload;
+  const atacado = normalizeWholesaleConfig(catalog.atacado || payload.atacado || catalog.wholesale || payload.wholesale || {});
   const rawSections = Array.isArray(catalog.secoes)
     ? catalog.secoes
     : Array.isArray(payload.secoes)
@@ -205,6 +280,8 @@ export function normalizeCatalog(payload = {}) {
       nome: name,
       icon: sectionEmoji(section, name),
       emoji: section.emoji || '',
+      virtual: section.virtual === true,
+      atacado: section.atacado === true,
       products: []
     });
   });
@@ -223,9 +300,33 @@ export function normalizeCatalog(payload = {}) {
     map.get(product.sectionId).products.push(product);
   });
 
+  const wholesaleProducts = products.filter(isWholesaleProduct);
+  const wholesaleSectionId = atacado.secaoVirtualId || 'atacado';
+  Array.from(map.values()).forEach(section => {
+    if (section.atacado === true || section.id === wholesaleSectionId) {
+      section.virtual = true;
+      section.atacado = true;
+      section.products = wholesaleProducts;
+    }
+  });
+  if (atacado.ativo !== false && atacado.mostrarBotaoSecaoAtacado !== false && wholesaleProducts.length && !map.has(wholesaleSectionId)) {
+    map.set(wholesaleSectionId, {
+      id: wholesaleSectionId,
+      name: atacado.nomeSecaoVirtual,
+      nome: atacado.nomeSecaoVirtual,
+      icon: '💙',
+      emoji: '💙',
+      virtual: true,
+      atacado: true,
+      products: wholesaleProducts
+    });
+  }
+
   return {
     sections: Array.from(map.values()).filter(section => section.products.length),
-    products
+    products,
+    atacado,
+    wholesale: atacado
   };
 }
 

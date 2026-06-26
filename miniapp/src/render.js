@@ -75,14 +75,14 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart } from './cart.js?v=2026.06.23.304';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productBadges } from './catalog.js?v=2026.06.23.304';
-import { telegramHandoff } from './checkout.js?v=2026.06.23.304';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.23.304';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.23.304';
-import { persistMiniAppUiState } from './storage.js?v=2026.06.23.304';
-import { updateMainButton } from './telegram.js?v=2026.06.23.304';
-import { loadTracking } from './tracking.js?v=2026.06.23.304';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.06.26.581';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productBadges } from './catalog.js?v=2026.06.26.581';
+import { telegramHandoff } from './checkout.js?v=2026.06.26.581';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.26.581';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.26.581';
+import { persistMiniAppUiState } from './storage.js?v=2026.06.26.581';
+import { updateMainButton } from './telegram.js?v=2026.06.26.581';
+import { loadTracking } from './tracking.js?v=2026.06.26.581';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -276,6 +276,33 @@ function formatMoney(value = 0) {
   return money(Number(value || 0));
 }
 
+function wholesaleConfig(state = {}) {
+  return state.wholesale || state.atacado || {};
+}
+
+function wholesaleEnabled(state = {}) {
+  return wholesaleConfig(state).ativo !== false;
+}
+
+function wholesaleProducts(state = {}) {
+  return (state.products || []).filter(product => product.wholesaleActive === true || product.atacado_ativo === true || product.atacadoAtivo === true);
+}
+
+function wholesaleSection(state = {}) {
+  const cfg = wholesaleConfig(state);
+  const id = String(cfg.secaoVirtualId || 'atacado');
+  return (state.sections || []).find(section => section.atacado === true || String(section.id) === id);
+}
+
+function wholesaleSectionId(state = {}) {
+  return String(wholesaleConfig(state).secaoVirtualId || 'atacado');
+}
+
+function productElement(root, productId) {
+  return Array.from(root?.querySelectorAll?.('[data-product-id]') || [])
+    .find(element => String(element.dataset.productId || '') === String(productId || ''));
+}
+
 function customerPoints(state = {}) {
   return Number(
     state.loyalty?.saldoPontos ??
@@ -403,15 +430,22 @@ function productThumb(product) {
   return `<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name || 'Produto')}" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`;
 }
 
-function productPriceBlock(product = {}) {
-  const precoAtual = Number(product.price || 0);
+function productPriceBlock(product = {}, quantity = 0) {
+  const priceInfo = wholesalePriceInfo(product, quantity);
+  const precoAtual = Number(priceInfo.price || product.price || 0);
   const precoOriginal = Number(product.normalPrice || product.preco_normal || product.price || 0);
   const isPromocao = (product.promocao === true || product.promocao_ativa === true || product.promocaoAtiva === true)
     && Number(precoAtual) > 0 && Number(precoOriginal) > Number(precoAtual);
-  if (!isPromocao) {
-    return `<strong>${formatMoney(precoAtual)}</strong>`;
+  const atacadoLinha = product.wholesaleActive === true && Number(product.wholesalePrice || product.preco_atacado || 0) > 0
+    ? `<em class="wholesale-price-hint">Atacado ${formatMoney(product.wholesalePrice || product.preco_atacado)} a partir de ${Number(product.wholesaleMinQuantity || product.quantidade_atacado || 0)} un.</em>`
+    : '';
+  if (priceInfo.wholesaleApplied) {
+    return `<strong>${formatMoney(precoAtual)}</strong><small>${formatMoney(priceInfo.retailPrice)}</small><em class="wholesale-price-hint wholesale-price-hint--active">Atacado aplicado</em>`;
   }
-  return `<strong>${formatMoney(precoAtual)}</strong><small>${formatMoney(precoOriginal)}</small>`;
+  if (!isPromocao) {
+    return `<strong>${formatMoney(precoAtual)}</strong>${atacadoLinha}`;
+  }
+  return `<strong>${formatMoney(precoAtual)}</strong><small>${formatMoney(precoOriginal)}</small>${atacadoLinha}`;
 }
 
 function svgIcon(name, size = 20) {
@@ -805,6 +839,47 @@ export function createRenderer(state) {
     `;
   }
 
+  function renderWholesaleProgress(product = {}, quantity = 0) {
+    const cfg = wholesaleConfig(state);
+    const progress = wholesaleProgress(product, quantity);
+    if (!wholesaleEnabled(state) || !progress.active || cfg.barraProgressoAtiva === false) return '';
+    if (cfg.mostrarBarraNoVarejo === false && quantity <= 0) return '';
+    const text = progress.reached
+      ? (cfg.mensagemMetaAtingida || 'Parabéns, Você atingiu o desconto máximo.')
+      : `Faltam ${progress.missing} un. para ${formatMoney(progress.wholesalePrice)} no atacado`;
+    return `
+      <div class="wholesale-progress-wrap${progress.reached ? ' wholesale-progress-complete' : ''}" data-wholesale-progress="${escapeHtml(product.id)}" style="--wholesale-progress:${progress.percent}%;--wholesale-color:${escapeHtml(cfg.corBarra || '#2563eb')};--wholesale-complete:${escapeHtml(cfg.corBarraCompleta || '#16a34a')};--wholesale-text:${escapeHtml(cfg.corTextoBarra || '#ffffff')}">
+        <div class="wholesale-progress-head">
+          <span>Atacado ativado</span>
+          <strong>${progress.quantity}/${progress.minQuantity}</strong>
+        </div>
+        <div class="wholesale-progress" role="progressbar" aria-valuemin="0" aria-valuemax="${progress.minQuantity}" aria-valuenow="${Math.min(progress.quantity, progress.minQuantity)}">
+          <span></span>
+        </div>
+        <small>${escapeHtml(text)}</small>
+      </div>
+    `;
+  }
+
+  function updateWholesaleProgress(productId) {
+    const product = state.products.find(item => item.id === productId);
+    const container = productElement(root, productId)?.querySelector('[data-wholesale-progress]');
+    if (!product || !container) return;
+    const next = renderWholesaleProgress(product, cartQty(state, productId));
+    if (next) container.outerHTML = next;
+  }
+
+  function triggerWholesaleFireworks(target) {
+    const cfg = wholesaleConfig(state);
+    if (!target || cfg.tipoAnimacao === 'nenhuma' || cfg.animacaoFogosAtiva === false) return;
+    const effect = document.createElement('div');
+    effect.className = `wholesale-fireworks wholesale-fireworks--${cfg.tipoAnimacao || 'fogos'}`;
+    effect.setAttribute('aria-hidden', 'true');
+    effect.innerHTML = Array.from({ length: 10 }, (_, index) => `<span style="--i:${index}"></span>`).join('');
+    target.appendChild(effect);
+    window.setTimeout(() => effect.remove(), Number(cfg.duracaoAnimacaoMs || 1800));
+  }
+
   function productCard(product) {
     const quantity = cartQty(state, product.id);
     const badges = productBadges(product).slice(0, 2);
@@ -835,8 +910,9 @@ export function createRenderer(state) {
           ${brand ? `<span class="product-brand">${escapeHtml(brand)}</span>` : ''}
           ${unit ? `<p class="product-description product-unit">${escapeHtml(unit)}</p>` : ''}
           <div class="product-buy-row${quantity ? ' product-buy-row--quantity' : ''}">
-            <div class="product-price-block">${productPriceBlock(product)}</div>
+            <div class="product-price-block">${productPriceBlock(product, quantity)}</div>
           </div>
+          ${renderWholesaleProgress(product, quantity)}
         </div>
       </article>
     `;
@@ -931,6 +1007,21 @@ export function createRenderer(state) {
     `;
   }
 
+  function renderWholesaleSectionButton() {
+    const cfg = wholesaleConfig(state);
+    const products = wholesaleProducts(state);
+    if (!wholesaleEnabled(state) || cfg.mostrarBotaoSecaoAtacado === false || !products.length) return '';
+    return `
+      <section class="wholesale-section-card">
+        <button class="wholesale-section-button" type="button" data-wholesale-section>
+          <span>💙</span>
+          <strong>${escapeHtml(cfg.textoBotaoSecao || 'Compre em Atacado')}</strong>
+          <small>${products.length} produto(s) com desconto por quantidade</small>
+        </button>
+      </section>
+    `;
+  }
+
   function renderSearchResults(products, title = 'Produtos') {
     if (!products.length) {
       return `
@@ -959,7 +1050,7 @@ export function createRenderer(state) {
       <main class="page home-page" data-page="home">
         ${searchBox('Buscar produtos')}
         ${renderBannerCarousel()}
-        ${filtered ? renderSearchResults(filtered, 'Resultados da busca') : state.sections.map(renderHomeSectionCarousel).join('')}
+        ${filtered ? renderSearchResults(filtered, 'Resultados da busca') : `${renderWholesaleSectionButton()}${state.sections.map(renderHomeSectionCarousel).join('')}`}
       </main>
     `;
   }
@@ -994,8 +1085,15 @@ export function createRenderer(state) {
   }
 
   function renderProducts() {
-    const section = state.sections.find(item => item.id === state.sectionId) || state.sections[0];
-    const products = filterProducts(state.products, state.query, section?.id || '');
+    const section = state.sectionId
+      ? state.sections.find(item => item.id === state.sectionId)
+      : null;
+    const baseProducts = section?.atacado === true || String(section?.id || '') === wholesaleSectionId(state)
+      ? (section?.products?.length ? section.products : wholesaleProducts(state))
+      : state.products;
+    const products = section?.atacado === true || String(section?.id || '') === wholesaleSectionId(state)
+      ? filterProducts(baseProducts, state.query, '')
+      : filterProducts(baseProducts, state.query, section?.id || '');
     return `
       ${renderCustomerHeader(section?.name || 'Produtos')}
       <main class="page products-page" data-page="products">
@@ -1015,6 +1113,8 @@ export function createRenderer(state) {
     const badges = productBadges(product).slice(0, 3);
     const section = state.sections.find(item => item.id === product.sectionId || item.id === product.secao || item.name === product.section);
     const description = String(product.descricao || product.description || product.detalhes || '').trim();
+    const quantity = cartQty(state, product.id);
+    const priceInfo = wholesalePriceInfo(product, quantity);
     return `
       ${renderCustomerHeader()}
       <main class="page product-page" data-page="product">
@@ -1032,10 +1132,11 @@ export function createRenderer(state) {
           ${description ? `<p class="product-description">${escapeHtml(description)}</p>` : ''}
           ${renderProductDetailInfo(product, section?.name || section?.nome || '')}
           <div class="product-price-line">
-            ${productPriceBlock(product)}
+            ${productPriceBlock(product, quantity)}
           </div>
+          ${renderWholesaleProgress(product, quantity)}
           <div class="detail-buy">
-            <strong>${formatMoney(product.price || 0)}</strong>
+            <strong>${formatMoney(priceInfo.price || product.price || 0)}</strong>
             <button data-qty-plus="${escapeHtml(product.id)}" aria-label="Adicionar ao carrinho">+</button>
           </div>
         </section>
@@ -1068,6 +1169,7 @@ export function createRenderer(state) {
                   <strong>${escapeHtml(item.name)}</strong>
                   <small>${escapeHtml(item.unit || 'un')}</small>
                   <span>${formatMoney(item.price)} un.</span>
+                  ${item.wholesaleApplied || item.atacado_aplicado ? `<small class="wholesale-cart-label">Atacado aplicado</small>` : ''}
                 </div>
                 <div class="qty">
                   <button data-qty-minus="${escapeHtml(item.id)}" aria-label="Diminuir quantidade">-</button>
@@ -1390,6 +1492,11 @@ export function createRenderer(state) {
         navigateTo('products', { sectionId: button.dataset.sectionOpen, query: '' });
       });
     });
+    root.querySelectorAll('[data-wholesale-section]').forEach(button => {
+      button.addEventListener('click', () => {
+        navigateTo('products', { sectionId: wholesaleSection(state)?.id || wholesaleSectionId(state), query: '' });
+      });
+    });
     root.querySelectorAll('[data-all-products]').forEach(button => {
       button.addEventListener('click', () => navigateTo('home', { sectionId: '', query: '' }));
     });
@@ -1411,9 +1518,19 @@ export function createRenderer(state) {
       button.addEventListener('click', () => {
         const product = state.products.find(item => item.id === button.dataset.qtyPlus);
         if (!product) return;
-        changeQty(state, product, 1);
+        const before = wholesaleProgress(product, cartQty(state, product.id));
+        const nextQuantity = changeQty(state, product, 1);
+        const after = wholesaleProgress(product, nextQuantity);
         syncCart(state, { itens: cartItems(state) });
+        updateWholesaleProgress(product.id);
         render();
+        if (after.active && after.reached && !before.reached) {
+          state.wholesaleCelebrated = state.wholesaleCelebrated || {};
+          state.wholesaleCelebrated[product.id] = Date.now();
+          window.setTimeout(() => {
+            triggerWholesaleFireworks(productElement(root, product.id) || root.querySelector('.detail-content'));
+          }, 0);
+        }
       });
     });
     root.querySelectorAll('[data-qty-minus]').forEach(button => {

@@ -1,4 +1,5 @@
-﻿import { restoreMiniAppUiState } from './storage.js?v=2026.06.23.304';
+﻿import { restoreMiniAppUiState } from './storage.js?v=2026.06.26.581';
+import { normalizeWholesaleConfig } from './catalog.js?v=2026.06.26.581';
 
 export const MINIAPP_UI_DEFAULTS = {
   header: {
@@ -184,6 +185,9 @@ export function createState() {
     sections: [],
     products: [],
     cart: {},
+    wholesale: normalizeWholesaleConfig(saved.wholesale || saved.atacado || {}),
+    atacado: normalizeWholesaleConfig(saved.wholesale || saved.atacado || {}),
+    wholesaleCelebrated: {},
     orders: [],
     pix: null,
     pedidoAtual: null,
@@ -254,6 +258,10 @@ export function applySnapshot(state, snapshot = {}) {
   if (snapshot.loja) state.store = { ...state.store, ...snapshot.loja };
   if (canApplyPersonal && snapshot.programa) state.loyalty = { ...state.loyalty, ...snapshot.programa };
   if (snapshot.miniappUi) state.miniappUi = normalizeMiniAppUi(snapshot.miniappUi);
+  if (snapshot.atacado || snapshot.wholesale) {
+    state.wholesale = normalizeWholesaleConfig(snapshot.atacado || snapshot.wholesale);
+    state.atacado = state.wholesale;
+  }
 }
 
 export function reopenStateFromUrl() {

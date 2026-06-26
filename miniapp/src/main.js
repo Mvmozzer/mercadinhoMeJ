@@ -1,11 +1,11 @@
-import { initTelegram, telegramUserName, telegramUserId } from './telegram.js?v=2026.06.23.304';
-import { carregarRuntimeConfigPages, authenticateBridge, loadBootstrap, loadCatalogWithFallback, loadHealth, loadCustomer } from './api.js?v=2026.06.23.304';
-import { createRenderer } from './render.js?v=2026.06.23.304';
-import { createState, applySnapshot, normalizeMiniAppUi } from './state.js?v=2026.06.23.304';
-import { normalizeCatalog } from './catalog.js?v=2026.06.23.304';
-import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.06.23.304';
-import { loadLoyalty } from './loyalty.js?v=2026.06.23.304';
-import { loadOrders } from './orders.js?v=2026.06.23.304';
+import { initTelegram, telegramUserName, telegramUserId } from './telegram.js?v=2026.06.26.581';
+import { carregarRuntimeConfigPages, authenticateBridge, loadBootstrap, loadCatalogWithFallback, loadHealth, loadCustomer } from './api.js?v=2026.06.26.581';
+import { createRenderer } from './render.js?v=2026.06.26.581';
+import { createState, applySnapshot, normalizeMiniAppUi } from './state.js?v=2026.06.26.581';
+import { normalizeCatalog } from './catalog.js?v=2026.06.26.581';
+import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.06.26.581';
+import { loadLoyalty } from './loyalty.js?v=2026.06.26.581';
+import { loadOrders } from './orders.js?v=2026.06.26.581';
 
 function sincronizarStatusLoja(state, health) {
   if (health?.loja) state.store = { ...state.store, ...health.loja };
@@ -46,6 +46,12 @@ async function refreshMiniAppVisualConfig(state) {
     const catalog = await loadCatalogWithFallback(state).catch(() => null);
     const catalogUi = miniappUiFromPayload(catalog);
     if (catalogUi) state.miniappUi = normalizeMiniAppUi(catalogUi);
+    const catalogWholesale = catalog?.catalogo?.atacado || catalog?.atacado;
+    if (catalogWholesale) {
+      const normalized = normalizeCatalog(catalog);
+      state.wholesale = normalized.wholesale;
+      state.atacado = normalized.wholesale;
+    }
   }
   return { health, changed: miniappRefreshSignature(state) !== before };
 }
@@ -115,11 +121,14 @@ async function init() {
       cliente: boot?.cliente,
       programa: boot?.programa,
       miniappUi: boot?.miniappUi,
+      atacado: boot?.atacado || boot?.catalogo?.atacado,
       pedidos: Array.isArray(boot?.pedidosAtivos) ? boot.pedidosAtivos : undefined
     });
-    const normalized = normalizeCatalog({ catalogo: { secoes: boot.secoes, produtos: boot.produtos } });
+    const normalized = normalizeCatalog({ catalogo: { secoes: boot.secoes, produtos: boot.produtos, atacado: boot.atacado } });
     state.sections = normalized.sections;
     state.products = normalized.products;
+    state.wholesale = normalized.wholesale;
+    state.atacado = normalized.wholesale;
     reconcileCartWithCatalog(state);
   } catch {
     const catalog = await loadCatalogWithFallback(state);
@@ -127,6 +136,8 @@ async function init() {
     const normalized = normalizeCatalog(catalog);
     state.sections = normalized.sections;
     state.products = normalized.products;
+    state.wholesale = normalized.wholesale;
+    state.atacado = normalized.wholesale;
     reconcileCartWithCatalog(state);
   }
   const loyalty = await loadLoyalty(state);

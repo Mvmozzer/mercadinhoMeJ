@@ -1,4 +1,5 @@
-import { CART_KEY, readJson, writeJson } from './storage.js?v=2026.06.23.304';
+import { CART_KEY, readJson, writeJson } from './storage.js?v=2026.06.26.581';
+import { productWholesale } from './catalog.js?v=2026.06.26.581';
 
 function itemQuantity(item = {}) {
   const quantity = Number(item.quantity ?? item.quantidade ?? item.qtd ?? 0);
@@ -24,10 +25,51 @@ function productCatalogMap(products = []) {
   return map;
 }
 
+export function wholesaleProgress(product = {}, quantity = 0) {
+  const info = productWholesale(product);
+  const current = Math.max(0, Math.floor(Number(quantity || 0)));
+  if (!info.active) {
+    return {
+      active: false,
+      quantity: current,
+      minQuantity: 0,
+      missing: 0,
+      percent: 0,
+      reached: false,
+      wholesalePrice: 0
+    };
+  }
+  const reached = current >= info.wholesaleMinQuantity;
+  return {
+    active: true,
+    quantity: current,
+    minQuantity: info.wholesaleMinQuantity,
+    missing: Math.max(0, info.wholesaleMinQuantity - current),
+    percent: Math.min(100, Math.max(0, Math.round((current / info.wholesaleMinQuantity) * 100))),
+    reached,
+    wholesalePrice: info.wholesalePrice
+  };
+}
+
+export function wholesalePriceInfo(product = {}, quantity = 0) {
+  const retailPrice = Number(product.price ?? product.preco ?? 0) || 0;
+  const progress = wholesaleProgress(product, quantity);
+  const price = progress.active && progress.reached ? progress.wholesalePrice : retailPrice;
+  return {
+    price,
+    retailPrice,
+    wholesalePrice: progress.wholesalePrice,
+    wholesaleApplied: progress.active && progress.reached,
+    minQuantity: progress.minQuantity,
+    progress
+  };
+}
+
 function cartItemFromProduct(product = {}, quantity = 1) {
   const id = productId(product);
   const name = product.name || product.nome || 'Produto';
-  const price = Number(product.price ?? product.preco ?? 0);
+  const priceInfo = wholesalePriceInfo(product, quantity);
+  const price = priceInfo.price;
   const saleMode = product.saleMode || product.modo_venda || product.modoVenda || 'unit';
   return {
     id,
@@ -36,6 +78,16 @@ function cartItemFromProduct(product = {}, quantity = 1) {
     nome: name,
     price,
     preco: price,
+    retailPrice: priceInfo.retailPrice,
+    preco_varejo: priceInfo.retailPrice,
+    wholesalePrice: priceInfo.wholesalePrice,
+    preco_atacado: priceInfo.wholesalePrice,
+    wholesaleMinQuantity: priceInfo.minQuantity,
+    quantidade_atacado: priceInfo.minQuantity,
+    wholesaleApplied: priceInfo.wholesaleApplied,
+    atacado_aplicado: priceInfo.wholesaleApplied,
+    wholesaleProgress: priceInfo.progress,
+    progresso_atacado: priceInfo.progress,
     image: product.image || product.imagem || '',
     unit: product.unit || product.unidade || product.tamanho || 'un',
     section: product.section || product.secao_nome || product.secao || '',
@@ -115,6 +167,11 @@ export function cartPayload(state) {
     nome: item.name,
     quantidade: item.quantity,
     preco: item.price,
+    preco_varejo: item.retailPrice,
+    preco_atacado: item.wholesalePrice,
+    quantidade_atacado: item.wholesaleMinQuantity,
+    atacado_aplicado: item.wholesaleApplied,
+    progresso_atacado: item.wholesaleProgress,
     saleMode: item.saleMode,
     quantidade_solicitada: item.quantity,
     peso_estimado: item.saleMode === 'weighted' ? item.quantity : null,
