@@ -194,16 +194,16 @@
         "descricao": "",
         "nome_completo": "Aparelho de Barbear Probak II",
         "nomeCompleto": "Aparelho de Barbear Probak II",
-        "preco": 32,
-        "preco_normal": 32,
-        "precoOriginal": 32,
-        "preco_original": 32,
+        "preco": 4.5,
+        "preco_normal": 4.5,
+        "precoOriginal": 4.5,
+        "preco_original": 4.5,
         "preco_promocional": 0,
         "precoPromocional": 0,
         "atacado_ativo": true,
         "atacadoAtivo": true,
-        "preco_atacado": 23,
-        "precoAtacado": 23,
+        "preco_atacado": 2.99,
+        "precoAtacado": 2.99,
         "quantidade_atacado": 10,
         "quantidadeAtacado": 10,
         "estoque": 22,
@@ -237,8 +237,8 @@
         "saleUnit": "un",
         "unidadeBasePreco": "un",
         "priceBaseUnit": "un",
-        "precoBaseCentavos": 3200,
-        "priceBaseCents": 3200,
+        "precoBaseCentavos": 450,
+        "priceBaseCents": 450,
         "pesoMinimo": 0,
         "minWeight": 0,
         "pesoMaximo": 0,
@@ -254,23 +254,23 @@
         "productObservation": "",
         "tarjas": [
           {
-            "texto": "Acima de 20un no atacado",
+            "texto": "Varej/Atac",
             "cor": "#ffffff",
-            "fundo": "#bf0000"
+            "fundo": "#6153ae"
           }
         ],
         "etiquetas": [
           {
-            "texto": "Acima de 20un no atacado",
+            "texto": "Varej/Atac",
             "cor": "#ffffff",
-            "fundo": "#bf0000"
+            "fundo": "#6153ae"
           }
         ],
         "labels": [
           {
-            "texto": "Acima de 20un no atacado",
+            "texto": "Varej/Atac",
             "cor": "#ffffff",
-            "fundo": "#bf0000"
+            "fundo": "#6153ae"
           }
         ],
         "product_point_offer": {
@@ -316,7 +316,7 @@
         "secao_ordem": 18,
         "index": 3,
         "grupo": "Barbearia",
-        "preco_base": 32
+        "preco_base": 4.5
       }
     ],
     "miniappUi": {
