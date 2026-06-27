@@ -359,6 +359,9 @@
       "sectionsMenu": {
         "enabled": true
       },
+      "productDetails": {
+        "enabled": true
+      },
       "banners": [
         {
           "id": "banner-1781966126889-0",

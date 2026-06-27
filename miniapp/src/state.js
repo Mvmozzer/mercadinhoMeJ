@@ -1,5 +1,5 @@
-﻿import { restoreMiniAppUiState } from './storage.js?v=2026.06.26.346';
-import { normalizeWholesaleConfig } from './catalog.js?v=2026.06.26.346';
+﻿import { restoreMiniAppUiState } from './storage.js?v=2026.06.27.854';
+import { normalizeWholesaleConfig } from './catalog.js?v=2026.06.27.854';
 
 export const MINIAPP_UI_DEFAULTS = {
   header: {
@@ -39,6 +39,9 @@ export const MINIAPP_UI_DEFAULTS = {
     animation: 'slide'
   },
   sectionsMenu: {
+    enabled: true
+  },
+  productDetails: {
     enabled: true
   },
   banners: [
@@ -115,6 +118,14 @@ export function normalizeMiniAppUi(raw = {}) {
     cfg.mostrarMenuSecoes,
     cfg.showSectionsMenu
   ].find(value => typeof value === 'boolean');
+  const productDetailsEnabled = [
+    cfg.productDetails?.enabled,
+    cfg.product_details?.enabled,
+    cfg.detalhesProduto?.enabled,
+    cfg.detalhes_produto?.enabled,
+    cfg.mostrarDetalhesProduto,
+    cfg.showProductDetails
+  ].find(value => typeof value === 'boolean');
   return {
     header: {
       ...header,
@@ -159,6 +170,11 @@ export function normalizeMiniAppUi(raw = {}) {
       enabled: sectionsMenuEnabled === undefined
         ? MINIAPP_UI_DEFAULTS.sectionsMenu.enabled
         : sectionsMenuEnabled === true
+    },
+    productDetails: {
+      enabled: productDetailsEnabled === undefined
+        ? MINIAPP_UI_DEFAULTS.productDetails.enabled
+        : productDetailsEnabled === true
     },
     banners: banners.map(normalizeBanner).sort((a, b) => Number(a.order || 0) - Number(b.order || 0) || String(a.title).localeCompare(String(b.title), 'pt-BR'))
   };

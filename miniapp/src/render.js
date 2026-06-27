@@ -46,6 +46,9 @@ const MINIAPP_UI_DEFAULTS = {
   sectionsMenu: {
     enabled: true
   },
+  productDetails: {
+    enabled: true
+  },
   banners: [
     {
       id: 'ofertas-mercadinho',
@@ -75,14 +78,14 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.06.26.346';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productBadges } from './catalog.js?v=2026.06.26.346';
-import { telegramHandoff } from './checkout.js?v=2026.06.26.346';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.26.346';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.26.346';
-import { persistMiniAppUiState } from './storage.js?v=2026.06.26.346';
-import { updateMainButton } from './telegram.js?v=2026.06.26.346';
-import { loadTracking } from './tracking.js?v=2026.06.26.346';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.06.27.854';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productBadges } from './catalog.js?v=2026.06.27.854';
+import { telegramHandoff } from './checkout.js?v=2026.06.27.854';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.27.854';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.27.854';
+import { persistMiniAppUiState } from './storage.js?v=2026.06.27.854';
+import { updateMainButton } from './telegram.js?v=2026.06.27.854';
+import { loadTracking } from './tracking.js?v=2026.06.27.854';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -168,6 +171,14 @@ function normalizeMiniAppUi(raw = {}) {
     cfg.mostrarMenuSecoes,
     cfg.showSectionsMenu
   ].find(value => typeof value === 'boolean');
+  const productDetailsEnabled = [
+    cfg.productDetails?.enabled,
+    cfg.product_details?.enabled,
+    cfg.detalhesProduto?.enabled,
+    cfg.detalhes_produto?.enabled,
+    cfg.mostrarDetalhesProduto,
+    cfg.showProductDetails
+  ].find(value => typeof value === 'boolean');
   return {
     header: {
       ...header,
@@ -215,6 +226,11 @@ function normalizeMiniAppUi(raw = {}) {
       enabled: sectionsMenuEnabled === undefined
         ? MINIAPP_UI_DEFAULTS.sectionsMenu.enabled
         : sectionsMenuEnabled === true
+    },
+    productDetails: {
+      enabled: productDetailsEnabled === undefined
+        ? MINIAPP_UI_DEFAULTS.productDetails.enabled
+        : productDetailsEnabled === true
     },
     banners: banners.map(normalizeBanner).sort((a, b) => Number(a.order || 0) - Number(b.order || 0) || String(a.title).localeCompare(String(b.title), 'pt-BR'))
   };
@@ -538,8 +554,18 @@ export function createRenderer(state) {
   }
 
   function navigateTo(page, options = {}) {
+    const nextPage = page || 'home';
+    if (nextPage === 'product' && !productDetailsEnabled()) {
+      state.sectionsMenuOpen = false;
+      if (options.sectionId !== undefined) state.sectionId = options.sectionId;
+      if (options.query !== undefined) state.query = options.query;
+      if (state.page === 'product') state.page = state.previousPage || 'home';
+      persistMiniAppUiState(state);
+      render();
+      return;
+    }
     state.previousPage = state.page || 'home';
-    state.page = page || 'home';
+    state.page = nextPage;
     state.sectionsMenuOpen = false;
     if (options.sectionId !== undefined) state.sectionId = options.sectionId;
     if (options.query !== undefined) state.query = options.query;
@@ -555,6 +581,10 @@ export function createRenderer(state) {
 
   function sectionsMenuEnabled(ui = normalizeMiniAppUi(state.miniappUi || state.miniappui || {})) {
     return ui.sectionsMenu?.enabled === true;
+  }
+
+  function productDetailsEnabled(ui = normalizeMiniAppUi(state.miniappUi || state.miniappui || {})) {
+    return ui.productDetails?.enabled !== false;
   }
 
   function bannerTargetSectionId(value = '') {
@@ -1572,6 +1602,12 @@ export function createRenderer(state) {
   function render() {
     let html = '';
     const activeUi = normalizeMiniAppUi(state.miniappUi || state.miniappui || {});
+    if (state.page === 'product' && !productDetailsEnabled(activeUi)) {
+      state.page = state.previousPage || 'home';
+      if (state.page === 'product') state.page = 'home';
+      state.productId = '';
+      persistMiniAppUiState(state);
+    }
     const splashDuration = clampMs(activeUi.splash?.durationMs, MINIAPP_UI_DEFAULTS.splash.durationMs);
     applyThemeVariables(activeUi);
     document.documentElement.style.setProperty('--mj-splash-duration', `${splashDuration}ms`);
