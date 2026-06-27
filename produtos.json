@@ -166,8 +166,8 @@
       "precoAtacado": 2.99,
       "quantidade_atacado": 10,
       "quantidadeAtacado": 10,
-      "estoque": 22,
-      "estoque_pronta_entrega": 22,
+      "estoque": 440,
+      "estoque_pronta_entrega": 440,
       "ativo": true,
       "tipo": "sku",
       "produto_principal": false,
@@ -212,27 +212,9 @@
       "textoPesoAproximado": "",
       "observacaoProduto": "",
       "productObservation": "",
-      "tarjas": [
-        {
-          "texto": "Varej/Atac",
-          "cor": "#ffffff",
-          "fundo": "#6153ae"
-        }
-      ],
-      "etiquetas": [
-        {
-          "texto": "Varej/Atac",
-          "cor": "#ffffff",
-          "fundo": "#6153ae"
-        }
-      ],
-      "labels": [
-        {
-          "texto": "Varej/Atac",
-          "cor": "#ffffff",
-          "fundo": "#6153ae"
-        }
-      ],
+      "tarjas": [],
+      "etiquetas": [],
+      "labels": [],
       "product_point_offer": {
         "id": "higiene:4",
         "product_id": "higiene:4",
