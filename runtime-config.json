@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-01T14:33:49.033-03:00",
-  "webBuild": "2026.07.01.229",
-  "apiBaseUrl": "",
-  "allowTemporaryApiBase": false,
-  "apiBaseKind": ""
+  "updatedAt": "2026-07-01T20:12:31.801-03:00",
+  "webBuild": "2026.07.01.551",
+  "apiBaseUrl": "https://psychology-itself-contrast-mysql.trycloudflare.com",
+  "allowTemporaryApiBase": true,
+  "apiBaseKind": "temporary_tunnel"
 }
