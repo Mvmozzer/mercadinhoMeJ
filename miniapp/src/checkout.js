@@ -1,5 +1,5 @@
-import { cartPayload } from './cart.js?v=2026.07.01.297';
-import { fallbackSendData } from './telegram.js?v=2026.07.01.297';
+import { cartPayload } from './cart.js?v=2026.07.01.229';
+import { fallbackSendData } from './telegram.js?v=2026.07.01.229';
 
 function normalizeTelegramCartItem(item = {}) {
   const quantity = Number(item.quantidade || item.quantity || 0);
