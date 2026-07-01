@@ -1,5 +1,5 @@
-﻿import { restoreMiniAppUiState } from './storage.js?v=2026.06.27.123';
-import { normalizeWholesaleConfig } from './catalog.js?v=2026.06.27.123';
+﻿import { restoreMiniAppUiState } from './storage.js?v=2026.07.01.297';
+import { normalizeWholesaleConfig } from './catalog.js?v=2026.07.01.297';
 
 export const MINIAPP_UI_DEFAULTS = {
   header: {
@@ -180,6 +180,20 @@ export function normalizeMiniAppUi(raw = {}) {
   };
 }
 
+export function loyaltyProgramEnabled(state = {}) {
+  const loyalty = state.loyalty || {};
+  const programa = loyalty.programa || {};
+  const checkout = state.checkout || {};
+  return [
+    loyalty.ativo,
+    loyalty.active,
+    programa.ativo,
+    programa.active,
+    checkout.permitirUsarPontos,
+    checkout.permitir_usar_pontos
+  ].every(value => value !== false);
+}
+
 export function createState() {
   const saved = restoreMiniAppUiState();
   return {
@@ -198,6 +212,7 @@ export function createState() {
     store: { nome: 'Mercadinho M&J', status: 'aberta', mensagem: 'Aberto agora', aceitaPedidos: true },
     cliente: { nome: 'cliente' },
     loyalty: { saldoPontos: 0 },
+    checkout: { permitirUsarPontos: true },
     sections: [],
     products: [],
     cart: {},
@@ -273,6 +288,7 @@ export function applySnapshot(state, snapshot = {}) {
   if (canApplyPersonal && Array.isArray(snapshot.pedidos)) state.orders = snapshot.pedidos;
   if (snapshot.loja) state.store = { ...state.store, ...snapshot.loja };
   if (canApplyPersonal && snapshot.programa) state.loyalty = { ...state.loyalty, ...snapshot.programa };
+  if (snapshot.checkout) state.checkout = { ...state.checkout, ...snapshot.checkout };
   if (snapshot.miniappUi) state.miniappUi = normalizeMiniAppUi(snapshot.miniappUi);
   if (snapshot.atacado || snapshot.wholesale) {
     state.wholesale = normalizeWholesaleConfig(snapshot.atacado || snapshot.wholesale);

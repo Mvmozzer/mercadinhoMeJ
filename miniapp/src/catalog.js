@@ -1,4 +1,4 @@
-import { slugify } from './utils.js?v=2026.06.27.123';
+import { slugify } from './utils.js?v=2026.07.01.297';
 
 const WEIGHTED_CATALOG_MARKERS = ['item.tarjas'];
 export const WHOLESALE_DEFAULTS = {
@@ -99,6 +99,37 @@ export function productWholesale(product = {}) {
 
 export function isWholesaleProduct(product = {}) {
   return productWholesale(product).active;
+}
+
+export function productAvailability(product = {}) {
+  const rawMode = String(
+    product.disponibilidade ||
+      product.disponibilidade_produto ||
+      product.availabilityMode ||
+      product.modoDisponibilidade ||
+      ''
+  ).trim().toLowerCase();
+  const preorder = product.sob_encomenda === true || product.sobEncomenda === true || product.preorder === true;
+  let mode = 'retirada_rapida';
+  if (preorder || ['sob_encomenda', 'encomenda', 'por_encomenda', 'retirada_futura', 'preorder', 'backorder'].includes(rawMode)) {
+    mode = 'sob_encomenda';
+  } else if (['oculto', 'hidden', 'nao_vender', 'offline'].includes(rawMode)) {
+    mode = 'oculto';
+  }
+  const daysRaw = Number(product.prazo_retirada_dias ?? product.prazoRetiradaDias ?? product.leadTimeDays ?? product.lead_time_days ?? 0);
+  const days = mode === 'sob_encomenda'
+    ? Math.max(1, Math.min(365, Math.ceil(Number.isFinite(daysRaw) && daysRaw > 0 ? daysRaw : 1)))
+    : 0;
+  return {
+    mode,
+    label: mode === 'sob_encomenda' ? 'Sob encomenda' : mode === 'oculto' ? 'Oculto' : 'Retirada hoje',
+    preorder: mode === 'sob_encomenda',
+    hidden: mode === 'oculto',
+    days,
+    forecast: mode === 'sob_encomenda'
+      ? `Retirada em ate ${days} ${days === 1 ? 'dia util' : 'dias uteis'}`
+      : 'Retirada hoje'
+  };
 }
 
 export function productImage(product = {}) {
@@ -208,6 +239,10 @@ export function normalizeProduct(raw = {}, sectionName = '', index = 0) {
   const description = String(raw.descricao || raw.description || raw.detalhes || '').trim();
   const brand = String(raw.marca || raw.brand || raw.fabricante || '').trim();
   const badges = productBadges(raw);
+  const availability = productAvailability(raw);
+  if (availability.preorder && !badges.some(badge => String(badge.text || '').toLowerCase() === 'sob encomenda')) {
+    badges.unshift({ text: 'Sob encomenda', color: '#1E1E1E', background: '#FFECBD' });
+  }
   const wholesale = productWholesale(raw);
   return {
     ...raw,
@@ -238,6 +273,19 @@ export function normalizeProduct(raw = {}, sectionName = '', index = 0) {
     quantidadeAtacado: wholesale.active ? wholesale.wholesaleMinQuantity : 0,
     wholesaleMinQuantity: wholesale.active ? wholesale.wholesaleMinQuantity : 0,
     stock: num(raw.estoque ?? raw.stock ?? 999),
+    disponibilidade: availability.mode,
+    disponibilidade_produto: availability.mode,
+    availabilityMode: availability.mode,
+    disponibilidade_label: raw.disponibilidade_label || raw.disponibilidadeLabel || availability.label,
+    disponibilidadeLabel: raw.disponibilidadeLabel || raw.disponibilidade_label || availability.label,
+    sob_encomenda: availability.preorder,
+    sobEncomenda: availability.preorder,
+    prazo_retirada_dias: availability.days,
+    prazoRetiradaDias: availability.days,
+    previsao_retirada_texto: raw.previsao_retirada_texto || raw.previsaoRetiradaTexto || availability.forecast,
+    previsaoRetiradaTexto: raw.previsaoRetiradaTexto || raw.previsao_retirada_texto || availability.forecast,
+    availableForPurchase: raw.availableForPurchase !== false && raw.disponivel_para_compra !== false && !availability.hidden,
+    disponivel_para_compra: raw.disponivel_para_compra !== false && raw.availableForPurchase !== false && !availability.hidden,
     unit: raw.unidade || raw.unidadeVenda || raw.tamanho || raw.medida || 'un',
     points: productPoints(raw, price)
   };

@@ -78,14 +78,15 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.06.27.123';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productBadges } from './catalog.js?v=2026.06.27.123';
-import { telegramHandoff } from './checkout.js?v=2026.06.27.123';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.06.27.123';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.06.27.123';
-import { persistMiniAppUiState } from './storage.js?v=2026.06.27.123';
-import { updateMainButton } from './telegram.js?v=2026.06.27.123';
-import { loadTracking } from './tracking.js?v=2026.06.27.123';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.01.297';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.01.297';
+import { telegramHandoff } from './checkout.js?v=2026.07.01.297';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.01.297';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.01.297';
+import { persistMiniAppUiState } from './storage.js?v=2026.07.01.297';
+import { updateMainButton } from './telegram.js?v=2026.07.01.297';
+import { loadTracking } from './tracking.js?v=2026.07.01.297';
+import { loyaltyProgramEnabled } from './state.js?v=2026.07.01.297';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -555,6 +556,13 @@ export function createRenderer(state) {
 
   function navigateTo(page, options = {}) {
     const nextPage = page || 'home';
+    if (nextPage === 'loyalty' && !loyaltyProgramEnabled(state)) {
+      state.sectionsMenuOpen = false;
+      state.page = 'home';
+      persistMiniAppUiState(state);
+      render();
+      return;
+    }
     if (nextPage === 'product' && !productDetailsEnabled()) {
       state.sectionsMenuOpen = false;
       if (options.sectionId !== undefined) state.sectionId = options.sectionId;
@@ -756,6 +764,9 @@ export function createRenderer(state) {
           <img class="brand-logo" src="${escapeHtml(headerLogo)}" alt="Mercadinho M&J" referrerpolicy="no-referrer" onerror="this.hidden=true">`;
     const greetingMarkup = header.greetingEnabled === false ? '' : `<p class="greeting" id="customerGreeting">${greetingText}</p>`;
     const titleMarkup = title && header.titleEnabled !== false ? `<h1>${escapeHtml(titleText)}</h1>` : '';
+    const loyaltyShortcut = loyaltyProgramEnabled(state)
+      ? `<button class="loyalty-shortcut" type="button" data-page="loyalty" aria-label="Abrir fidelidade. ${loyaltyPointsAvailable(state)} pontos disponiveis">⭐: ${loyaltyPointsAvailable(state)}</button>`
+      : '<span class="hero-spacer" aria-hidden="true"></span>';
     return `
       <header class="market-hero app-header" id="marketHero">
         <div class="hero-top-row">
@@ -767,7 +778,7 @@ export function createRenderer(state) {
               ${titleMarkup}
             </div>
           </div>
-          <button class="loyalty-shortcut" type="button" data-page="loyalty" aria-label="Abrir fidelidade. ${loyaltyPointsAvailable(state)} pontos disponiveis">⭐: ${loyaltyPointsAvailable(state)}</button>
+          ${loyaltyShortcut}
         </div>
         <div class="store-status ${status.className}" id="storeStatus"><span class="store-status-dot" aria-hidden="true"></span><span>${escapeHtml(status.text)}</span></div>
       </header>
@@ -811,6 +822,7 @@ export function createRenderer(state) {
   }
 
   function renderProductPointsChip(product = {}) {
+    if (!loyaltyProgramEnabled(state)) return '';
     const points = Number(product.points || 0);
     if (!points) return '';
     return `<span class="product-points-chip">+ ${points} ⭐</span>`;
@@ -830,10 +842,21 @@ export function createRenderer(state) {
     return text;
   }
 
+  function productAvailabilityLine(product = {}) {
+    const availability = productAvailability(product);
+    if (availability.hidden) return 'Indisponivel';
+    const stock = Number(product.stock ?? product.estoque_pronta_entrega ?? product.estoque_atual ?? product.estoque ?? 0);
+    if (!availability.preorder && stock <= 0) return 'Sem estoque para pronta entrega';
+    return product.previsao_retirada_texto || product.previsaoRetiradaTexto || availability.forecast;
+  }
+
   function renderProductDetailInfo(product = {}, sectionName = '') {
     const unit = cleanProductDetail(product.unit || product.unidadeVenda || product.unidadeMedida || product.tamanho);
     const stock = Number(product.stock ?? product.estoque_pronta_entrega ?? product.estoque_atual ?? product.estoque ?? 0);
-    const points = Number(product.points || product.product_point_offer_points || product.productPointOffer?.points || 0);
+    const availability = productAvailability(product);
+    const points = loyaltyProgramEnabled(state)
+      ? Number(product.points || product.product_point_offer_points || product.productPointOffer?.points || 0)
+      : 0;
     const group = cleanProductDetail(product.grupoNome || product.grupo_nome || product.nome_principal || product.produtoPaiNome);
     const code = cleanProductDetail(product.codigoInterno || product.codigo_interno || product.sku || product.codigoBarras || product.codigo_barras);
     const observation = cleanProductDetail(product.productObservation || product.observacaoProduto || product.observacao_produto);
@@ -841,9 +864,11 @@ export function createRenderer(state) {
     const flavor = cleanProductDetail(product.sabor);
     const saleMode = cleanProductDetail(product.modoVenda || product.saleMode);
     const validity = cleanProductDetail(product.validade);
-    const stockText = stock > 0
+    const stockText = availability.preorder
+      ? productAvailabilityLine(product)
+      : stock > 0
       ? `${stock} ${unit || 'un'} disponiveis`
-      : '';
+      : productAvailabilityLine(product);
     const rows = [
       ['Marca', product.marca || product.brand],
       ['Categoria', sectionName || product.section || product.secao],
@@ -920,6 +945,7 @@ export function createRenderer(state) {
     const brand = String(product.marca || product.brand || '').trim();
     const description = String(product.descricao || product.description || product.unit || '').trim();
     const unit = String(product.unit || product.unidade || '').trim() || description || brand || 'un';
+    const availabilityLine = productAvailabilityLine(product);
     return `
       <article class="product-card mini-product-card" data-product-id="${escapeHtml(product.id)}">
         <div class="product-media-frame product-media">
@@ -943,6 +969,7 @@ export function createRenderer(state) {
           <h3>${escapeHtml(product.name)}</h3>
           ${brand ? `<span class="product-brand">${escapeHtml(brand)}</span>` : ''}
           ${unit ? `<p class="product-description product-unit">${escapeHtml(unit)}</p>` : ''}
+          ${availabilityLine ? `<p class="product-description product-availability-line">${escapeHtml(availabilityLine)}</p>` : ''}
           <div class="product-buy-row${quantity ? ' product-buy-row--quantity' : ''}">
             <div class="product-price-block">${productPriceBlock(product, quantity)}</div>
           </div>
@@ -1205,6 +1232,7 @@ export function createRenderer(state) {
                   <small>${escapeHtml(item.unit || 'un')}</small>
                   <span>${formatMoney(item.price)} un.</span>
                   ${item.wholesaleApplied || item.atacado_aplicado ? `<small class="wholesale-cart-label">Atacado aplicado</small>` : ''}
+                  ${item.sob_encomenda || item.sobEncomenda ? `<small class="wholesale-cart-label">${escapeHtml(item.previsao_retirada_texto || 'Sob encomenda')}</small>` : ''}
                 </div>
                 <div class="qty">
                   <button data-qty-minus="${escapeHtml(item.id)}" aria-label="Diminuir quantidade">-</button>
@@ -1418,7 +1446,7 @@ export function createRenderer(state) {
             ${profileItem('Nascimento', cliente.dataNascimento)}
             ${profileItem('Endereco', endereco)}
           </div>
-          <button data-page="loyalty">Programa de fidelidade</button>
+          ${loyaltyProgramEnabled(state) ? '<button data-page="loyalty">Programa de fidelidade</button>' : ''}
           <button data-page="home">Sair para produtos</button>
         </section>
       </main>
@@ -1606,6 +1634,11 @@ export function createRenderer(state) {
       state.page = state.previousPage || 'home';
       if (state.page === 'product') state.page = 'home';
       state.productId = '';
+      persistMiniAppUiState(state);
+    }
+    if (state.page === 'loyalty' && !loyaltyProgramEnabled(state)) {
+      state.page = 'home';
+      state.previousPage = 'home';
       persistMiniAppUiState(state);
     }
     const splashDuration = clampMs(activeUi.splash?.durationMs, MINIAPP_UI_DEFAULTS.splash.durationMs);

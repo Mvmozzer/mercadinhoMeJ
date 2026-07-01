@@ -1,5 +1,5 @@
-import { CART_KEY, readJson, writeJson } from './storage.js?v=2026.06.27.123';
-import { productWholesale } from './catalog.js?v=2026.06.27.123';
+import { CART_KEY, readJson, writeJson } from './storage.js?v=2026.07.01.297';
+import { productAvailability, productWholesale } from './catalog.js?v=2026.07.01.297';
 
 function itemQuantity(item = {}) {
   const quantity = Number(item.quantity ?? item.quantidade ?? item.qtd ?? 0);
@@ -71,6 +71,7 @@ function cartItemFromProduct(product = {}, quantity = 1) {
   const priceInfo = wholesalePriceInfo(product, quantity);
   const price = priceInfo.price;
   const saleMode = product.saleMode || product.modo_venda || product.modoVenda || 'unit';
+  const availability = productAvailability(product);
   return {
     id,
     produto_id: String(product.produto_id || product.produtoId || id),
@@ -93,6 +94,12 @@ function cartItemFromProduct(product = {}, quantity = 1) {
     section: product.section || product.secao_nome || product.secao || '',
     points: Number(product.points || product.pontos || 0),
     saleMode,
+    disponibilidade: availability.mode,
+    disponibilidade_label: product.disponibilidade_label || product.disponibilidadeLabel || availability.label,
+    sob_encomenda: availability.preorder,
+    sobEncomenda: availability.preorder,
+    prazo_retirada_dias: availability.days,
+    previsao_retirada_texto: product.previsao_retirada_texto || product.previsaoRetiradaTexto || availability.forecast,
     quantity
   };
 }
@@ -172,6 +179,11 @@ export function cartPayload(state) {
     quantidade_atacado: item.wholesaleMinQuantity,
     atacado_aplicado: item.wholesaleApplied,
     progresso_atacado: item.wholesaleProgress,
+    disponibilidade: item.disponibilidade,
+    disponibilidade_label: item.disponibilidade_label,
+    sob_encomenda: item.sob_encomenda === true || item.sobEncomenda === true,
+    prazo_retirada_dias: item.prazo_retirada_dias,
+    previsao_retirada_texto: item.previsao_retirada_texto,
     saleMode: item.saleMode,
     quantidade_solicitada: item.quantity,
     peso_estimado: item.saleMode === 'weighted' ? item.quantity : null,

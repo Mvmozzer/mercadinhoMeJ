@@ -1,11 +1,11 @@
-import { initTelegram, telegramUserName, telegramUserId } from './telegram.js?v=2026.06.27.123';
-import { carregarRuntimeConfigPages, authenticateBridge, loadBootstrap, loadCatalogWithFallback, loadHealth, loadCustomer } from './api.js?v=2026.06.27.123';
-import { createRenderer } from './render.js?v=2026.06.27.123';
-import { createState, applySnapshot, normalizeMiniAppUi } from './state.js?v=2026.06.27.123';
-import { normalizeCatalog } from './catalog.js?v=2026.06.27.123';
-import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.06.27.123';
-import { loadLoyalty } from './loyalty.js?v=2026.06.27.123';
-import { loadOrders } from './orders.js?v=2026.06.27.123';
+import { initTelegram, telegramUserName, telegramUserId } from './telegram.js?v=2026.07.01.297';
+import { carregarRuntimeConfigPages, authenticateBridge, loadBootstrap, loadCatalogWithFallback, loadHealth, loadCustomer } from './api.js?v=2026.07.01.297';
+import { createRenderer } from './render.js?v=2026.07.01.297';
+import { createState, applySnapshot, normalizeMiniAppUi, loyaltyProgramEnabled } from './state.js?v=2026.07.01.297';
+import { normalizeCatalog } from './catalog.js?v=2026.07.01.297';
+import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.01.297';
+import { loadLoyalty } from './loyalty.js?v=2026.07.01.297';
+import { loadOrders } from './orders.js?v=2026.07.01.297';
 
 function sincronizarStatusLoja(state, health) {
   if (health?.loja) state.store = { ...state.store, ...health.loja };
@@ -25,6 +25,8 @@ function miniappRefreshSignature(state = {}) {
     pollingMs: state.pollingMs || 0,
     store: state.store || {},
     cliente: state.cliente || {},
+    loyalty: { ativo: state.loyalty?.ativo },
+    checkout: state.checkout || {},
     miniappUi: state.miniappUi || {}
   });
 }
@@ -38,6 +40,8 @@ async function refreshMiniAppVisualConfig(state) {
   const health = await loadHealth(state);
   if (health?.checkout?.pollingMs) state.pollingMs = health.checkout.pollingMs;
   sincronizarStatusLoja(state, health);
+  if (health?.checkout) state.checkout = { ...state.checkout, ...health.checkout };
+  if (health?.programa) state.loyalty = { ...state.loyalty, ...health.programa };
   const customer = await loadCustomer(state);
   if (customer?.cliente) applySnapshot(state, { telegramId: customer.cliente.telegramId, cliente: customer.cliente });
   const ui = miniappUiFromPayload(health);
@@ -120,6 +124,7 @@ async function init() {
       loja: boot?.loja,
       cliente: boot?.cliente,
       programa: boot?.programa,
+      checkout: boot?.checkout,
       miniappUi: boot?.miniappUi,
       atacado: boot?.atacado || boot?.catalogo?.atacado,
       pedidos: Array.isArray(boot?.pedidosAtivos) ? boot.pedidosAtivos : undefined
@@ -140,9 +145,11 @@ async function init() {
     state.atacado = normalized.wholesale;
     reconcileCartWithCatalog(state);
   }
-  const loyalty = await loadLoyalty(state);
-  if (loyalty?.ok !== false) applySnapshot(state, { telegramId: loyalty.telegramId || loyalty.programa?.telegramId, programa: loyalty });
-  else state.loyalty = { ...state.loyalty, ...loyalty };
+  if (loyaltyProgramEnabled(state)) {
+    const loyalty = await loadLoyalty(state);
+    if (loyalty?.ok !== false) applySnapshot(state, { telegramId: loyalty.telegramId || loyalty.programa?.telegramId, programa: loyalty });
+    else state.loyalty = { ...state.loyalty, ...loyalty };
+  }
   const orders = await loadOrders(state);
   if (Array.isArray(orders?.pedidos)) applySnapshot(state, { telegramId: orders.telegramId, pedidos: orders.pedidos });
   applySnapshot(state, window.__MJ_SNAPSHOT__ || {});
