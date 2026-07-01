@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-01T20:32:36.514-03:00",
-  "webBuild": "2026.07.01.756",
-  "apiBaseUrl": "https://superior-menu-while-dairy.trycloudflare.com",
+  "updatedAt": "2026-07-01T20:35:41.449-03:00",
+  "webBuild": "2026.07.01.941",
+  "apiBaseUrl": "https://administrators-popularity-louise-badge.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
 }
