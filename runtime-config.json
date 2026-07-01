@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-01T20:44:37.915-03:00",
-  "webBuild": "2026.07.01.477",
-  "apiBaseUrl": "https://somerset-swaziland-obj-locate.trycloudflare.com",
+  "updatedAt": "2026-07-01T20:54:38.547-03:00",
+  "webBuild": "2026.07.01.078",
+  "apiBaseUrl": "https://attempts-tradition-gods-cloudy.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
 }
