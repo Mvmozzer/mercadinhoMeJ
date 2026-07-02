@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-02T08:40:53.206-03:00",
-  "webBuild": "2026.07.02.453",
-  "apiBaseUrl": "https://adaptive-mart-vienna-frankfurt.trycloudflare.com",
+  "updatedAt": "2026-07-02T08:50:44.284-03:00",
+  "webBuild": "2026.07.02.044",
+  "apiBaseUrl": "https://advisor-weekends-east-internship.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
 }
