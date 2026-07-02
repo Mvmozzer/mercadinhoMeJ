@@ -337,30 +337,30 @@
         "titleText": "Mercadinho M&J"
       },
       "theme": {
-        "primary": "#006CFF",
-        "primarySoft": "#EAF3FF",
-        "bg": "#F5F8FC",
+        "primary": "#006cff",
+        "primarySoft": "#eaf3ff",
+        "bg": "#f5f8fc",
         "card": "#ffffff",
         "text": "#142033",
-        "muted": "#60718A",
-        "border": "#D9E2EF",
-        "heroFrom": "#006CFF",
-        "heroTo": "#087BFF",
-        "buttonGradientFrom": "#006CFF",
-        "buttonGradientTo": "#0049B8"
+        "muted": "#60718a",
+        "border": "#d9e2ef",
+        "heroFrom": "#006cff",
+        "heroTo": "#087bff",
+        "buttonGradientFrom": "#006cff",
+        "buttonGradientTo": "#0049b8"
       },
       "splash": {
         "logo": "/assets/logo-mj-mercadinho.png",
         "mode": "logo",
         "mediaUrl": "",
-        "animation": "zoom",
-        "background": "#006CFF",
-        "gradientFrom": "#087BFF",
-        "gradientTo": "#0049B8",
+        "animation": "fade",
+        "background": "#006cff",
+        "gradientFrom": "#087bff",
+        "gradientTo": "#0049b8",
         "durationMs": 5000
       },
       "bannerCarousel": {
-        "autoplay": false,
+        "autoplay": true,
         "intervalMs": 5000,
         "animation": "slide"
       },
@@ -372,7 +372,7 @@
       },
       "banners": [
         {
-          "id": "banner-1781966126889-0",
+          "id": "banner-1782991940901-0",
           "title": "Ofertas para o seu mercado",
           "subtitle": "Produtos por peso, ofertas e itens essenciais com entrega rapida.",
           "eyebrow": "Mercadinho M&J",
@@ -382,7 +382,7 @@
           "buttonText": "Ver produtos",
           "targetType": "page",
           "targetValue": "home",
-          "active": false,
+          "active": true,
           "order": 0
         }
       ]

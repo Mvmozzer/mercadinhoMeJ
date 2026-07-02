@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-02T08:28:54.565-03:00",
-  "webBuild": "2026.07.02.734",
-  "apiBaseUrl": "https://typically-exhaust-isbn-harley.trycloudflare.com",
-  "allowTemporaryApiBase": true,
-  "apiBaseKind": "temporary_tunnel"
+  "updatedAt": "2026-07-02T08:32:42.162-03:00",
+  "webBuild": "2026.07.02.962",
+  "apiBaseUrl": "",
+  "allowTemporaryApiBase": false,
+  "apiBaseKind": ""
 }
