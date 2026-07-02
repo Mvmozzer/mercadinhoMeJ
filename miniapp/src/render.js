@@ -78,15 +78,24 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.02.526';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.02.526';
-import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.02.526';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.02.526';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.02.526';
-import { persistMiniAppUiState } from './storage.js?v=2026.07.02.526';
-import { updateMainButton } from './telegram.js?v=2026.07.02.526';
-import { loadTracking } from './tracking.js?v=2026.07.02.526';
-import { loyaltyProgramEnabled } from './state.js?v=2026.07.02.526';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.02.506';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.02.506';
+import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.02.506';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.02.506';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.02.506';
+import { persistMiniAppUiState } from './storage.js?v=2026.07.02.506';
+import { updateMainButton } from './telegram.js?v=2026.07.02.506';
+import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.02.506';
+import { loyaltyProgramEnabled } from './state.js?v=2026.07.02.506';
+import {
+  activeOrderId,
+  applyOrderStatusToState,
+  applyTrackingToState,
+  isFinalOrderStatus,
+  mapFromTrackingPayload,
+  orderFlowPollingMs,
+  shouldOpenTrackingAfterPayment
+} from './orderFlow.js?v=2026.07.02.506';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -1500,13 +1509,15 @@ export function createRenderer(state) {
     const pedido = trackingPedidoAtual(tracking);
     const statusAtual = statusTrackingAtual(tracking);
     const detalhe = pedido.statusDetalhe || tracking.statusDetalhe || {};
-    const mapaUrl = tracking?.mapaUrl || tracking?.mapUrl || pedido.localizacao?.mapaUrl || '';
+    const mapa = mapFromTrackingPayload(tracking);
+    const mapaUrl = mapa.mapaUrl || '';
     const status = detalhe.label || trackingStatusLabel(statusAtual);
     const modo = trackingModeForCustomer(tracking);
     const pagamentoStatus = pedido.pagamento?.status || pedido.statusPagamento || pedido.status_pagamento || '';
     const resumo = modo === 'miniapp'
       ? 'Status sincronizado com o painel.'
       : 'Atualizacoes seguem pelo Telegram.';
+    const entregaAtiva = String(pedido.modalidadeEntrega || pedido.modalidade_entrega || '').toLowerCase() === 'entrega' || pedido.retiradaNoLocal === false;
     return `
       <main class="page tracking-panel" id="trackingPanel" data-page="tracking">
         <div class="topbar page-brand-hero">
@@ -1529,7 +1540,14 @@ export function createRenderer(state) {
           ${trackingStepsForStatus(statusAtual, pagamentoStatus).map(renderTrackingStep).join('')}
         </section>
         <section class="tracking-map-card">
-          ${mapaUrl ? `<a class="track-map" href="${escapeHtml(mapaUrl)}" target="_blank" rel="noopener">Abrir rota no Maps</a>` : '<div class="map-road"></div><div class="map-pin"></div>'}
+          ${mapaUrl ? `
+            <a class="track-map" href="${escapeHtml(mapaUrl)}" target="_blank" rel="noopener">Abrir localizacao ao vivo do entregador</a>
+            <p>${escapeHtml(mapa.mensagem || 'Mesmo mapa compartilhado pelo entregador no Telegram.')}</p>
+            ${mapa.atualizadaEm ? `<small>Atualizada em ${escapeHtml(mapa.atualizadaEm)}</small>` : ''}
+          ` : `
+            <div class="map-road"></div><div class="map-pin"></div>
+            <p>${escapeHtml(entregaAtiva ? 'Aguardando o entregador compartilhar a localizacao ao vivo.' : 'Pedido sem entrega ao vivo no momento.')}</p>
+          `}
         </section>
       </main>
     `;
@@ -1663,8 +1681,9 @@ export function createRenderer(state) {
     const modoPagamento = paymentModeForCustomer(state);
     sendMiniAppEvent(state, modoPagamento === 'miniapp' ? 'checkout_miniapp_payment_start' : 'checkout_telegram_handoff_start', { itemCount: cartCount(state), total: cartTotal(state) });
     const result = await checkoutCreate(state);
-    const resultMode = result?.checkout?.modo === 'miniapp' || result?.modo === 'miniapp' || Boolean(result?.pix);
-    if (resultMode) {
+    const resultMode = String(result?.checkout?.modo || result?.modo || '').trim().toLowerCase();
+    const resultModeMiniApp = resultMode === 'miniapp' || (!resultMode && Boolean(result?.pix));
+    if (resultModeMiniApp) {
       state.lastMiniAppCheckout = result || {};
       state.pedidoAtual = result?.pedido || state.pedidoAtual || null;
       state.pix = result?.pix || state.pix || null;
@@ -1683,23 +1702,60 @@ export function createRenderer(state) {
     }
   }
 
-  async function loadTrackingForCurrentOrder() {
-    const pedidoId = state.pedidoAtual?.id || state.pedidoAtual?.pedidoId;
-    if (!pedidoId || state.page !== 'tracking') return;
+  async function refreshActiveOrderFlow() {
+    const pedidoId = activeOrderId(state);
+    if (!pedidoId || !['payment', 'tracking'].includes(state.page) || state.__orderFlowRefreshing) return;
+    state.__orderFlowRefreshing = true;
     try {
-      const data = await loadTracking(state, pedidoId);
-      state.tracking = data || {};
-      if (state.tracking?.pedido) {
-        state.pedidoAtual = {
-          ...(state.pedidoAtual || {}),
-          ...state.tracking.pedido
-        };
+      if (state.page === 'payment') {
+        const status = await loadOrderStatus(state, pedidoId);
+        if (!status) return;
+        const result = applyOrderStatusToState(state, status);
+        if (shouldOpenTrackingAfterPayment(state, result.order)) {
+          state.tracking = null;
+          navigateTo('tracking');
+          return;
+        }
+        if (result.changed) render();
+        return;
       }
-      if (!state.tracking?.status && !state.tracking?.pedido?.status && state.pedidoAtual?.status) {
-        state.tracking.status = state.pedidoAtual.status;
-      }
-      render();
-    } catch {}
+
+      const tracking = await loadTracking(state, pedidoId);
+      const result = applyTrackingToState(state, tracking || {});
+      if (result.changed) render();
+      const finalStatus = result.order?.status || state.tracking?.pedido?.status || state.tracking?.status || '';
+      if (isFinalOrderStatus(finalStatus)) stopOrderFlowPolling();
+    } catch {
+      // The Mini App keeps the last known status and retries on the next cycle.
+    } finally {
+      state.__orderFlowRefreshing = false;
+    }
+  }
+
+  function stopOrderFlowPolling() {
+    if (state.__orderFlowTimer) {
+      window.clearInterval(state.__orderFlowTimer);
+      state.__orderFlowTimer = null;
+    }
+    state.__orderFlowTimerKey = '';
+    state.__orderFlowTimerMs = 0;
+  }
+
+  function syncOrderFlowPolling() {
+    const pedidoId = activeOrderId(state);
+    const active = Boolean(pedidoId && ['payment', 'tracking'].includes(state.page));
+    if (!active) {
+      stopOrderFlowPolling();
+      return;
+    }
+    const ms = orderFlowPollingMs(state);
+    const key = `${state.page}:${pedidoId}`;
+    if (state.__orderFlowTimer && state.__orderFlowTimerKey === key && state.__orderFlowTimerMs === ms) return;
+    stopOrderFlowPolling();
+    state.__orderFlowTimerKey = key;
+    state.__orderFlowTimerMs = ms;
+    state.__orderFlowTimer = window.setInterval(() => refreshActiveOrderFlow(), ms);
+    window.setTimeout(() => refreshActiveOrderFlow(), 0);
   }
 
   function bindBannerControls(scope = root) {
@@ -1817,10 +1873,6 @@ export function createRenderer(state) {
     });
 
     root.querySelector('#trackingPanel')?.classList.add('active-page');
-    const trackingStatus = state.tracking?.status || state.tracking?.pedido?.status;
-    if (state.page === 'tracking' && !trackingStatus) {
-      loadTrackingForCurrentOrder();
-    }
   }
 
   function render() {
@@ -1874,9 +1926,10 @@ export function createRenderer(state) {
     }
     bind();
     scheduleBannerAutoSlide(activeUi);
+    syncOrderFlowPolling();
   }
 
-  const renderer = { render, navigateTo };
+  const renderer = { render, navigateTo, refreshActiveOrderFlow };
   return renderer;
 }
 

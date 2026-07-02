@@ -1,6 +1,6 @@
-import { cartPayload } from './cart.js?v=2026.07.02.526';
-import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.07.02.526';
-import { fallbackSendData } from './telegram.js?v=2026.07.02.526';
+import { cartPayload } from './cart.js?v=2026.07.02.506';
+import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.07.02.506';
+import { fallbackSendData } from './telegram.js?v=2026.07.02.506';
 
 const MINIAPP_CHECKOUT_CREATE_PATH = '/api/miniapp/checkout/create';
 
@@ -97,12 +97,13 @@ export async function miniAppPaymentCheckout(state) {
   state.lastMiniAppCheckout = data || {};
   state.pedidoAtual = data?.pedido || null;
   state.pix = data?.pix || null;
+  const modo = data?.checkout?.modo || data?.modo || 'miniapp';
   return {
     ...data,
     ok: data?.ok !== false,
     checkout: {
       ...(data?.checkout || {}),
-      modo: 'miniapp',
+      modo,
       fallbackTelegramAtivo: true
     }
   };

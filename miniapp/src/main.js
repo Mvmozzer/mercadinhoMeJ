@@ -1,11 +1,11 @@
-import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.02.526';
-import { carregarRuntimeConfigPages, authenticateBridge, loadBootstrap, loadCatalogWithFallback, loadHealth, loadCustomer } from './api.js?v=2026.07.02.526';
-import { createRenderer } from './render.js?v=2026.07.02.526';
-import { createState, applySnapshot, normalizeMiniAppUi, loyaltyProgramEnabled } from './state.js?v=2026.07.02.526';
-import { normalizeCatalog } from './catalog.js?v=2026.07.02.526';
-import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.02.526';
-import { loadLoyalty } from './loyalty.js?v=2026.07.02.526';
-import { loadOrders } from './orders.js?v=2026.07.02.526';
+import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.02.506';
+import { carregarRuntimeConfigPages, authenticateBridge, loadBootstrap, loadCatalogWithFallback, loadHealth, loadCustomer } from './api.js?v=2026.07.02.506';
+import { createRenderer } from './render.js?v=2026.07.02.506';
+import { createState, applySnapshot, normalizeMiniAppUi, loyaltyProgramEnabled } from './state.js?v=2026.07.02.506';
+import { normalizeCatalog } from './catalog.js?v=2026.07.02.506';
+import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.02.506';
+import { loadLoyalty } from './loyalty.js?v=2026.07.02.506';
+import { loadOrders } from './orders.js?v=2026.07.02.506';
 
 function sincronizarStatusLoja(state, health) {
   if (health?.loja) state.store = { ...state.store, ...health.loja };
@@ -27,6 +27,12 @@ function miniappRefreshSignature(state = {}) {
     cliente: state.cliente || {},
     loyalty: { ativo: state.loyalty?.ativo },
     checkout: state.checkout || {},
+    orders: (state.orders || []).map(order => ({
+      id: order.id || order.pedidoId || '',
+      status: order.status || '',
+      statusPagamento: order.statusPagamento || order.status_pagamento || order.pagamento?.status || '',
+      updatedAt: order.updatedAt || order.atualizadoEm || ''
+    })),
     miniappUi: state.miniappUi || {}
   });
 }
@@ -64,6 +70,8 @@ async function refreshMiniAppVisualConfig(state) {
   if (health?.programa) state.loyalty = { ...state.loyalty, ...health.programa };
   const customer = await loadCustomer(state);
   if (customer?.cliente) applySnapshot(state, { telegramId: customer.cliente.telegramId, cliente: customer.cliente });
+  const orders = await loadOrders(state);
+  if (Array.isArray(orders?.pedidos)) applySnapshot(state, { telegramId: orders.telegramId, pedidos: orders.pedidos });
   const ui = miniappUiFromPayload(health);
   if (ui) state.miniappUi = normalizeMiniAppUi(ui);
   if (!ui) {
@@ -91,6 +99,18 @@ function applyBridgeSnapshot(renderer, state, snapshot = {}) {
   const before = miniappRefreshSignature(state);
   applySnapshot(state, snapshot);
   if (miniappRefreshSignature(state) !== before) renderer?.render?.();
+  renderer?.refreshActiveOrderFlow?.();
+}
+async function refreshPersonalDataFromBridge(renderer, state) {
+  const before = miniappRefreshSignature(state);
+  const [customer, orders] = await Promise.all([
+    loadCustomer(state).catch(() => null),
+    loadOrders(state).catch(() => null)
+  ]);
+  if (customer?.cliente) applySnapshot(state, { telegramId: customer.cliente.telegramId, cliente: customer.cliente });
+  if (Array.isArray(orders?.pedidos)) applySnapshot(state, { telegramId: orders.telegramId, pedidos: orders.pedidos });
+  if (miniappRefreshSignature(state) !== before) renderer?.render?.();
+  renderer?.refreshActiveOrderFlow?.();
 }
 function bindBridgeCustomerSync(renderer, state) {
   const bridge = globalThis.window?.MJMiniAppBridge;
@@ -105,12 +125,7 @@ function bindBridgeCustomerSync(renderer, state) {
   };
   bridge.state.onEvents = eventos => {
     if (typeof previousEvents === 'function') previousEvents(eventos);
-    const before = miniappRefreshSignature(state);
-    loadCustomer(state)
-      .then(customer => {
-        if (customer?.cliente) applySnapshot(state, { telegramId: customer.cliente.telegramId, cliente: customer.cliente });
-        if (miniappRefreshSignature(state) !== before) renderer?.render?.();
-      })
+    refreshPersonalDataFromBridge(renderer, state)
       .catch(error => bridge.state.onError?.(error));
   };
   bridge.state.onError = error => {
