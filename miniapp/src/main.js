@@ -1,11 +1,11 @@
-import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.01.078';
-import { carregarRuntimeConfigPages, authenticateBridge, loadBootstrap, loadCatalogWithFallback, loadHealth, loadCustomer } from './api.js?v=2026.07.01.078';
-import { createRenderer } from './render.js?v=2026.07.01.078';
-import { createState, applySnapshot, normalizeMiniAppUi, loyaltyProgramEnabled } from './state.js?v=2026.07.01.078';
-import { normalizeCatalog } from './catalog.js?v=2026.07.01.078';
-import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.01.078';
-import { loadLoyalty } from './loyalty.js?v=2026.07.01.078';
-import { loadOrders } from './orders.js?v=2026.07.01.078';
+import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.01.339';
+import { carregarRuntimeConfigPages, authenticateBridge, loadBootstrap, loadCatalogWithFallback, loadHealth, loadCustomer } from './api.js?v=2026.07.01.339';
+import { createRenderer } from './render.js?v=2026.07.01.339';
+import { createState, applySnapshot, normalizeMiniAppUi, loyaltyProgramEnabled } from './state.js?v=2026.07.01.339';
+import { normalizeCatalog } from './catalog.js?v=2026.07.01.339';
+import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.01.339';
+import { loadLoyalty } from './loyalty.js?v=2026.07.01.339';
+import { loadOrders } from './orders.js?v=2026.07.01.339';
 
 function sincronizarStatusLoja(state, health) {
   if (health?.loja) state.store = { ...state.store, ...health.loja };
@@ -34,6 +34,26 @@ function miniappPollingMs(state = {}) {
   const value = Number(state.pollingMs || 7000);
   if (!Number.isFinite(value)) return 7000;
   return Math.max(3000, Math.min(60000, Math.round(value)));
+}
+function withTimeout(promise, ms = 2500) {
+  let timer = null;
+  return Promise.race([
+    promise,
+    new Promise(resolve => {
+      timer = window.setTimeout(() => resolve(null), ms);
+    })
+  ]).finally(() => {
+    if (timer) window.clearTimeout(timer);
+  });
+}
+async function hydrateCustomerBeforeRender(state) {
+  if (!state.apiBase && !state.authOk && !state.bridgeReady) return null;
+  const customer = await withTimeout(loadCustomer(state).catch(() => null));
+  if (customer?.cliente) {
+    state.telegramId = String(customer.cliente.telegramId || customer.cliente.telegram_id || customer.cliente.chatId || state.telegramId || '').trim();
+    applySnapshot(state, { telegramId: customer.cliente.telegramId || state.telegramId, cliente: customer.cliente });
+  }
+  return customer;
 }
 async function refreshMiniAppVisualConfig(state) {
   const before = miniappRefreshSignature(state);
@@ -152,6 +172,7 @@ async function init() {
   const orders = await loadOrders(state);
   if (Array.isArray(orders?.pedidos)) applySnapshot(state, { telegramId: orders.telegramId, pedidos: orders.pedidos });
   applySnapshot(state, window.__MJ_SNAPSHOT__ || {});
+  await hydrateCustomerBeforeRender(state);
   if (!state.products.length) state.error = 'Catálogo vazio no painel.';
   const renderer = createRenderer(state);
   window.__mjMiniApp = { state, renderer };

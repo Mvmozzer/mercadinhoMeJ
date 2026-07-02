@@ -78,15 +78,15 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.01.078';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.01.078';
-import { telegramHandoff } from './checkout.js?v=2026.07.01.078';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.01.078';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.01.078';
-import { persistMiniAppUiState } from './storage.js?v=2026.07.01.078';
-import { updateMainButton } from './telegram.js?v=2026.07.01.078';
-import { loadTracking } from './tracking.js?v=2026.07.01.078';
-import { loyaltyProgramEnabled } from './state.js?v=2026.07.01.078';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.01.339';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.01.339';
+import { telegramHandoff } from './checkout.js?v=2026.07.01.339';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.01.339';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.01.339';
+import { persistMiniAppUiState } from './storage.js?v=2026.07.01.339';
+import { updateMainButton } from './telegram.js?v=2026.07.01.339';
+import { loadTracking } from './tracking.js?v=2026.07.01.339';
+import { loyaltyProgramEnabled } from './state.js?v=2026.07.01.339';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -387,6 +387,15 @@ function formatHeaderText(template = '', fallback = '', values = {}) {
     .replace(/\{nome\}/gi, values.name || '')
     .replace(/\{titulo\}/gi, values.title || '')
     .replace(/\{loja\}/gi, values.store || values.title || '');
+}
+
+function formatCustomerGreetingText(template = '', fallback = '', values = {}) {
+  const text = formatHeaderText(template, fallback, values);
+  const name = String(values.name || '').trim();
+  if (!name || name.toLowerCase() === 'cliente' || /\{nome\}/i.test(String(template || ''))) {
+    return text;
+  }
+  return text.replace(/^((?:bom dia|boa tarde|boa noite|ol[aá]|oi)\s*,?\s*)cliente\b/i, `$1${name}`);
 }
 
 function customerTelegramId(state = {}) {
@@ -750,7 +759,7 @@ export function createRenderer(state) {
       store: state.store?.nome || defaultTitle
     }) : '';
     const greetingText = header.greetingText
-      ? escapeHtml(formatHeaderText(header.greetingText, `${greeting}, ${name}`, {
+      ? escapeHtml(formatCustomerGreetingText(header.greetingText, `${greeting}, ${name}`, {
         greeting,
         name,
         title: titleText || defaultTitle,

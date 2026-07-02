@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-01T20:54:38.547-03:00",
-  "webBuild": "2026.07.01.078",
-  "apiBaseUrl": "https://attempts-tradition-gods-cloudy.trycloudflare.com",
-  "allowTemporaryApiBase": true,
-  "apiBaseKind": "temporary_tunnel"
+  "updatedAt": "2026-07-01T20:58:59.932-03:00",
+  "webBuild": "2026.07.01.339",
+  "apiBaseUrl": "",
+  "allowTemporaryApiBase": false,
+  "apiBaseKind": ""
 }
