@@ -78,15 +78,15 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.02.072';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.02.072';
-import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.02.072';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.02.072';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.02.072';
-import { persistMiniAppUiState } from './storage.js?v=2026.07.02.072';
-import { updateMainButton } from './telegram.js?v=2026.07.02.072';
-import { loadTracking } from './tracking.js?v=2026.07.02.072';
-import { loyaltyProgramEnabled } from './state.js?v=2026.07.02.072';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.02.526';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.02.526';
+import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.02.526';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.02.526';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.02.526';
+import { persistMiniAppUiState } from './storage.js?v=2026.07.02.526';
+import { updateMainButton } from './telegram.js?v=2026.07.02.526';
+import { loadTracking } from './tracking.js?v=2026.07.02.526';
+import { loyaltyProgramEnabled } from './state.js?v=2026.07.02.526';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -495,7 +495,8 @@ function svgIcon(name, size = 20) {
     arrowLeft: '<path d="m15 18-6-6 6-6"/>',
     trash: '<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/>',
     receipt: '<path d="M5 3v18l2-1 2 1 2-1 2 1 2-1 2 1V3Z"/><path d="M8 7h8"/><path d="M8 11h8"/><path d="M8 15h5"/>',
-    check: '<path d="m5 12 4 4L19 6"/>'
+    check: '<path d="m5 12 4 4L19 6"/>',
+    settings: '<path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.42 1.1V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.42H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .42-1.1V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.4.2.75.52 1 .9.25.38.39.82.42 1.27V11a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z"/>'
   };
   return `<svg ${attrs}>${icons[name] || icons.package}</svg>`;
 }
@@ -749,7 +750,6 @@ export function createRenderer(state) {
     const name = customerName(state);
     const greeting = customerGreetingPrefix(new Date());
     const status = normalizeStoreStatus(state);
-    const showSectionsMenu = sectionsMenuEnabled() && state.sections.length > 0;
     const headerLogo = logoSrc(state);
     const defaultTitle = 'Mercadinho M&J';
     const explicitTitle = String(title || '').trim();
@@ -777,7 +777,7 @@ export function createRenderer(state) {
     return `
       <header class="market-hero app-header" id="marketHero">
         <div class="hero-top-row">
-          ${showSectionsMenu ? `<button class="icon-button menu-button" type="button" data-open-sections aria-label="Abrir menu de secoes">${svgIcon('menu', 22)}</button>` : '<span class="hero-spacer" aria-hidden="true"></span>'}
+          <button class="icon-button menu-button" type="button" data-open-sections aria-label="Abrir menu">${svgIcon('settings', 22)}</button>
           <div class="hero-brand-block">
             ${logoMarkup}
             <div class="hero-copy">
@@ -1011,9 +1011,36 @@ export function createRenderer(state) {
     `;
   }
 
+  function appMenuShortcut(page, icon, label, active = false) {
+    return `
+      <button class="drawer-app-item${active ? ' active' : ''}" type="button" data-menu-page="${escapeHtml(page)}">
+        <span class="drawer-app-icon" aria-hidden="true">${icon}</span>
+        <span>${escapeHtml(label)}</span>
+      </button>
+    `;
+  }
+
+  function renderAppMenuShortcuts() {
+    const items = [
+      ['home', svgIcon('home', 18), 'Loja'],
+      ['categories', svgIcon('menu', 18), 'Seções'],
+      ['cart', svgIcon('bag', 18), 'Carrinho'],
+      ['orders', svgIcon('package', 18), 'Pedidos'],
+      ['profile', svgIcon('user', 18), 'Conta']
+    ];
+    if (loyaltyProgramEnabled(state)) {
+      items.push(['loyalty', '⭐', 'Fidelidade']);
+    }
+    return `
+      <div class="drawer-app-shortcuts" aria-label="Menu principal">
+        ${items.map(([page, icon, label]) => appMenuShortcut(page, icon, label, state.page === page)).join('')}
+      </div>
+    `;
+  }
+
   function renderSectionsDrawer() {
-    if (!sectionsMenuEnabled()) return '';
     const open = Boolean(state.sectionsMenuOpen);
+    const mostrarSecoes = sectionsMenuEnabled() && state.sections.length > 0;
     return `
       <nav class="section-menu" id="categoryRail" aria-label="Seções" hidden></nav>
       <div class="sections-menu-overlay${open ? ' open' : ''}" data-close-sections ${open ? '' : 'hidden'}>
@@ -1023,19 +1050,22 @@ export function createRenderer(state) {
               <img class="drawer-logo" src="${escapeHtml(logoSrc(state))}" alt="Mercadinho M&J" referrerpolicy="no-referrer">
               <div>
                 <h2 id="sectionsDrawerTitle">Mercadinho M&J</h2>
-                <p>Menu de secoes</p>
+                <p>Menu da loja</p>
               </div>
             </div>
-            <button class="icon-button" type="button" data-close-sections aria-label="Fechar menu de secoes">${svgIcon('x', 18)}</button>
+            <button class="icon-button" type="button" data-close-sections aria-label="Fechar menu">${svgIcon('x', 18)}</button>
           </div>
-          <div class="sections-drawer-list">
-            <button class="drawer-section-item${!state.sectionId ? ' active' : ''}" type="button" data-all-products>
-              ${renderSectionMenuIcon({ id: 'todos', name: 'Todos' })}
-              <span>Todos</span>
-              <small>${state.products.length} itens</small>
-            </button>
-            ${state.sections.map(section => renderDrawerSectionItem(section, state.sectionId === section.id)).join('')}
-          </div>
+          ${renderAppMenuShortcuts()}
+          ${mostrarSecoes ? `
+            <div class="sections-drawer-list" aria-label="Seções da loja">
+              <button class="drawer-section-item${!state.sectionId ? ' active' : ''}" type="button" data-all-products>
+                ${renderSectionMenuIcon({ id: 'todos', name: 'Todos' })}
+                <span>Todos</span>
+                <small>${state.products.length} itens</small>
+              </button>
+              ${state.sections.map(section => renderDrawerSectionItem(section, state.sectionId === section.id)).join('')}
+            </div>
+          ` : ''}
         </aside>
       </div>
     `;
@@ -1610,25 +1640,6 @@ export function createRenderer(state) {
     `;
   }
 
-  function bottomNav() {
-    if (['home', 'categories', 'products', 'product', 'cart', 'payment', 'telegram-checkout', 'loyalty'].includes(state.page)) return '';
-    const item = (page, icon, label) => `
-      <button class="${state.page === page ? 'active' : ''}" data-page="${page}">
-        <span aria-hidden="true">${icon}</span>
-        ${label}
-      </button>
-    `;
-    return `
-      <nav class="miniapp-bottom-nav">
-        ${item('home', svgIcon('home', 20), 'Loja')}
-        ${item('categories', svgIcon('menu', 20), 'Seções')}
-        ${item('cart', svgIcon('bag', 20), 'Carrinho')}
-        ${item('orders', svgIcon('package', 20), 'Pedidos')}
-        ${item('profile', svgIcon('user', 20), 'Conta')}
-      </nav>
-    `;
-  }
-
   function renderDebugOverlay() {
     const debugAtivo = new URLSearchParams(location.search).get('debug') === '1';
     if (!debugAtivo) return '';
@@ -1706,6 +1717,13 @@ export function createRenderer(state) {
   function bind() {
     root.querySelectorAll('button[data-page], a[data-page]').forEach(button => {
       button.addEventListener('click', () => navigateTo(button.dataset.page));
+    });
+    root.querySelectorAll('[data-menu-page]').forEach(button => {
+      button.addEventListener('click', () => {
+        const page = button.dataset.menuPage || 'home';
+        state.sectionsMenuOpen = false;
+        navigateTo(page);
+      });
     });
     root.querySelectorAll('[data-tracking-order]').forEach(button => {
       button.addEventListener('click', () => {
@@ -1835,7 +1853,7 @@ export function createRenderer(state) {
     else html = renderHome();
 
     root.className = 'mj-fresh-app';
-    root.innerHTML = `${renderSplash()}${html}${stickyCart()}${bottomNav()}${renderDebugOverlay()}<div id="productSheet" hidden></div>`;
+    root.innerHTML = `${renderSplash()}${html}${stickyCart()}${renderDebugOverlay()}<div id="productSheet" hidden></div>`;
     window.setTimeout(() => {
       root.querySelector('#miniappSplash')?.remove();
     }, splashDuration + 350);

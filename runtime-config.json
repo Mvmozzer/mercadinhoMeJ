@@ -1,7 +1,7 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-02T09:41:12.757-03:00",
-  "webBuild": "2026.07.02.072",
+  "updatedAt": "2026-07-02T09:48:46.005-03:00",
+  "webBuild": "2026.07.02.526",
   "apiBaseUrl": "https://med-fruits-integrated-dust.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
