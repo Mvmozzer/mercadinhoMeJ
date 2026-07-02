@@ -1,5 +1,8 @@
-import { cartPayload } from './cart.js?v=2026.07.01.146';
-import { fallbackSendData } from './telegram.js?v=2026.07.01.146';
+import { cartPayload } from './cart.js?v=2026.07.02.734';
+import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.07.02.734';
+import { fallbackSendData } from './telegram.js?v=2026.07.02.734';
+
+const MINIAPP_CHECKOUT_CREATE_PATH = '/api/miniapp/checkout/create';
 
 function normalizeTelegramCartItem(item = {}) {
   const quantity = Number(item.quantidade || item.quantity || 0);
@@ -13,6 +16,13 @@ function normalizeTelegramCartItem(item = {}) {
   };
 }
 
+function ensureClientOrderId(state) {
+  if (!state.clientOrderId) {
+    state.clientOrderId = `miniapp-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  }
+  return state.clientOrderId;
+}
+
 function telegramCartPayload(state) {
   const itens = cartPayload(state).map(normalizeTelegramCartItem);
   return {
@@ -22,6 +32,41 @@ function telegramCartPayload(state) {
     items: itens,
     itens
   };
+}
+
+function miniAppOrderPayload(state) {
+  const itens = cartPayload(state).map(item => ({
+    ...item,
+    produto_id: item.produto_id || item.id,
+    quantidade: item.quantidade || item.quantity || item.qtd || 0
+  }));
+  return {
+    type: 'mercadinho_order',
+    origem: 'miniapp',
+    checkout: 'miniapp',
+    client_order_id: ensureClientOrderId(state),
+    items: itens,
+    itens,
+    modalidade_entrega: state.selectedDeliveryMode || 'retirada',
+    forma_pagamento: 'pix'
+  };
+}
+
+export function paymentModeForCustomer(state = {}) {
+  const checkout = state.checkout || {};
+  const raw = String(
+    checkout.pagamentoModo ||
+    checkout.modoPagamentoCliente ||
+    checkout.modo_pagamento_cliente ||
+    checkout.paymentMode ||
+    ''
+  ).trim().toLowerCase();
+  if (checkout.pagamentoMiniAppAtivo === true || raw === 'miniapp') return 'miniapp';
+  return 'telegram';
+}
+
+export function isMiniAppPaymentEnabled(state = {}) {
+  return paymentModeForCustomer(state) === 'miniapp';
 }
 
 export async function telegramHandoff(state) {
@@ -43,6 +88,41 @@ export async function telegramHandoff(state) {
   };
 }
 
+export async function miniAppPaymentCheckout(state) {
+  const data = await retryApiFetchWithFreshRuntimeConfig(state, MINIAPP_CHECKOUT_CREATE_PATH, {
+    method: 'POST',
+    critical: true,
+    body: JSON.stringify(miniAppOrderPayload(state))
+  });
+  state.lastMiniAppCheckout = data || {};
+  state.pedidoAtual = data?.pedido || null;
+  state.pix = data?.pix || null;
+  return {
+    ...data,
+    ok: data?.ok !== false,
+    checkout: {
+      ...(data?.checkout || {}),
+      modo: 'miniapp',
+      fallbackTelegramAtivo: true
+    }
+  };
+}
+
+export async function fallbackTelegramFromMiniAppPayment(state, error) {
+  const result = await telegramHandoff(state);
+  return {
+    ...result,
+    fallbackMiniAppPayment: true,
+    miniappErro: error?.message || String(error || ''),
+    mensagem: 'Pagamento no Mini App indisponivel. Vamos continuar pelo Telegram.'
+  };
+}
+
 export async function checkoutCreate(state) {
-  return telegramHandoff(state);
+  if (!isMiniAppPaymentEnabled(state)) return telegramHandoff(state);
+  try {
+    return await miniAppPaymentCheckout(state);
+  } catch (error) {
+    return fallbackTelegramFromMiniAppPayment(state, error);
+  }
 }

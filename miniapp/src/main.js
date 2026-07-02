@@ -1,11 +1,11 @@
-import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.01.146';
-import { carregarRuntimeConfigPages, authenticateBridge, loadBootstrap, loadCatalogWithFallback, loadHealth, loadCustomer } from './api.js?v=2026.07.01.146';
-import { createRenderer } from './render.js?v=2026.07.01.146';
-import { createState, applySnapshot, normalizeMiniAppUi, loyaltyProgramEnabled } from './state.js?v=2026.07.01.146';
-import { normalizeCatalog } from './catalog.js?v=2026.07.01.146';
-import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.01.146';
-import { loadLoyalty } from './loyalty.js?v=2026.07.01.146';
-import { loadOrders } from './orders.js?v=2026.07.01.146';
+import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.02.734';
+import { carregarRuntimeConfigPages, authenticateBridge, loadBootstrap, loadCatalogWithFallback, loadHealth, loadCustomer } from './api.js?v=2026.07.02.734';
+import { createRenderer } from './render.js?v=2026.07.02.734';
+import { createState, applySnapshot, normalizeMiniAppUi, loyaltyProgramEnabled } from './state.js?v=2026.07.02.734';
+import { normalizeCatalog } from './catalog.js?v=2026.07.02.734';
+import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.02.734';
+import { loadLoyalty } from './loyalty.js?v=2026.07.02.734';
+import { loadOrders } from './orders.js?v=2026.07.02.734';
 
 function sincronizarStatusLoja(state, health) {
   if (health?.loja) state.store = { ...state.store, ...health.loja };
@@ -144,6 +144,7 @@ async function init() {
       cliente: boot?.cliente,
       programa: boot?.programa,
       checkout: boot?.checkout,
+      pagamentos: boot?.pagamentos,
       miniappUi: boot?.miniappUi,
       atacado: boot?.atacado || boot?.catalogo?.atacado,
       pedidos: Array.isArray(boot?.pedidosAtivos) ? boot.pedidosAtivos : undefined
@@ -176,7 +177,7 @@ async function init() {
   if (!state.products.length) state.error = 'Catálogo vazio no painel.';
   const renderer = createRenderer(state);
   window.__mjMiniApp = { state, renderer };
-  // Checkout marker: cart handoff stays in Telegram.
+  // Checkout marker: payment mode comes from panel config.
   bindBridgeCustomerSync(renderer, state);
   renderer.render();
   startPolling(renderer, state);

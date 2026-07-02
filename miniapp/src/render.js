@@ -78,15 +78,15 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.01.146';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.01.146';
-import { telegramHandoff } from './checkout.js?v=2026.07.01.146';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.01.146';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.01.146';
-import { persistMiniAppUiState } from './storage.js?v=2026.07.01.146';
-import { updateMainButton } from './telegram.js?v=2026.07.01.146';
-import { loadTracking } from './tracking.js?v=2026.07.01.146';
-import { loyaltyProgramEnabled } from './state.js?v=2026.07.01.146';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.02.734';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.02.734';
+import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.02.734';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.02.734';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.02.734';
+import { persistMiniAppUiState } from './storage.js?v=2026.07.02.734';
+import { updateMainButton } from './telegram.js?v=2026.07.02.734';
+import { loadTracking } from './tracking.js?v=2026.07.02.734';
+import { loyaltyProgramEnabled } from './state.js?v=2026.07.02.734';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -726,15 +726,16 @@ export function createRenderer(state) {
       sending: Boolean(state.sending),
       checkoutStep: 'cart',
       currentPage: state.page,
+      paymentMode: paymentModeForCustomer(state),
       enabled: true,
       hasPix: Boolean(state.pix)
     });
     const button = webApp?.MainButton;
-    if (button?.onClick && !button.__mjFinishInTelegramBound) {
+    if (button?.onClick && !button.__mjFinishCheckoutBound) {
       button.onClick(() => {
-        if (state.page === 'cart' && cartCount(state)) finishInTelegram();
+        if (state.page === 'cart' && cartCount(state)) finishCheckout();
       });
-      button.__mjFinishInTelegramBound = true;
+      button.__mjFinishCheckoutBound = true;
     }
   }
 
@@ -1215,13 +1216,19 @@ export function createRenderer(state) {
   function renderCart() {
     const items = cartItems(state);
     const useNativeTelegramButton = hasTelegramMainButton();
+    const miniAppPayment = isMiniAppPaymentEnabled(state);
+    const finishLabel = miniAppPayment ? 'Pagar no Mini App' : 'Finalizar no Telegram';
+    const checkoutSubtitle = miniAppPayment ? 'Revise antes de pagar no Mini App' : 'Revise antes de finalizar no Telegram';
+    const checkoutNote = miniAppPayment
+      ? 'Pix copia e cola, QR Code, recebedor, valor e numero do pedido aparecem no Mini App.'
+      : 'Pix preservado: recebedor, valor e numero do pedido aparecem na confirmacao pelo Telegram.';
     return `
       <main class="page cart-page" data-page="cart" id="cartDrawer">
         <div class="topbar page-brand-hero">
           <button data-page="${state.previousPage || 'home'}" aria-label="Voltar">${svgIcon('arrowLeft', 20)}</button>
           <div>
             <strong>Carrinho</strong>
-            <small>Revise antes de finalizar no Telegram</small>
+            <small>${escapeHtml(checkoutSubtitle)}</small>
           </div>
           <img class="topbar-logo" src="${escapeHtml(logoSrc(state))}" alt="Mercadinho M&J" referrerpolicy="no-referrer">
           <button data-clear-cart aria-label="Limpar carrinho">${svgIcon('trash', 18)}</button>
@@ -1252,10 +1259,10 @@ export function createRenderer(state) {
           <section class="total-card">
             <div><span>Subtotal</span><strong>${formatMoney(cartTotal(state))}</strong></div>
             <div class="summary-total"><span>Total</span><strong>${formatMoney(cartTotal(state))}</strong></div>
-            <p class="telegram-checkout-note">Pix preservado: recebedor, valor e numero do pedido aparecem na confirmacao pelo Telegram.</p>
+            <p class="telegram-checkout-note">${escapeHtml(checkoutNote)}</p>
             <div class="card-actions">
               <button id="continueShopping" data-page="${state.previousPage || 'home'}">Continuar comprando</button>
-              ${useNativeTelegramButton ? '' : '<button id="finishInTelegram">Finalizar no Telegram</button>'}
+              ${useNativeTelegramButton ? '' : `<button id="finishInTelegram">${escapeHtml(finishLabel)}</button>`}
             </div>
           </section>
         ` : `
@@ -1304,6 +1311,61 @@ export function createRenderer(state) {
         <section class="telegram-success-actions">
           <button class="primary-wide" data-page="orders">Acompanhar pedido</button>
           <button id="retryTelegramHandoff">Enviar carrinho novamente</button>
+          <button data-page="cart">Voltar ao carrinho</button>
+        </section>
+      </main>
+    `;
+  }
+
+  function renderMiniAppPayment() {
+    const checkout = state.lastMiniAppCheckout || {};
+    const pedido = state.pedidoAtual || checkout.pedido || {};
+    const pix = state.pix || checkout.pix || {};
+    const itens = Array.isArray(pedido.itens) && pedido.itens.length ? pedido.itens : cartItems(state);
+    const total = Number(pedido.total ?? cartTotal(state) ?? pix.valor ?? 0);
+    const pedidoId = String(pedido.id || checkout.pedidoId || '').trim();
+    const copiaCola = String(pix.copiaCola || pix.pix || '').trim();
+    const qrCodeDataUrl = String(pix.qrCodeDataUrl || pix.qrCode || '').trim();
+    return `
+      <main class="page telegram-checkout-panel success-screen" id="miniAppPaymentPanel" data-page="payment">
+        <div class="topbar">
+          <button data-page="cart" aria-label="Voltar">${svgIcon('arrowLeft', 20)}</button>
+          <strong>Pagamento</strong>
+          <span></span>
+        </div>
+        <section class="success-card telegram-handoff-card">
+          <span class="success-icon" aria-hidden="true">${svgIcon('receipt', 38)}</span>
+          <p class="greeting">Pagamento no Mini App</p>
+          <h1>Pix copia e cola</h1>
+          ${pedidoId ? `<strong class="order-id">Pedido ${escapeHtml(pedidoId)}</strong>` : ''}
+          <p>${escapeHtml(state.checkoutMessage || `Total de ${formatMoney(total)} gerado com recebedor e valor conferidos pelo backend.`)}</p>
+        </section>
+        <section class="payment-pix-card">
+          ${qrCodeDataUrl ? `<img class="pix-qr-image" src="${escapeHtml(qrCodeDataUrl)}" alt="QR Code Pix">` : ''}
+          <label for="pixCopyText">Pix copia e cola</label>
+          <textarea id="pixCopyText" class="pix-copy-text" readonly rows="6">${escapeHtml(copiaCola)}</textarea>
+          <div class="payment-details">
+            <div><span>Valor</span><strong>${formatMoney(total)}</strong></div>
+            <div><span>Recebedor</span><strong>${escapeHtml(pix.recebedor || 'Mercadinho M&J')}</strong></div>
+            ${pix.txid ? `<div><span>TXID</span><strong>${escapeHtml(pix.txid)}</strong></div>` : ''}
+          </div>
+        </section>
+        <section class="receipt">
+          <h2>${svgIcon('receipt', 18)} Resumo</h2>
+          ${itens.map(item => {
+            const quantidade = Number(item.quantidade || item.qtd || item.quantity || 1);
+            const subtotal = Number(item.subtotal ?? ((item.preco_unitario || item.preco || item.price || 0) * quantidade));
+            return `
+              <div>
+                <span>${escapeHtml(quantidade)}x ${escapeHtml(item.nome || item.name || 'Produto')}</span>
+                <strong>${formatMoney(subtotal)}</strong>
+              </div>
+            `;
+          }).join('')}
+        </section>
+        <section class="telegram-success-actions">
+          <button class="primary-wide" id="copyPixPayment">Copiar Pix</button>
+          <button data-page="orders">Acompanhar pedido</button>
           <button data-page="cart">Voltar ao carrinho</button>
         </section>
       </main>
@@ -1474,7 +1536,7 @@ export function createRenderer(state) {
   }
 
   function bottomNav() {
-    if (['home', 'categories', 'products', 'product', 'cart', 'telegram-checkout', 'loyalty'].includes(state.page)) return '';
+    if (['home', 'categories', 'products', 'product', 'cart', 'payment', 'telegram-checkout', 'loyalty'].includes(state.page)) return '';
     const item = (page, icon, label) => `
       <button class="${state.page === page ? 'active' : ''}" data-page="${page}">
         <span aria-hidden="true">${icon}</span>
@@ -1505,15 +1567,26 @@ export function createRenderer(state) {
     `;
   }
 
-  async function finishInTelegram() {
+  async function finishCheckout() {
     if (state.sending) return;
     if (!cartCount(state)) {
       navigateTo('home');
       return;
     }
     state.sending = true;
-    sendMiniAppEvent(state, 'checkout_telegram_handoff_start', { itemCount: cartCount(state), total: cartTotal(state) });
-    const result = await telegramHandoff(state);
+    const modoPagamento = paymentModeForCustomer(state);
+    sendMiniAppEvent(state, modoPagamento === 'miniapp' ? 'checkout_miniapp_payment_start' : 'checkout_telegram_handoff_start', { itemCount: cartCount(state), total: cartTotal(state) });
+    const result = await checkoutCreate(state);
+    const resultMode = result?.checkout?.modo === 'miniapp' || result?.modo === 'miniapp' || Boolean(result?.pix);
+    if (resultMode) {
+      state.lastMiniAppCheckout = result || {};
+      state.pedidoAtual = result?.pedido || state.pedidoAtual || null;
+      state.pix = result?.pix || state.pix || null;
+      state.checkoutMessage = result?.mensagem || result?.message || 'Pix gerado no Mini App. Copie o codigo ou use o QR Code para pagar.';
+      state.sending = false;
+      renderer.navigateTo('payment');
+      return;
+    }
     state.lastTelegramHandoff = result || {};
     state.checkoutMessage = result?.telegram?.mensagem || result?.mensagem || result?.message || 'Carrinho enviado ao Telegram. Termine entrega, retirada e Pix pelo chat.';
     state.sending = false;
@@ -1616,8 +1689,13 @@ export function createRenderer(state) {
       render();
     });
     root.querySelector('#continueShopping')?.addEventListener('click', () => navigateTo(state.previousPage || 'home'));
-    root.querySelector('#finishInTelegram')?.addEventListener('click', finishInTelegram);
-    root.querySelector('#retryTelegramHandoff')?.addEventListener('click', finishInTelegram);
+    root.querySelector('#finishInTelegram')?.addEventListener('click', finishCheckout);
+    root.querySelector('#retryTelegramHandoff')?.addEventListener('click', finishCheckout);
+    root.querySelector('#copyPixPayment')?.addEventListener('click', () => {
+      const pix = state.pix?.copiaCola || state.lastMiniAppCheckout?.pix?.copiaCola || '';
+      if (!pix) return;
+      navigator.clipboard?.writeText(pix).catch(() => null);
+    });
     root.querySelector('#search')?.addEventListener('input', event => {
       state.query = event.target.value;
       render();
@@ -1654,7 +1732,8 @@ export function createRenderer(state) {
     else if (state.page === 'products') html = renderProducts();
     else if (state.page === 'product') html = renderProductDetail();
     else if (state.page === 'cart') html = renderCart();
-    else if (['delivery', 'payment', 'telegram-checkout'].includes(state.page)) html = renderTelegramCheckout();
+    else if (state.page === 'payment') html = renderMiniAppPayment();
+    else if (['delivery', 'telegram-checkout'].includes(state.page)) html = renderTelegramCheckout();
     else if (state.page === 'orders') html = renderOrders();
     else if (state.page === 'tracking') html = renderTracking();
     else if (state.page === 'loyalty') html = renderLoyalty();
@@ -1675,7 +1754,8 @@ export function createRenderer(state) {
     trackingPanel?.classList.add('active-page');
     if (state.checkoutMessage && root.querySelector('#pixCopyText')) {
       const copyNode = root.querySelector('#pixCopyText');
-      copyNode.insertAdjacentHTML(
+      const warningTarget = copyNode.closest('.payment-pix-card') || copyNode.parentElement;
+      warningTarget?.insertAdjacentHTML(
         'afterbegin',
         `<p class="checkout-warning">${escapeHtml(state.checkoutMessage)}</p>`
       );

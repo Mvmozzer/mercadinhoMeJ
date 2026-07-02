@@ -1405,6 +1405,14 @@ img{max-width:100%}
 .receipt div{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-top:1px solid var(--mj-border);font-size:14px}
 .telegram-success-actions{display:grid;gap:10px;margin:0 14px}
 .telegram-success-actions button:not(.primary-wide){background:transparent;color:var(--mj-primary);box-shadow:none}
+.payment-pix-card{display:grid;gap:12px;margin:0 14px;padding:14px;border:1px solid var(--mj-border);border-radius:var(--mj-radius);background:#fff;box-shadow:var(--mj-shadow-soft)}
+.payment-pix-card label{font-size:13px;font-weight:900;color:var(--mj-text)}
+.pix-copy-text{width:100%;min-height:118px;padding:12px;border:1px solid var(--mj-border);border-radius:var(--mj-radius);background:var(--mj-bg);font-size:13px;line-height:1.35;resize:vertical}
+.pix-qr-image{width:min(220px,70vw);aspect-ratio:1/1;justify-self:center;border:1px solid var(--mj-border);border-radius:var(--mj-radius);background:#fff;object-fit:contain}
+.payment-details{display:grid;gap:8px}
+.payment-details div{display:flex;justify-content:space-between;gap:12px;font-size:13px}
+.payment-details span{color:var(--mj-muted)}
+.payment-details strong{text-align:right;color:var(--mj-text)}
 
 .orders-panel,.tracking-panel,.loyalty-panel,.profile-panel{
   min-height:100dvh;

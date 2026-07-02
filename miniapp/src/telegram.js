@@ -15,6 +15,6 @@ export function fallbackSendData(payload) {
   if (!app || typeof app.sendData !== 'function' || !canUseKeyboardSendData(app)) return false;
   try { app.sendData(JSON.stringify(payload)); return true; } catch { return false; }
 }
-export function updateMainButton(webApp = getTelegram(), options = {}) { const button = webApp?.MainButton; if (!button) return; if (options.currentPage !== 'cart' || !options.enabled || !options.count) { button.hide?.(); return; } button.setText?.(options.sending ? 'Enviando ao Telegram...' : ('Finalizar no Telegram ' + (options.totalText || '')).trim()); button.show?.(); }
+export function updateMainButton(webApp = getTelegram(), options = {}) { const button = webApp?.MainButton; if (!button) return; if (options.currentPage !== 'cart' || !options.enabled || !options.count) { button.hide?.(); return; } const miniapp = options.paymentMode === 'miniapp'; const label = miniapp ? 'Pagar no Mini App' : 'Finalizar no Telegram'; const loading = miniapp ? 'Gerando Pix no Mini App...' : 'Enviando ao Telegram...'; button.setText?.(options.sending ? loading : (`${label} ${options.totalText || ''}`).trim()); button.show?.(); }
 
 export function rawTelegramInitData(webApp = getTelegram()) { return webApp?.initData || ''; }
