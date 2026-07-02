@@ -78,15 +78,15 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.02.224';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.02.224';
-import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.02.224';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.02.224';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.02.224';
-import { persistMiniAppUiState } from './storage.js?v=2026.07.02.224';
-import { updateMainButton } from './telegram.js?v=2026.07.02.224';
-import { loadTracking } from './tracking.js?v=2026.07.02.224';
-import { loyaltyProgramEnabled } from './state.js?v=2026.07.02.224';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.02.072';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.02.072';
+import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.02.072';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.02.072';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.02.072';
+import { persistMiniAppUiState } from './storage.js?v=2026.07.02.072';
+import { updateMainButton } from './telegram.js?v=2026.07.02.072';
+import { loadTracking } from './tracking.js?v=2026.07.02.072';
+import { loyaltyProgramEnabled } from './state.js?v=2026.07.02.072';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -1373,6 +1373,7 @@ export function createRenderer(state) {
   }
 
   function renderOrders() {
+    const orderId = order => String(order?.id || order?.pedidoId || '').trim();
     return `
       ${renderCustomerHeader('Meus pedidos')}
       <main class="page orders-panel" id="ordersPanel" data-page="orders">
@@ -1384,10 +1385,10 @@ export function createRenderer(state) {
         <section class="orders-list">
           ${state.orders.length ? state.orders.map(order => `
             <article class="order-card">
-              <strong>Pedido #${escapeHtml(order.id || order.pedidoId || '')}</strong>
+              <strong>Pedido #${escapeHtml(orderId(order))}</strong>
               <span>${escapeHtml(order.status || 'Em andamento')}</span>
               <p>${escapeHtml(order.pagamento?.status || order.status_pagamento || 'Aguardando pagamento')}</p>
-              <button data-page="tracking">Acompanhar entrega</button>
+              <button data-tracking-order="${escapeHtml(orderId(order))}">Acompanhar entrega</button>
             </article>
           `).join('') : '<div class="empty">Seus pedidos aparecerão aqui.</div>'}
         </section>
@@ -1395,10 +1396,87 @@ export function createRenderer(state) {
     `;
   }
 
+  function trackingModeForCustomer(tracking = state.tracking || {}) {
+    const checkout = state.checkout || {};
+    const raw = tracking.acompanhamentoModo ||
+      tracking.modoAcompanhamentoCliente ||
+      checkout.acompanhamentoModo ||
+      checkout.modoAcompanhamentoCliente ||
+      checkout.modo_acompanhamento_cliente ||
+      'telegram';
+    return String(raw).trim().toLowerCase() === 'miniapp' ? 'miniapp' : 'telegram';
+  }
+
+  function trackingPedidoAtual(tracking = state.tracking || {}) {
+    const pedidoTracking = tracking?.pedido || tracking?.order || {};
+    return {
+      ...(state.pedidoAtual || {}),
+      ...(pedidoTracking || {})
+    };
+  }
+
+  function statusTrackingAtual(tracking = state.tracking || {}) {
+    const pedido = trackingPedidoAtual(tracking);
+    return String(pedido.status || tracking.status || '').trim().toLowerCase();
+  }
+
+  function trackingStatusLabel(status) {
+    const labels = {
+      aguardando_pagamento: 'Aguardando pagamento',
+      pago: 'Pagamento confirmado',
+      preparando: 'Em preparacao',
+      pronto: 'Pedido pronto',
+      saiu_entrega: 'Saiu para entrega',
+      entregue: 'Entregue',
+      cancelado: 'Cancelado'
+    };
+    return labels[status] || status || 'Aguardando atualizacao';
+  }
+
+  function trackingStepsForStatus(status = '', pagamentoStatus = '') {
+    const atual = String(status || '').trim().toLowerCase();
+    if (atual === 'cancelado') {
+      return [{
+        key: 'cancelado',
+        title: 'Pedido cancelado',
+        text: 'Status atualizado pelo painel',
+        state: 'current'
+      }];
+    }
+    const ordem = ['aguardando_pagamento', 'pago', 'preparando', 'pronto', 'saiu_entrega', 'entregue'];
+    const indice = Math.max(0, ordem.indexOf(atual));
+    const pagamentoOk = ['pago', 'confirmado', 'aprovado', 'paid'].includes(String(pagamentoStatus || '').trim().toLowerCase());
+    return [
+      { key: 'aguardando_pagamento', title: 'Pedido recebido', text: 'Pedido registrado na loja' },
+      { key: 'pago', title: 'Pagamento confirmado', text: pagamentoOk || indice >= 1 ? 'Pagamento liberado' : 'Aguardando confirmacao' },
+      { key: 'preparando', title: 'Em preparacao', text: 'Separacao dos produtos' },
+      { key: 'pronto', title: 'Pedido pronto', text: 'Aguardando retirada ou entrega' },
+      { key: 'saiu_entrega', title: 'Saiu para entrega', text: 'Entrega em andamento' },
+      { key: 'entregue', title: 'Entregue', text: 'Pedido finalizado' }
+    ].map((step, stepIndex) => ({
+      ...step,
+      state: stepIndex < indice ? 'done' : stepIndex === indice ? 'current' : ''
+    }));
+  }
+
+  function renderTrackingStep(step, index) {
+    const marker = step.state === 'done' ? svgIcon('check', 18) : String(index + 1);
+    const classe = ['tracking-step', step.state].filter(Boolean).join(' ');
+    return `<div class="${escapeHtml(classe)}"><span>${marker}</span><div><strong>${escapeHtml(step.title)}</strong><p>${escapeHtml(step.text)}</p></div></div>`;
+  }
+
   function renderTracking() {
     const tracking = state.tracking || {};
-    const mapaUrl = tracking?.mapaUrl || tracking?.mapUrl || '';
-    const status = tracking?.status || 'Aguardando atualizacao do status.';
+    const pedido = trackingPedidoAtual(tracking);
+    const statusAtual = statusTrackingAtual(tracking);
+    const detalhe = pedido.statusDetalhe || tracking.statusDetalhe || {};
+    const mapaUrl = tracking?.mapaUrl || tracking?.mapUrl || pedido.localizacao?.mapaUrl || '';
+    const status = detalhe.label || trackingStatusLabel(statusAtual);
+    const modo = trackingModeForCustomer(tracking);
+    const pagamentoStatus = pedido.pagamento?.status || pedido.statusPagamento || pedido.status_pagamento || '';
+    const resumo = modo === 'miniapp'
+      ? 'Status sincronizado com o painel.'
+      : 'Atualizacoes seguem pelo Telegram.';
     return `
       <main class="page tracking-panel" id="trackingPanel" data-page="tracking">
         <div class="topbar page-brand-hero">
@@ -1411,17 +1489,14 @@ export function createRenderer(state) {
         </div>
         <section class="tracking-status-card">
           <h2>${escapeHtml(status)}</h2>
-          <p>${escapeHtml(tracking?.previsao || tracking?.mensagem || 'Previsao atualizada pelo painel quando o pedido avanca.')}</p>
+          <p>${escapeHtml(detalhe.mensagem || tracking?.previsao || tracking?.mensagem || resumo)}</p>
         </section>
         <section class="tracking-summary-card">
           <h2>Resumo</h2>
-          <p>${escapeHtml(tracking?.resumo || 'Status, pagamento e entrega continuam sincronizados com o pedido real.')}</p>
+          <p>${escapeHtml(tracking?.resumo || `Pedido #${pedido.id || pedido.pedidoId || ''} - ${resumo}`)}</p>
         </section>
         <section class="tracking-timeline">
-          <div class="tracking-step done"><span>${svgIcon('check', 18)}</span><div><strong>Pedido recebido</strong><p>Carrinho enviado pelo Mini App</p></div></div>
-          <div class="tracking-step done"><span>${svgIcon('check', 18)}</span><div><strong>Pix aprovado</strong><p>Valor e recebedor conferidos</p></div></div>
-          <div class="tracking-step current"><span>3</span><div><strong>Em rota</strong><p>Cliente acompanha sem ver dados privados</p></div></div>
-          <div class="tracking-step"><span>4</span><div><strong>Entregue</strong><p>Finalizacao pelo painel</p></div></div>
+          ${trackingStepsForStatus(statusAtual, pagamentoStatus).map(renderTrackingStep).join('')}
         </section>
         <section class="tracking-map-card">
           ${mapaUrl ? `<a class="track-map" href="${escapeHtml(mapaUrl)}" target="_blank" rel="noopener">Abrir rota no Maps</a>` : '<div class="map-road"></div><div class="map-pin"></div>'}
@@ -1603,6 +1678,15 @@ export function createRenderer(state) {
     try {
       const data = await loadTracking(state, pedidoId);
       state.tracking = data || {};
+      if (state.tracking?.pedido) {
+        state.pedidoAtual = {
+          ...(state.pedidoAtual || {}),
+          ...state.tracking.pedido
+        };
+      }
+      if (!state.tracking?.status && !state.tracking?.pedido?.status && state.pedidoAtual?.status) {
+        state.tracking.status = state.pedidoAtual.status;
+      }
       render();
     } catch {}
   }
@@ -1622,6 +1706,15 @@ export function createRenderer(state) {
   function bind() {
     root.querySelectorAll('button[data-page], a[data-page]').forEach(button => {
       button.addEventListener('click', () => navigateTo(button.dataset.page));
+    });
+    root.querySelectorAll('[data-tracking-order]').forEach(button => {
+      button.addEventListener('click', () => {
+        const pedidoId = String(button.dataset.trackingOrder || '').trim();
+        const order = (state.orders || []).find(item => String(item.id || item.pedidoId || '').trim() === pedidoId) || null;
+        if (order) state.pedidoAtual = order;
+        state.tracking = null;
+        navigateTo('tracking');
+      });
     });
     root.querySelectorAll('[data-open-sections]').forEach(button => {
       button.addEventListener('click', () => {
@@ -1706,7 +1799,8 @@ export function createRenderer(state) {
     });
 
     root.querySelector('#trackingPanel')?.classList.add('active-page');
-    if (state.page === 'tracking' && !state.tracking?.status) {
+    const trackingStatus = state.tracking?.status || state.tracking?.pedido?.status;
+    if (state.page === 'tracking' && !trackingStatus) {
       loadTrackingForCurrentOrder();
     }
   }
