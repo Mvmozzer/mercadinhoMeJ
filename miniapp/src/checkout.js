@@ -1,6 +1,6 @@
-import { cartPayload } from './cart.js?v=2026.07.02.970';
-import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.07.02.970';
-import { fallbackSendData } from './telegram.js?v=2026.07.02.970';
+import { cartPayload } from './cart.js?v=2026.07.02.837';
+import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.07.02.837';
+import { fallbackSendData } from './telegram.js?v=2026.07.02.837';
 
 const MINIAPP_CHECKOUT_CREATE_PATH = '/api/miniapp/checkout/create';
 
