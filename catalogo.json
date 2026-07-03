@@ -382,7 +382,7 @@
           "buttonText": "Ver produtos",
           "targetType": "page",
           "targetValue": "home",
-          "active": true,
+          "active": false,
           "order": 0
         }
       ]
