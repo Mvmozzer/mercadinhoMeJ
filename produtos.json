@@ -151,8 +151,8 @@
   ],
   "higiene": [
     {
-      "id": "higiene_3",
-      "produto_id": "higiene_3",
+      "id": "higiene_2",
+      "produto_id": "higiene_2",
       "secao_id": "higiene",
       "grupo_id": "barbearia",
       "grupoId": "barbearia",

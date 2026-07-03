@@ -1,5 +1,5 @@
-﻿import { restoreMiniAppUiState } from './storage.js?v=2026.07.02.837';
-import { normalizeWholesaleConfig } from './catalog.js?v=2026.07.02.837';
+﻿import { restoreMiniAppUiState } from './storage.js?v=2026.07.02.071';
+import { normalizeWholesaleConfig } from './catalog.js?v=2026.07.02.071';
 
 export const MINIAPP_UI_DEFAULTS = {
   header: {
@@ -111,7 +111,7 @@ export function normalizeMiniAppUi(raw = {}) {
   const header = cfg.header && typeof cfg.header === 'object' ? cfg.header : {};
   const bannerCarousel = cfg.bannerCarousel && typeof cfg.bannerCarousel === 'object' ? cfg.bannerCarousel : {};
   const bannerAnimation = String(bannerCarousel.animation || MINIAPP_UI_DEFAULTS.bannerCarousel.animation).trim().toLowerCase();
-  const banners = Array.isArray(cfg.banners) && cfg.banners.length ? cfg.banners : MINIAPP_UI_DEFAULTS.banners;
+  const banners = Array.isArray(cfg.banners) ? cfg.banners : MINIAPP_UI_DEFAULTS.banners;
   const sectionsMenuEnabled = [
     cfg.sectionsMenu?.enabled,
     cfg.sections_menu?.enabled,

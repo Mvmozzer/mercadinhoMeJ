@@ -78,15 +78,15 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.02.837';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.02.837';
-import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.02.837';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.02.837';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.02.837';
-import { persistMiniAppUiState } from './storage.js?v=2026.07.02.837';
-import { updateMainButton } from './telegram.js?v=2026.07.02.837';
-import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.02.837';
-import { loyaltyProgramEnabled } from './state.js?v=2026.07.02.837';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.02.071';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.02.071';
+import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.02.071';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.02.071';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.02.071';
+import { persistMiniAppUiState } from './storage.js?v=2026.07.02.071';
+import { updateMainButton } from './telegram.js?v=2026.07.02.071';
+import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.02.071';
+import { loyaltyProgramEnabled } from './state.js?v=2026.07.02.071';
 import {
   activeOrderId,
   applyOrderStatusToState,
@@ -95,7 +95,7 @@ import {
   mapFromTrackingPayload,
   orderFlowPollingMs,
   shouldOpenTrackingAfterPayment
-} from './orderFlow.js?v=2026.07.02.837';
+} from './orderFlow.js?v=2026.07.02.071';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -599,8 +599,7 @@ export function createRenderer(state) {
   }
 
   function activeBanners(ui = normalizeMiniAppUi(state.miniappUi || state.miniappui || {})) {
-    const banners = (ui.banners || []).filter(item => item.active !== false);
-    return banners.length ? banners : MINIAPP_UI_DEFAULTS.banners;
+    return (ui.banners || []).filter(item => item.active !== false);
   }
 
   function sectionsMenuEnabled(ui = normalizeMiniAppUi(state.miniappUi || state.miniappui || {})) {
@@ -665,6 +664,7 @@ export function createRenderer(state) {
 
   function renderBannerCarousel(ui = normalizeMiniAppUi(state.miniappUi || state.miniappui || {})) {
     const banners = activeBanners(ui);
+    if (!banners.length) return '';
     const index = Math.abs(Number(state.bannerIndex || 0)) % banners.length;
     const banner = banners[index] || banners[0];
     const image = banner.image ? resolveAssetUrl(banner.image, '') : '';
@@ -709,7 +709,11 @@ export function createRenderer(state) {
     const wrapper = document.createElement('div');
     wrapper.innerHTML = renderBannerCarousel(ui).trim();
     const next = wrapper.firstElementChild;
-    if (!next) return;
+    if (!next) {
+      current.remove();
+      scheduleBannerAutoSlide(ui);
+      return;
+    }
     current.replaceWith(next);
     bindBannerControls(next);
     scheduleBannerAutoSlide(ui);

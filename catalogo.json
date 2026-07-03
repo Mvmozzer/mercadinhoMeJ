@@ -191,8 +191,8 @@
         "preco_base": 20
       },
       {
-        "id": "higiene_3",
-        "produto_id": "higiene_3",
+        "id": "higiene_2",
+        "produto_id": "higiene_2",
         "secao_id": "higiene",
         "grupo_id": "barbearia",
         "grupoId": "barbearia",
@@ -322,7 +322,7 @@
         "secao": "higiene",
         "secao_nome": "Higiene",
         "secao_ordem": 18,
-        "index": 3,
+        "index": 2,
         "grupo": "Barbearia",
         "preco_base": 4.5
       }
