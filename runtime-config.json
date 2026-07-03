@@ -1,7 +1,7 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-02T21:21:11.536-03:00",
-  "webBuild": "2026.07.02.071",
+  "updatedAt": "2026-07-02T21:24:33.607-03:00",
+  "webBuild": "2026.07.02.273",
   "apiBaseUrl": "https://palm-connection-plots-other.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
