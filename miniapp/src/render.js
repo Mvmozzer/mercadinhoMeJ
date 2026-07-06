@@ -78,15 +78,15 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.02.319';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.02.319';
-import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.02.319';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.02.319';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.02.319';
-import { persistMiniAppUiState } from './storage.js?v=2026.07.02.319';
-import { updateMainButton } from './telegram.js?v=2026.07.02.319';
-import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.02.319';
-import { loyaltyProgramEnabled } from './state.js?v=2026.07.02.319';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.06.011';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.06.011';
+import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.06.011';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.06.011';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.06.011';
+import { persistMiniAppUiState } from './storage.js?v=2026.07.06.011';
+import { updateMainButton } from './telegram.js?v=2026.07.06.011';
+import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.06.011';
+import { loyaltyProgramEnabled } from './state.js?v=2026.07.06.011';
 import {
   activeOrderId,
   applyOrderStatusToState,
@@ -95,7 +95,7 @@ import {
   mapFromTrackingPayload,
   orderFlowPollingMs,
   shouldOpenTrackingAfterPayment
-} from './orderFlow.js?v=2026.07.02.319';
+} from './orderFlow.js?v=2026.07.06.011';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -341,17 +341,6 @@ function customerPoints(state = {}) {
   ) || 0;
 }
 
-function loyaltyPointsAvailable(state = {}) {
-  const value = state.loyalty?.pontosDisponiveis ??
-    state.loyalty?.saldoPontos ??
-    state.loyalty?.pontos ??
-    state.cliente?.pontosFidelidade ??
-    state.cliente?.saldoFidelidade ??
-    0;
-  const points = Math.floor(Number(value) || 0);
-  return Math.max(0, points);
-}
-
 function loyaltyChallenges(state = {}) {
   const items = state.loyalty?.desafios ||
     state.loyalty?.challenges ||
@@ -574,6 +563,7 @@ export function createRenderer(state) {
     const nextPage = page || 'home';
     if (nextPage === 'loyalty' && !loyaltyProgramEnabled(state)) {
       state.sectionsMenuOpen = false;
+      state.pageMenuOpen = false;
       state.page = 'home';
       persistMiniAppUiState(state);
       render();
@@ -581,6 +571,7 @@ export function createRenderer(state) {
     }
     if (nextPage === 'product' && !productDetailsEnabled()) {
       state.sectionsMenuOpen = false;
+      state.pageMenuOpen = false;
       if (options.sectionId !== undefined) state.sectionId = options.sectionId;
       if (options.query !== undefined) state.query = options.query;
       if (state.page === 'product') state.page = state.previousPage || 'home';
@@ -591,6 +582,7 @@ export function createRenderer(state) {
     state.previousPage = state.page || 'home';
     state.page = nextPage;
     state.sectionsMenuOpen = false;
+    state.pageMenuOpen = false;
     if (options.sectionId !== undefined) state.sectionId = options.sectionId;
     if (options.query !== undefined) state.query = options.query;
     persistMiniAppUiState(state);
@@ -784,13 +776,13 @@ export function createRenderer(state) {
           <img class="brand-logo" src="${escapeHtml(headerLogo)}" alt="Mercadinho M&J" referrerpolicy="no-referrer" onerror="this.hidden=true">`;
     const greetingMarkup = header.greetingEnabled === false ? '' : `<p class="greeting" id="customerGreeting">${greetingText}</p>`;
     const titleMarkup = title && header.titleEnabled !== false ? `<h1>${escapeHtml(titleText)}</h1>` : '';
-    const loyaltyShortcut = loyaltyProgramEnabled(state)
-      ? `<button class="loyalty-shortcut" type="button" data-page="loyalty" aria-label="Abrir fidelidade. ${loyaltyPointsAvailable(state)} pontos disponiveis">⭐: ${loyaltyPointsAvailable(state)}</button>`
+    const sectionsButton = sectionsMenuEnabled() && state.sections.length > 0
+      ? `<button class="icon-button menu-button" type="button" data-open-sections aria-label="Abrir seções">${svgIcon('menu', 22)}</button>`
       : '<span class="hero-spacer" aria-hidden="true"></span>';
     return `
       <header class="market-hero app-header" id="marketHero">
         <div class="hero-top-row">
-          <button class="icon-button menu-button" type="button" data-open-sections aria-label="Abrir menu">${svgIcon('settings', 22)}</button>
+          ${sectionsButton}
           <div class="hero-brand-block">
             ${logoMarkup}
             <div class="hero-copy">
@@ -798,10 +790,11 @@ export function createRenderer(state) {
               ${titleMarkup}
             </div>
           </div>
-          ${loyaltyShortcut}
+          <button class="icon-button pages-button" type="button" data-open-pages aria-label="Abrir páginas">${svgIcon('settings', 22)}</button>
         </div>
         <div class="store-status ${status.className}" id="storeStatus"><span class="store-status-dot" aria-hidden="true"></span><span>${escapeHtml(status.text)}</span></div>
       </header>
+      ${renderPagesDrawer()}
       ${renderSectionsDrawer()}
     `;
   }
@@ -1051,6 +1044,27 @@ export function createRenderer(state) {
     `;
   }
 
+  function renderPagesDrawer() {
+    const open = Boolean(state.pageMenuOpen);
+    return `
+      <div class="sections-menu-overlay page-menu-overlay${open ? ' open' : ''}" data-close-pages ${open ? '' : 'hidden'}>
+        <aside class="sections-drawer page-drawer" id="pagesDrawer" role="dialog" aria-modal="true" aria-labelledby="pagesDrawerTitle">
+          <div class="sections-drawer-header">
+            <div class="drawer-brand-lockup">
+              <img class="drawer-logo" src="${escapeHtml(logoSrc(state))}" alt="Mercadinho M&J" referrerpolicy="no-referrer">
+              <div>
+                <h2 id="pagesDrawerTitle">Páginas</h2>
+                <p>Atalhos do Mini App</p>
+              </div>
+            </div>
+            <button class="icon-button" type="button" data-close-pages aria-label="Fechar páginas">${svgIcon('x', 18)}</button>
+          </div>
+          ${renderAppMenuShortcuts()}
+        </aside>
+      </div>
+    `;
+  }
+
   function renderSectionsDrawer() {
     const open = Boolean(state.sectionsMenuOpen);
     const mostrarSecoes = sectionsMenuEnabled() && state.sections.length > 0;
@@ -1063,12 +1077,11 @@ export function createRenderer(state) {
               <img class="drawer-logo" src="${escapeHtml(logoSrc(state))}" alt="Mercadinho M&J" referrerpolicy="no-referrer">
               <div>
                 <h2 id="sectionsDrawerTitle">Mercadinho M&J</h2>
-                <p>Menu da loja</p>
+                <p>Seções da loja</p>
               </div>
             </div>
-            <button class="icon-button" type="button" data-close-sections aria-label="Fechar menu">${svgIcon('x', 18)}</button>
+            <button class="icon-button" type="button" data-close-sections aria-label="Fechar seções">${svgIcon('x', 18)}</button>
           </div>
-          ${renderAppMenuShortcuts()}
           ${mostrarSecoes ? `
             <div class="sections-drawer-list" aria-label="Seções da loja">
               <button class="drawer-section-item${!state.sectionId ? ' active' : ''}" type="button" data-all-products>
@@ -1078,7 +1091,12 @@ export function createRenderer(state) {
               </button>
               ${state.sections.map(section => renderDrawerSectionItem(section, state.sectionId === section.id)).join('')}
             </div>
-          ` : ''}
+          ` : `
+            <div class="empty-state">
+              <strong>Nenhuma seção disponível</strong>
+              <p>Use as páginas para navegar pela loja.</p>
+            </div>
+          `}
         </aside>
       </div>
     `;
@@ -1782,6 +1800,7 @@ export function createRenderer(state) {
       button.addEventListener('click', () => {
         const page = button.dataset.menuPage || 'home';
         state.sectionsMenuOpen = false;
+        state.pageMenuOpen = false;
         navigateTo(page);
       });
     });
@@ -1796,7 +1815,16 @@ export function createRenderer(state) {
     });
     root.querySelectorAll('[data-open-sections]').forEach(button => {
       button.addEventListener('click', () => {
+        if (!sectionsMenuEnabled()) return;
         state.sectionsMenuOpen = true;
+        state.pageMenuOpen = false;
+        render();
+      });
+    });
+    root.querySelectorAll('[data-open-pages]').forEach(button => {
+      button.addEventListener('click', () => {
+        state.sectionsMenuOpen = false;
+        state.pageMenuOpen = true;
         render();
       });
     });
@@ -1819,7 +1847,14 @@ export function createRenderer(state) {
         render();
       });
     });
+    root.querySelectorAll('[data-close-pages]').forEach(element => {
+      element.addEventListener('click', () => {
+        state.pageMenuOpen = false;
+        render();
+      });
+    });
     root.querySelector('#sectionsDrawer')?.addEventListener('click', event => event.stopPropagation());
+    root.querySelector('#pagesDrawer')?.addEventListener('click', event => event.stopPropagation());
     root.querySelectorAll('[data-product-open]').forEach(button => {
       button.addEventListener('click', () => {
         state.productId = button.dataset.productOpen;

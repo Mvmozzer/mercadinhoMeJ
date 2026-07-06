@@ -1,5 +1,5 @@
-﻿import { restoreMiniAppUiState } from './storage.js?v=2026.07.02.319';
-import { normalizeWholesaleConfig } from './catalog.js?v=2026.07.02.319';
+﻿import { restoreMiniAppUiState } from './storage.js?v=2026.07.06.011';
+import { normalizeWholesaleConfig } from './catalog.js?v=2026.07.06.011';
 
 export const MINIAPP_UI_DEFAULTS = {
   header: {
@@ -201,6 +201,8 @@ export function createState() {
     previousPage: 'home',
     sectionId: saved.sectionId || '',
     query: saved.query || '',
+    sectionsMenuOpen: false,
+    pageMenuOpen: false,
     apiBase: '',
     telegramId: '',
     bridgeReady: false,

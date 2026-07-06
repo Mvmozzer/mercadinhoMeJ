@@ -1,4 +1,4 @@
-import { apiDiagnosticMessage, retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.07.02.319';
+import { apiDiagnosticMessage, retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.07.06.011';
 
 export async function loadLoyalty(state) {
   try {
