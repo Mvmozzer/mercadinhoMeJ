@@ -1,4 +1,4 @@
-﻿const WEIGHTED_RENDER_MARKERS = [
+const WEIGHTED_RENDER_MARKERS = [
   'Produto vendido por peso. O valor final pode mudar apos a pesagem na loja.',
   'data-action="set-weight"',
   'function productBadges'
@@ -78,15 +78,15 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.06.011';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.06.011';
-import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.06.011';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.06.011';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.06.011';
-import { persistMiniAppUiState } from './storage.js?v=2026.07.06.011';
-import { updateMainButton } from './telegram.js?v=2026.07.06.011';
-import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.06.011';
-import { loyaltyProgramEnabled } from './state.js?v=2026.07.06.011';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.09.131';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.09.131';
+import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.09.131';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.09.131';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.09.131';
+import { persistMiniAppUiState } from './storage.js?v=2026.07.09.131';
+import { updateMainButton } from './telegram.js?v=2026.07.09.131';
+import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.09.131';
+import { loyaltyProgramEnabled } from './state.js?v=2026.07.09.131';
 import {
   activeOrderId,
   applyOrderStatusToState,
@@ -95,7 +95,7 @@ import {
   mapFromTrackingPayload,
   orderFlowPollingMs,
   shouldOpenTrackingAfterPayment
-} from './orderFlow.js?v=2026.07.06.011';
+} from './orderFlow.js?v=2026.07.09.131';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -911,16 +911,17 @@ export function createRenderer(state) {
     `;
   }
 
-  function renderWholesaleProgress(product = {}, quantity = 0) {
+  function renderWholesaleProgress(product = {}, quantity = 0, options = {}) {
     const cfg = wholesaleConfig(state);
     const progress = wholesaleProgress(product, quantity);
     if (!wholesaleEnabled(state) || !progress.active || cfg.barraProgressoAtiva === false) return '';
     if (cfg.mostrarBarraNoVarejo === false && quantity <= 0) return '';
+    const compact = options.compact === true;
     const text = progress.reached
-      ? (cfg.mensagemMetaAtingida || 'Parabéns, Você atingiu o desconto máximo.')
+      ? (cfg.mensagemMetaAtingida || 'Parabéns, você atingiu o desconto máximo.')
       : `Faltam ${progress.missing} un. para ${formatMoney(progress.wholesalePrice)} no atacado`;
     return `
-      <div class="wholesale-progress-wrap${progress.reached ? ' wholesale-progress-complete' : ''}" data-wholesale-progress="${escapeHtml(product.id)}" style="--wholesale-progress:${progress.percent}%;--wholesale-color:${escapeHtml(cfg.corBarra || '#2563eb')};--wholesale-complete:${escapeHtml(cfg.corBarraCompleta || '#16a34a')};--wholesale-text:${escapeHtml(cfg.corTextoBarra || '#ffffff')}">
+      <div class="wholesale-progress-wrap${compact ? ' wholesale-progress-wrap--compact' : ''}${progress.reached ? ' wholesale-progress-complete' : ''}" data-wholesale-progress="${escapeHtml(product.id)}" data-wholesale-compact="${compact ? 'true' : 'false'}" style="--wholesale-progress:${progress.percent}%;--wholesale-color:${escapeHtml(cfg.corBarra || '#2563eb')};--wholesale-complete:${escapeHtml(cfg.corBarraCompleta || '#16a34a')};--wholesale-text:${escapeHtml(cfg.corTextoBarra || '#ffffff')}">
         <div class="wholesale-progress-head">
           <span>Atacado ativado</span>
           <strong>${progress.quantity}/${progress.minQuantity}</strong>
@@ -928,7 +929,7 @@ export function createRenderer(state) {
         <div class="wholesale-progress" role="progressbar" aria-valuemin="0" aria-valuemax="${progress.minQuantity}" aria-valuenow="${Math.min(progress.quantity, progress.minQuantity)}">
           <span></span>
         </div>
-        <small>${escapeHtml(text)}</small>
+        ${compact && !progress.reached ? '' : `<small>${escapeHtml(text)}</small>`}
       </div>
     `;
   }
@@ -937,7 +938,9 @@ export function createRenderer(state) {
     const product = state.products.find(item => item.id === productId);
     const container = productElement(root, productId)?.querySelector('[data-wholesale-progress]');
     if (!product || !container) return;
-    const next = renderWholesaleProgress(product, cartQty(state, productId));
+    const next = renderWholesaleProgress(product, cartQty(state, productId), {
+      compact: container.dataset.wholesaleCompact === 'true'
+    });
     if (next) container.outerHTML = next;
   }
 
@@ -956,9 +959,18 @@ export function createRenderer(state) {
     const quantity = cartQty(state, product.id);
     const badges = productBadges(product).slice(0, 2);
     const brand = String(product.marca || product.brand || '').trim();
-    const description = String(product.descricao || product.description || product.unit || '').trim();
-    const unit = String(product.unit || product.unidade || '').trim() || description || brand || 'un';
+    const unit = cleanProductDetail(product.unit || product.unidade || product.unidadeVenda || product.unidadeMedida || product.tamanho) || 'un';
     const availabilityLine = productAvailabilityLine(product);
+    const availability = productAvailability(product);
+    const availabilityClass = availability.hidden
+      ? ' product-availability-chip--danger'
+      : availability.preorder
+        ? ' product-availability-chip--warning'
+        : '';
+    const metaMarkup = [
+      brand ? `<span class="product-brand">${escapeHtml(brand)}</span>` : '',
+      unit ? `<span class="product-unit-chip">${escapeHtml(unit)}</span>` : ''
+    ].filter(Boolean).join('');
     return `
       <article class="product-card mini-product-card" data-product-id="${escapeHtml(product.id)}">
         <div class="product-media-frame product-media">
@@ -980,13 +992,12 @@ export function createRenderer(state) {
         </div>
         <div class="product-info">
           <h3>${escapeHtml(product.name)}</h3>
-          ${brand ? `<span class="product-brand">${escapeHtml(brand)}</span>` : ''}
-          ${unit ? `<p class="product-description product-unit">${escapeHtml(unit)}</p>` : ''}
-          ${availabilityLine ? `<p class="product-description product-availability-line">${escapeHtml(availabilityLine)}</p>` : ''}
+          ${metaMarkup ? `<div class="product-meta-row">${metaMarkup}</div>` : ''}
+          ${availabilityLine ? `<span class="product-availability-chip${availabilityClass}">${escapeHtml(availabilityLine)}</span>` : ''}
           <div class="product-buy-row${quantity ? ' product-buy-row--quantity' : ''}">
             <div class="product-price-block">${productPriceBlock(product, quantity)}</div>
           </div>
-          ${renderWholesaleProgress(product, quantity)}
+          ${renderWholesaleProgress(product, quantity, { compact: true })}
         </div>
       </article>
     `;

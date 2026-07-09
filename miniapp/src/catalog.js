@@ -1,4 +1,4 @@
-import { slugify } from './utils.js?v=2026.07.06.011';
+import { slugify } from './utils.js?v=2026.07.09.131';
 
 const WEIGHTED_CATALOG_MARKERS = ['item.tarjas'];
 export const WHOLESALE_DEFAULTS = {
@@ -9,7 +9,7 @@ export const WHOLESALE_DEFAULTS = {
   textoBotaoSecao: 'Compre em Atacado',
   secaoVirtualId: 'atacado',
   nomeSecaoVirtual: '💙 Compre em Atacado',
-  mensagemMetaAtingida: 'Parabéns, Você atingiu o desconto máximo.',
+  mensagemMetaAtingida: 'Parabéns, você atingiu o desconto máximo.',
   tipoAnimacao: 'fogos',
   animacaoFogosAtiva: true,
   duracaoAnimacaoMs: 1800,
