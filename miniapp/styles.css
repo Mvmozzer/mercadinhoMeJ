@@ -9,8 +9,10 @@
   --mj-splash-gradient-from:#087BFF;
   --mj-splash-gradient-to:#0049B8;
   --mj-success:#10A55A;
+  --mj-success-ink:#087A43;
   --mj-warning:#F8B400;
   --mj-danger:#E53935;
+  --mj-danger-ink:#C62828;
   --mj-bg:#F5F8FC;
   --mj-card:#ffffff;
   --mj-text:#142033;
@@ -911,7 +913,7 @@ img{max-width:100%}
   text-align:left;
   white-space:normal;
   overflow-wrap:anywhere;
-  color:var(--mj-success);
+  color:var(--mj-success-ink);
   border-color:rgba(10,124,66,.18);
   background:rgba(10,124,66,.1);
 }
@@ -923,7 +925,7 @@ img{max-width:100%}
 }
 
 .product-availability-chip--danger{
-  color:var(--mj-danger);
+  color:var(--mj-danger-ink);
   border-color:rgba(220,38,38,.18);
   background:#fff1f1;
 }
