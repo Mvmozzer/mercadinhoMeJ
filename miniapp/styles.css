@@ -904,6 +904,13 @@ img{max-width:100%}
 }
 
 .product-availability-chip{
+  width:fit-content;
+  max-width:100%;
+  box-sizing:border-box;
+  justify-self:start;
+  text-align:left;
+  white-space:normal;
+  overflow-wrap:anywhere;
   color:var(--mj-success);
   border-color:rgba(10,124,66,.18);
   background:rgba(10,124,66,.1);

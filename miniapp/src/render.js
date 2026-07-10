@@ -78,15 +78,15 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.09.131';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.09.131';
-import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.09.131';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.09.131';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.09.131';
-import { persistMiniAppUiState } from './storage.js?v=2026.07.09.131';
-import { updateMainButton } from './telegram.js?v=2026.07.09.131';
-import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.09.131';
-import { loyaltyProgramEnabled } from './state.js?v=2026.07.09.131';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.10.554';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.10.554';
+import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.10.554';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.10.554';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.10.554';
+import { persistMiniAppUiState } from './storage.js?v=2026.07.10.554';
+import { updateMainButton } from './telegram.js?v=2026.07.10.554';
+import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.10.554';
+import { loyaltyProgramEnabled } from './state.js?v=2026.07.10.554';
 import {
   activeOrderId,
   applyOrderStatusToState,
@@ -95,7 +95,7 @@ import {
   mapFromTrackingPayload,
   orderFlowPollingMs,
   shouldOpenTrackingAfterPayment
-} from './orderFlow.js?v=2026.07.09.131';
+} from './orderFlow.js?v=2026.07.10.554';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -962,7 +962,9 @@ export function createRenderer(state) {
     const unit = cleanProductDetail(product.unit || product.unidade || product.unidadeVenda || product.unidadeMedida || product.tamanho) || 'un';
     const availabilityLine = productAvailabilityLine(product);
     const availability = productAvailability(product);
-    const availabilityClass = availability.hidden
+    const stock = Number(product.stock ?? product.estoque_pronta_entrega ?? product.estoque_atual ?? product.estoque ?? 0);
+    const outOfStock = !availability.preorder && stock <= 0;
+    const availabilityClass = availability.hidden || outOfStock
       ? ' product-availability-chip--danger'
       : availability.preorder
         ? ' product-availability-chip--warning'
