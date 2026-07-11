@@ -1,5 +1,5 @@
-import { isTemporaryPublicApiBase } from './utils.js?v=2026.07.10.083';
-import { applySnapshot } from './state.js?v=2026.07.10.083';
+import { isTemporaryPublicApiBase } from './utils.js?v=2026.07.11.640';
+import { applySnapshot, applyStoreSnapshot } from './state.js?v=2026.07.11.640';
 
 export const TELEGRAM_AUTH_PATH = '/api/telegram/auth';
 export const MINIAPP_API_PATHS = {
@@ -126,6 +126,26 @@ export async function loadBootstrap(state) { return retryApiFetchWithFreshRuntim
 export async function loadHealth(state) { return retryApiFetchWithFreshRuntimeConfig(state, MINIAPP_API_PATHS.health).catch(() => null); }
 export async function loadCustomer(state) { return retryApiFetchWithFreshRuntimeConfig(state, MINIAPP_API_PATHS.customer).catch(() => null); }
 export async function loadCatalog(state) { return retryApiFetchWithFreshRuntimeConfig(state, MINIAPP_API_PATHS.catalog); }
+const CATALOG_SOURCE_FIELD = '__mjCatalogSource';
+
+function markCatalogSource(payload, source) {
+  if (!payload || typeof payload !== 'object') return payload;
+  try {
+    Object.defineProperty(payload, CATALOG_SOURCE_FIELD, {
+      value: source,
+      configurable: true,
+      enumerable: false
+    });
+    return payload;
+  } catch {
+    return { ...payload, [CATALOG_SOURCE_FIELD]: source };
+  }
+}
+
+export function catalogPayloadSource(payload = {}) {
+  return String(payload?.[CATALOG_SOURCE_FIELD] || '').trim().toLowerCase();
+}
+
 export async function loadStaticCatalog() {
   const candidates = ['./catalogo.json', '../catalogo.json'];
   let lastError = null;
@@ -133,7 +153,7 @@ export async function loadStaticCatalog() {
     try {
       const sep = path.includes('?') ? '&' : '?';
       const res = await fetch(`${path}${sep}ts=${Date.now()}`, { cache: 'no-store' });
-      if (res.ok) return res.json();
+      if (res.ok) return markCatalogSource(await res.json(), 'static');
       lastError = new Error(`Falha HTTP ${res.status}`);
     } catch (error) {
       lastError = error;
@@ -143,7 +163,7 @@ export async function loadStaticCatalog() {
 }
 export async function loadCatalogWithFallback(state) {
   try {
-    return await loadCatalog(state);
+    return markCatalogSource(await loadCatalog(state), 'api');
   } catch (error) {
     if (!apiBase(state)) return loadStaticCatalog();
     try {
@@ -188,10 +208,7 @@ export async function uploadPixReceipt(state, pedidoId, options = {}) {
 }
 
 export function atualizarStatusLoja(state, payload = {}, options = {}) {
-  if (options.source === 'static') return state.loja || state.store;
   const loja = payload.loja || payload.catalogo?.loja;
   if (!loja) return state.loja || state.store;
-  if (state.loja) state.loja = { ...state.loja, ...loja };
-  if (state.store) state.store = { ...state.store, ...loja };
-  return state.loja || state.store;
+  return applyStoreSnapshot(state, loja);
 }

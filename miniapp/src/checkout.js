@@ -1,25 +1,70 @@
-import { cartPayload } from './cart.js?v=2026.07.10.083';
-import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.07.10.083';
-import { fallbackSendData } from './telegram.js?v=2026.07.10.083';
+import { cartPayload } from './cart.js?v=2026.07.11.640';
+import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.07.11.640';
+import { fallbackSendData, telegramPayloadBytes, TELEGRAM_SEND_DATA_MAX_BYTES } from './telegram.js?v=2026.07.11.640';
 
 const MINIAPP_CHECKOUT_CREATE_PATH = '/api/miniapp/checkout/create';
+const TELEGRAM_OFFLINE_ATTEMPT_KEY = 'mj_telegram_offline_attempt_v1';
+const TELEGRAM_OFFLINE_ATTEMPT_TTL_MS = 24 * 60 * 60 * 1000;
 
 function normalizeTelegramCartItem(item = {}) {
-  const quantity = Number(item.quantidade || item.quantity || 0);
-  const price = Number(item.preco || item.price || 0);
+  const quantity = Number(item.quantidade ?? item.quantity ?? item.q ?? 0);
+  const productId = String(item.produto_id || item.produtoId || item.id || item.p || '').trim().slice(0, 120);
+  const weighted = item.saleMode === 'weighted' || item.modo_venda === 'granel' || item.m === 'g';
   return {
-    ...item,
-    quantidade_solicitada: item.quantidade_solicitada ?? quantity,
-    peso_estimado: item.peso_estimado ?? (item.saleMode === 'weighted' ? quantity : null),
-    subtotal_estimado_exibido: item.subtotal_estimado_exibido ?? Number((quantity * price).toFixed(2)),
-    modo_venda: item.saleMode === 'weighted' ? 'granel' : 'unidade'
+    p: productId,
+    q: weighted ? Number(quantity.toFixed(3)) : Math.trunc(quantity),
+    ...(weighted ? { m: 'g' } : {})
   };
 }
 
-function ensureClientOrderId(state) {
-  if (!state.clientOrderId) {
-    state.clientOrderId = `miniapp-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+function offlineAttemptStorage() {
+  return globalThis.localStorage || globalThis.window?.localStorage || null;
+}
+
+function clientOrderFingerprint(items = []) {
+  return JSON.stringify(items.map(normalizeTelegramCartItem));
+}
+
+function saveOfflineAttempt(id, fingerprint) {
+  try {
+    offlineAttemptStorage()?.setItem(TELEGRAM_OFFLINE_ATTEMPT_KEY, JSON.stringify({
+      id,
+      fingerprint,
+      createdAt: Date.now()
+    }));
+  } catch (_) {
+    // O estado em memoria ainda protege retries dentro da mesma abertura.
   }
+}
+
+function loadOfflineAttempt(fingerprint) {
+  try {
+    const raw = offlineAttemptStorage()?.getItem(TELEGRAM_OFFLINE_ATTEMPT_KEY);
+    const saved = raw ? JSON.parse(raw) : null;
+    const age = Date.now() - Number(saved?.createdAt || 0);
+    const id = String(saved?.id || '').trim().slice(0, 80);
+    if (!id || saved?.fingerprint !== fingerprint || age < 0 || age > TELEGRAM_OFFLINE_ATTEMPT_TTL_MS) return '';
+    return id;
+  } catch (_) {
+    return '';
+  }
+}
+
+function ensureClientOrderId(state, items = []) {
+  const fingerprint = clientOrderFingerprint(items);
+  const atual = String(state.clientOrderId || '').trim().slice(0, 80);
+  const fingerprintAtual = String(state.clientOrderFingerprint || '');
+  if (atual && (!fingerprintAtual || fingerprintAtual === fingerprint)) {
+    state.clientOrderId = atual;
+    state.clientOrderFingerprint = fingerprint;
+    saveOfflineAttempt(atual, fingerprint);
+    return atual;
+  }
+
+  const persistido = loadOfflineAttempt(fingerprint);
+  state.clientOrderId = persistido || `miniapp-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  state.clientOrderFingerprint = fingerprint;
+  saveOfflineAttempt(state.clientOrderId, fingerprint);
   return state.clientOrderId;
 }
 
@@ -27,10 +72,11 @@ function telegramCartPayload(state) {
   const itens = cartPayload(state).map(normalizeTelegramCartItem);
   return {
     type: 'mercadinho_cart',
+    v: 2,
     origem: 'miniapp',
     checkout: 'telegram',
-    items: itens,
-    itens
+    client_order_id: ensureClientOrderId(state, itens),
+    items: itens
   };
 }
 
@@ -44,7 +90,7 @@ function miniAppOrderPayload(state) {
     type: 'mercadinho_order',
     origem: 'miniapp',
     checkout: 'miniapp',
-    client_order_id: ensureClientOrderId(state),
+    client_order_id: ensureClientOrderId(state, itens),
     items: itens,
     itens,
     modalidade_entrega: state.selectedDeliveryMode || 'retirada',
@@ -73,17 +119,26 @@ export async function telegramHandoff(state) {
   const payload = telegramCartPayload(state);
   const enviado = fallbackSendData(payload);
   if (!enviado) {
+    const tamanho = telegramPayloadBytes(payload);
     return {
       ok: false,
       fallback: false,
-      mensagem: 'Nao foi possivel enviar ao Telegram. Abra a lojinha pelo botao Abrir lojinha dentro da conversa do bot. O menu do Telegram nao envia carrinho em Mini App estatico.'
+      client_order_id: payload.client_order_id,
+      mensagem: tamanho > TELEGRAM_SEND_DATA_MAX_BYTES
+        ? 'Seu carrinho ficou grande demais para a contingencia do Telegram. Remova alguns itens e tente novamente pelo botao Abrir lojinha dentro da conversa do bot.'
+        : 'Nao foi possivel enviar ao Telegram. Abra a lojinha pelo botao Abrir lojinha dentro da conversa do bot. O menu do Telegram nao envia carrinho em Mini App estatico.'
     };
   }
+  const mensagem = 'Solicitacao entregue ao Telegram e aguardando confirmacao do bot. Quando o sistema se conectar, preco e estoque serao validados e o bot respondera na conversa. O Telegram pode guardar a solicitacao por ate 24 horas.';
   return {
     ok: true,
     fallback: true,
+    client_order_id: payload.client_order_id,
+    mensagem,
     telegram: {
-      mensagem: 'Carrinho enviado ao bot. Termine entrega, retirada, Pix e comprovante pelo Telegram.'
+      status: 'aguardando_confirmacao',
+      client_order_id: payload.client_order_id,
+      mensagem
     }
   };
 }
@@ -115,7 +170,9 @@ export async function fallbackTelegramFromMiniAppPayment(state, error) {
     ...result,
     fallbackMiniAppPayment: true,
     miniappErro: error?.message || String(error || ''),
-    mensagem: 'Pagamento no Mini App indisponivel. Vamos continuar pelo Telegram.'
+    mensagem: result.ok
+      ? `Pagamento no Mini App indisponivel. ${result.telegram?.mensagem || result.mensagem}`
+      : result.mensagem
   };
 }
 

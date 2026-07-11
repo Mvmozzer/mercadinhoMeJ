@@ -1,4 +1,4 @@
-import { slugify } from './utils.js?v=2026.07.10.083';
+import { slugify } from './utils.js?v=2026.07.11.640';
 
 const WEIGHTED_CATALOG_MARKERS = ['item.tarjas'];
 export const WHOLESALE_DEFAULTS = {
@@ -110,25 +110,39 @@ export function productAvailability(product = {}) {
       ''
   ).trim().toLowerCase();
   const preorder = product.sob_encomenda === true || product.sobEncomenda === true || product.preorder === true;
+  const hidden = ['oculto', 'hidden', 'nao_vender', 'offline'].includes(rawMode);
+  const hasKnownStock = ['stock', 'estoque_pronta_entrega', 'estoque_atual', 'estoque'].some(field =>
+    Object.prototype.hasOwnProperty.call(product || {}, field)
+  );
+  const stock = Number(product.stock ?? product.estoque_pronta_entrega ?? product.estoque_atual ?? product.estoque);
+  const automaticPreorder = !hidden
+    && !preorder
+    && product.ativo !== false
+    && hasKnownStock
+    && Number.isFinite(stock)
+    && stock <= 0;
   let mode = 'retirada_rapida';
-  if (preorder || ['sob_encomenda', 'encomenda', 'por_encomenda', 'retirada_futura', 'preorder', 'backorder'].includes(rawMode)) {
-    mode = 'sob_encomenda';
-  } else if (['oculto', 'hidden', 'nao_vender', 'offline'].includes(rawMode)) {
+  if (hidden) {
     mode = 'oculto';
+  } else if (preorder || automaticPreorder || ['sob_encomenda', 'encomenda', 'por_encomenda', 'retirada_futura', 'preorder', 'backorder'].includes(rawMode)) {
+    mode = 'sob_encomenda';
   }
   const daysRaw = Number(product.prazo_retirada_dias ?? product.prazoRetiradaDias ?? product.leadTimeDays ?? product.lead_time_days ?? 0);
-  const days = mode === 'sob_encomenda'
-    ? Math.max(1, Math.min(365, Math.ceil(Number.isFinite(daysRaw) && daysRaw > 0 ? daysRaw : 1)))
+  const days = mode === 'sob_encomenda' && Number.isFinite(daysRaw) && daysRaw > 0
+    ? Math.max(1, Math.min(365, Math.ceil(daysRaw)))
     : 0;
   return {
     mode,
-    label: mode === 'sob_encomenda' ? 'Sob encomenda' : mode === 'oculto' ? 'Oculto' : 'Retirada hoje',
+    label: mode === 'sob_encomenda' ? 'Somente sob encomenda' : mode === 'oculto' ? 'Oculto' : 'Retirada hoje',
     preorder: mode === 'sob_encomenda',
     hidden: mode === 'oculto',
+    automatic: automaticPreorder,
     days,
-    forecast: mode === 'sob_encomenda'
+    forecast: mode === 'sob_encomenda' && days > 0
       ? `Retirada em ate ${days} ${days === 1 ? 'dia util' : 'dias uteis'}`
-      : 'Retirada hoje'
+      : mode === 'sob_encomenda'
+        ? ''
+        : 'Retirada hoje'
   };
 }
 
@@ -240,8 +254,9 @@ export function normalizeProduct(raw = {}, sectionName = '', index = 0) {
   const brand = String(raw.marca || raw.brand || raw.fabricante || '').trim();
   const badges = productBadges(raw);
   const availability = productAvailability(raw);
-  if (availability.preorder && !badges.some(badge => String(badge.text || '').toLowerCase() === 'sob encomenda')) {
-    badges.unshift({ text: 'Sob encomenda', color: '#1E1E1E', background: '#FFECBD' });
+  if (availability.preorder) {
+    const withoutLegacyPreorder = badges.filter(badge => !['sob encomenda', 'somente sob encomenda'].includes(String(badge.text || '').trim().toLowerCase()));
+    badges.splice(0, badges.length, { text: 'Somente sob encomenda', color: '#1E1E1E', background: '#FFECBD' }, ...withoutLegacyPreorder);
   }
   const wholesale = productWholesale(raw);
   return {

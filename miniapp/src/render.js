@@ -78,15 +78,15 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.10.083';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.10.083';
-import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.10.083';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.10.083';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.10.083';
-import { persistMiniAppUiState } from './storage.js?v=2026.07.10.083';
-import { updateMainButton } from './telegram.js?v=2026.07.10.083';
-import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.10.083';
-import { loyaltyProgramEnabled } from './state.js?v=2026.07.10.083';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.11.640';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.11.640';
+import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.11.640';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.11.640';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.11.640';
+import { persistMiniAppUiState } from './storage.js?v=2026.07.11.640';
+import { updateMainButton } from './telegram.js?v=2026.07.11.640';
+import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.11.640';
+import { loyaltyProgramEnabled, storeAcceptsOrders } from './state.js?v=2026.07.11.640';
 import {
   activeOrderId,
   applyOrderStatusToState,
@@ -95,7 +95,7 @@ import {
   mapFromTrackingPayload,
   orderFlowPollingMs,
   shouldOpenTrackingAfterPayment
-} from './orderFlow.js?v=2026.07.10.083';
+} from './orderFlow.js?v=2026.07.11.640';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -440,7 +440,7 @@ function customerAddressSummary(state = {}) {
 function normalizeStoreStatus(state = {}) {
   const status = String(state.store?.status || '').toLowerCase();
   const isPaused = status === 'pausada';
-  const isClosed = status === 'fechada' || status === 'fechado' || state.store?.aceitaPedidos === false;
+  const isClosed = !storeAcceptsOrders(state) && !isPaused;
   return {
     className: isPaused ? 'paused' : (isClosed ? 'closed' : 'open'),
     text: isClosed ? 'Loja fechada.' : (state.store?.mensagem || (isPaused ? 'Pedidos pausados' : 'Loja aberta. Pode fazer seu pedido.'))
@@ -733,7 +733,7 @@ export function createRenderer(state) {
       checkoutStep: 'cart',
       currentPage: state.page,
       paymentMode: paymentModeForCustomer(state),
-      enabled: true,
+      enabled: storeAcceptsOrders(state),
       hasPix: Boolean(state.pix)
     });
     const button = webApp?.MainButton;
@@ -860,6 +860,11 @@ export function createRenderer(state) {
     if (availability.hidden) return 'Indisponivel';
     const stock = Number(product.stock ?? product.estoque_pronta_entrega ?? product.estoque_atual ?? product.estoque ?? 0);
     if (!availability.preorder && stock <= 0) return 'Sem estoque para pronta entrega';
+    if (availability.preorder) {
+      return availability.forecast
+        ? `Somente sob encomenda • ${availability.forecast}`
+        : 'Somente sob encomenda';
+    }
     return product.previsao_retirada_texto || product.previsaoRetiradaTexto || availability.forecast;
   }
 
@@ -1290,12 +1295,17 @@ export function createRenderer(state) {
   function renderCart() {
     const items = cartItems(state);
     const useNativeTelegramButton = hasTelegramMainButton();
+    const acceptsOrders = storeAcceptsOrders(state);
     const miniAppPayment = isMiniAppPaymentEnabled(state);
     const finishLabel = miniAppPayment ? 'Pagar no Mini App' : 'Finalizar no Telegram';
-    const checkoutSubtitle = miniAppPayment ? 'Revise antes de pagar no Mini App' : 'Revise antes de finalizar no Telegram';
-    const checkoutNote = miniAppPayment
-      ? 'Pix copia e cola, QR Code, recebedor, valor e numero do pedido aparecem no Mini App.'
-      : 'Pix preservado: recebedor, valor e numero do pedido aparecem na confirmacao pelo Telegram.';
+    const checkoutSubtitle = acceptsOrders
+      ? (miniAppPayment ? 'Revise antes de pagar no Mini App' : 'Revise antes de finalizar no Telegram')
+      : 'Loja fechada para novos pedidos';
+    const checkoutNote = acceptsOrders
+      ? (miniAppPayment
+          ? 'Pix copia e cola, QR Code, recebedor, valor e numero do pedido aparecem no Mini App.'
+          : 'Pix preservado: recebedor, valor e numero do pedido aparecem na confirmacao pelo Telegram.')
+      : 'Loja fechada. A finalizacao sera liberada quando voltarmos a aceitar pedidos.';
     return `
       <main class="page cart-page" data-page="cart" id="cartDrawer">
         <div class="topbar page-brand-hero">
@@ -1319,7 +1329,7 @@ export function createRenderer(state) {
                   <small>${escapeHtml(item.unit || 'un')}</small>
                   <span>${formatMoney(item.price)} un.</span>
                   ${item.wholesaleApplied || item.atacado_aplicado ? `<small class="wholesale-cart-label">Atacado aplicado</small>` : ''}
-                  ${item.sob_encomenda || item.sobEncomenda ? `<small class="wholesale-cart-label">${escapeHtml(item.previsao_retirada_texto || 'Sob encomenda')}</small>` : ''}
+                  ${item.sob_encomenda || item.sobEncomenda ? `<small class="wholesale-cart-label">${escapeHtml(item.previsao_retirada_texto ? `Somente sob encomenda • ${item.previsao_retirada_texto}` : 'Somente sob encomenda')}</small>` : ''}
                 </div>
                 <div class="qty">
                   <button data-qty-minus="${escapeHtml(item.id)}" aria-label="Diminuir quantidade">-</button>
@@ -1336,7 +1346,7 @@ export function createRenderer(state) {
             <p class="telegram-checkout-note">${escapeHtml(checkoutNote)}</p>
             <div class="card-actions">
               <button id="continueShopping" data-page="${state.previousPage || 'home'}">Continuar comprando</button>
-              ${useNativeTelegramButton ? '' : `<button id="finishInTelegram">${escapeHtml(finishLabel)}</button>`}
+              ${acceptsOrders && !useNativeTelegramButton ? `<button id="finishInTelegram">${escapeHtml(finishLabel)}</button>` : ''}
             </div>
           </section>
         ` : `
@@ -1708,6 +1718,13 @@ export function createRenderer(state) {
 
   async function finishCheckout() {
     if (state.sending) return;
+    if (!storeAcceptsOrders(state)) {
+      state.sending = false;
+      state.checkoutMessage = 'Loja fechada. A finalizacao sera liberada quando voltarmos a aceitar pedidos.';
+      if (state.page !== 'cart') navigateTo('cart');
+      else render();
+      return;
+    }
     if (!cartCount(state)) {
       navigateTo('home');
       return;

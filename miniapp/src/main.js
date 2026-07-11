@@ -1,15 +1,23 @@
-import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.10.083';
-import { carregarRuntimeConfigPages, authenticateBridge, loadBootstrap, loadCatalogWithFallback, loadHealth, loadCustomer } from './api.js?v=2026.07.10.083';
-import { createRenderer } from './render.js?v=2026.07.10.083';
-import { createState, applySnapshot, normalizeMiniAppUi, loyaltyProgramEnabled } from './state.js?v=2026.07.10.083';
-import { normalizeCatalog } from './catalog.js?v=2026.07.10.083';
-import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.10.083';
-import { loadLoyalty } from './loyalty.js?v=2026.07.10.083';
-import { loadOrders } from './orders.js?v=2026.07.10.083';
+import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.11.640';
+import {
+  atualizarStatusLoja,
+  authenticateBridge,
+  carregarRuntimeConfigPages,
+  catalogPayloadSource,
+  loadBootstrap,
+  loadCatalogWithFallback,
+  loadCustomer,
+  loadHealth
+} from './api.js?v=2026.07.11.640';
+import { createRenderer } from './render.js?v=2026.07.11.640';
+import { createState, applySnapshot, normalizeMiniAppUi, loyaltyProgramEnabled } from './state.js?v=2026.07.11.640';
+import { normalizeCatalog } from './catalog.js?v=2026.07.11.640';
+import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.11.640';
+import { loadLoyalty } from './loyalty.js?v=2026.07.11.640';
+import { loadOrders } from './orders.js?v=2026.07.11.640';
 
 function sincronizarStatusLoja(state, health) {
-  if (health?.loja) state.store = { ...state.store, ...health.loja };
-  return state.store;
+  return atualizarStatusLoja(state, health || {});
 }
 function miniappUiFromPayload(payload) {
   return payload?.miniappUi || payload?.catalogo?.miniappUi || null;
@@ -32,6 +40,24 @@ function miniappRefreshSignature(state = {}) {
       status: order.status || '',
       statusPagamento: order.statusPagamento || order.status_pagamento || order.pagamento?.status || '',
       updatedAt: order.updatedAt || order.atualizadoEm || ''
+    })),
+    wholesale: state.wholesale || state.atacado || {},
+    products: (state.products || []).map(product => ({
+      id: product.id || product.produto_id || '',
+      name: product.name || product.nome || '',
+      image: product.image || product.imagem || product.imagem_url || '',
+      retailPrice: Number(product.price ?? product.preco ?? 0),
+      normalPrice: Number(product.normalPrice ?? product.preco_normal ?? product.preco ?? product.price ?? 0),
+      promotionalPrice: Number(product.preco_promocional ?? product.precoPromocional ?? 0),
+      promotion: product.promocao === true || product.promocao_ativa === true || product.promocaoAtiva === true,
+      wholesaleActive: product.wholesaleActive === true || product.atacado_ativo === true || product.atacadoAtivo === true,
+      wholesalePrice: Number(product.wholesalePrice ?? product.preco_atacado ?? product.precoAtacado ?? 0),
+      wholesaleMinQuantity: Number(product.wholesaleMinQuantity ?? product.quantidade_atacado ?? product.quantidadeAtacado ?? 0),
+      stock: Number(product.stock ?? product.estoque_pronta_entrega ?? product.estoque ?? 0),
+      availability: product.disponibilidade || product.availabilityMode || '',
+      preorder: product.sob_encomenda === true || product.sobEncomenda === true,
+      pickupDeadlineDays: Number(product.prazo_retirada_dias ?? product.prazoRetiradaDias ?? 0),
+      pickupForecast: product.previsao_retirada_texto || product.previsaoRetiradaTexto || ''
     })),
     miniappUi: state.miniappUi || {}
   });
@@ -74,16 +100,17 @@ async function refreshMiniAppVisualConfig(state) {
   if (Array.isArray(orders?.pedidos)) applySnapshot(state, { telegramId: orders.telegramId, pedidos: orders.pedidos });
   const ui = miniappUiFromPayload(health);
   if (ui) state.miniappUi = normalizeMiniAppUi(ui);
-  if (!ui) {
-    const catalog = await loadCatalogWithFallback(state).catch(() => null);
+  const catalog = await loadCatalogWithFallback(state).catch(() => null);
+  if (catalog) {
+    if (!health?.loja || catalogPayloadSource(catalog) !== 'static') sincronizarStatusLoja(state, catalog);
     const catalogUi = miniappUiFromPayload(catalog);
-    if (catalogUi) state.miniappUi = normalizeMiniAppUi(catalogUi);
-    const catalogWholesale = catalog?.catalogo?.atacado || catalog?.atacado;
-    if (catalogWholesale) {
-      const normalized = normalizeCatalog(catalog);
-      state.wholesale = normalized.wholesale;
-      state.atacado = normalized.wholesale;
-    }
+    if (!ui && catalogUi) state.miniappUi = normalizeMiniAppUi(catalogUi);
+    const normalized = normalizeCatalog(catalog);
+    state.sections = normalized.sections;
+    state.products = normalized.products;
+    state.wholesale = normalized.wholesale;
+    state.atacado = normalized.wholesale;
+    reconcileCartWithCatalog(state);
   }
   return { health, changed: miniappRefreshSignature(state) !== before };
 }
@@ -141,6 +168,13 @@ function bindBridgeCustomerSync(renderer, state) {
 }
 
 async function init() {
+  let versionCheck = null;
+  try {
+    versionCheck = await Promise.resolve(window.__MJ_VERSION_CHECK__);
+  } catch {
+    versionCheck = null;
+  }
+  if (versionCheck?.reloading === true) return;
   initTelegram();
   const state = createState();
   state.telegramId = telegramUserId();
@@ -172,6 +206,7 @@ async function init() {
     reconcileCartWithCatalog(state);
   } catch {
     const catalog = await loadCatalogWithFallback(state);
+    sincronizarStatusLoja(state, catalog);
     if (miniappUiFromPayload(catalog)) state.miniappUi = normalizeMiniAppUi(miniappUiFromPayload(catalog));
     const normalized = normalizeCatalog(catalog);
     state.sections = normalized.sections;

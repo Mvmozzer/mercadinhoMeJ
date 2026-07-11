@@ -1,5 +1,5 @@
-﻿import { restoreMiniAppUiState } from './storage.js?v=2026.07.10.083';
-import { normalizeWholesaleConfig } from './catalog.js?v=2026.07.10.083';
+﻿import { restoreMiniAppUiState } from './storage.js?v=2026.07.11.640';
+import { normalizeWholesaleConfig } from './catalog.js?v=2026.07.11.640';
 
 export const MINIAPP_UI_DEFAULTS = {
   header: {
@@ -194,6 +194,47 @@ export function loyaltyProgramEnabled(state = {}) {
   ].every(value => value !== false);
 }
 
+const OPEN_STORE_STATUSES = new Set(['aberta', 'aberto', 'open']);
+const BLOCKED_STORE_STATUSES = new Set([
+  'fechada',
+  'fechado',
+  'pausada',
+  'pausado',
+  'inativa',
+  'inativo',
+  'offline',
+  'indisponivel',
+  'indisponível',
+  'manutencao',
+  'manutenção',
+  'verificando'
+]);
+
+export function storeAcceptsOrders(state = {}) {
+  const store = state.store || state.loja || {};
+  const status = String(store.status || '').trim().toLowerCase();
+  if (store.aceitaPedidos === false || store.aceita_pedidos === false || store.acceptsOrders === false) return false;
+  if (BLOCKED_STORE_STATUSES.has(status)) return false;
+  if (OPEN_STORE_STATUSES.has(status)) return true;
+  return store.aceitaPedidos === true || store.aceita_pedidos === true || store.acceptsOrders === true;
+}
+
+export function applyStoreSnapshot(state = {}, incoming = {}) {
+  if (!incoming || typeof incoming !== 'object') return state.store || state.loja || {};
+  const current = state.store || state.loja || {};
+  const next = { ...current, ...incoming };
+  const explicitAccepts = [incoming.aceitaPedidos, incoming.aceita_pedidos, incoming.acceptsOrders]
+    .find(value => typeof value === 'boolean');
+  if (typeof explicitAccepts === 'boolean') {
+    next.aceitaPedidos = explicitAccepts;
+  } else if (Object.prototype.hasOwnProperty.call(incoming, 'status')) {
+    next.aceitaPedidos = OPEN_STORE_STATUSES.has(String(incoming.status || '').trim().toLowerCase());
+  }
+  state.store = next;
+  if (state.loja) state.loja = { ...state.loja, ...next };
+  return state.store;
+}
+
 export function createState() {
   const saved = restoreMiniAppUiState();
   return {
@@ -211,7 +252,12 @@ export function createState() {
     loading: true,
     sending: false,
     error: '',
-    store: { nome: 'Mercadinho M&J', status: 'aberta', mensagem: 'Aberto agora', aceitaPedidos: true },
+    store: {
+      nome: 'Mercadinho M&J',
+      status: 'verificando',
+      mensagem: 'Verificando disponibilidade da loja.',
+      aceitaPedidos: false
+    },
     cliente: { nome: 'cliente' },
     loyalty: { saldoPontos: 0 },
     checkout: { permitirUsarPontos: true },
@@ -289,7 +335,7 @@ export function applySnapshot(state, snapshot = {}) {
   const canApplyPersonal = isPersonalSnapshotForCurrentSession(state, snapshot);
   if (canApplyPersonal && snapshot.cliente) state.cliente = { ...state.cliente, ...snapshot.cliente };
   if (canApplyPersonal && Array.isArray(snapshot.pedidos)) state.orders = snapshot.pedidos;
-  if (snapshot.loja) state.store = { ...state.store, ...snapshot.loja };
+  if (snapshot.loja) applyStoreSnapshot(state, snapshot.loja);
   if (canApplyPersonal && snapshot.programa) state.loyalty = { ...state.loyalty, ...snapshot.programa };
   if (snapshot.checkout) state.checkout = { ...state.checkout, ...snapshot.checkout };
   if (snapshot.pagamentos) state.pagamentos = { ...state.pagamentos, ...snapshot.pagamentos };
