@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-12T17:15:32.709-03:00",
-  "webBuild": "2026.07.12.332",
-  "apiBaseUrl": "https://thanks-locate-generations-measurements.trycloudflare.com",
-  "allowTemporaryApiBase": true,
-  "apiBaseKind": "temporary_tunnel"
+  "updatedAt": "2026-07-12T17:33:18.537-03:00",
+  "webBuild": "2026.07.12.398",
+  "apiBaseUrl": "",
+  "allowTemporaryApiBase": false,
+  "apiBaseKind": ""
 }
