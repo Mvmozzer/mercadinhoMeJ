@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-12T20:25:47.911-03:00",
-  "webBuild": "2026.07.12.747",
-  "apiBaseUrl": "https://buried-cooking-contests-aims.trycloudflare.com",
+  "updatedAt": "2026-07-12T20:39:40.773-03:00",
+  "webBuild": "2026.07.12.580",
+  "apiBaseUrl": "https://lotus-territories-heat-balance.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
 }
