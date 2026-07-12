@@ -1,6 +1,6 @@
-import { cartPayload } from './cart.js?v=2026.07.12.231';
-import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.07.12.231';
-import { fallbackSendData, telegramPayloadBytes, TELEGRAM_SEND_DATA_MAX_BYTES } from './telegram.js?v=2026.07.12.231';
+import { cartPayload } from './cart.js?v=2026.07.12.652';
+import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.07.12.652';
+import { fallbackSendData, telegramPayloadBytes, TELEGRAM_SEND_DATA_MAX_BYTES } from './telegram.js?v=2026.07.12.652';
 
 const MINIAPP_CHECKOUT_CREATE_PATH = '/api/miniapp/checkout/create';
 const TELEGRAM_OFFLINE_ATTEMPT_KEY = 'mj_telegram_offline_attempt_v1';
