@@ -2,9 +2,9 @@
   "ok": true,
   "catalogo": {
     "loja": {
-      "status": "fechada",
-      "mensagem": "A loja esta fechada no momento. Assim que abrirmos voce sera bem-vindo para pedir.",
-      "aceitaPedidos": false
+      "status": "aberta",
+      "mensagem": "Loja aberta. Pode fazer seu pedido.",
+      "aceitaPedidos": true
     },
     "secoes": [
       {
