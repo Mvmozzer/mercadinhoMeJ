@@ -1,7 +1,7 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-12T18:32:22.079-03:00",
-  "webBuild": "2026.07.12.942",
+  "updatedAt": "2026-07-12T18:51:52.867-03:00",
+  "webBuild": "2026.07.12.112",
   "apiBaseUrl": "https://roller-organize-investigate-associate.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
