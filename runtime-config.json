@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-12T19:15:38.090-03:00",
-  "webBuild": "2026.07.12.538",
-  "apiBaseUrl": "https://integrated-cement-honor-dosage.trycloudflare.com",
+  "updatedAt": "2026-07-12T19:18:59.215-03:00",
+  "webBuild": "2026.07.12.739",
+  "apiBaseUrl": "https://plus-chosen-frog-silver.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
 }

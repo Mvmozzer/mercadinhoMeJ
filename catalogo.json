@@ -280,23 +280,23 @@
         "productObservation": "",
         "tarjas": [
           {
-            "texto": "Promoção",
+            "texto": "Oferta",
             "cor": "#ffffff",
-            "fundo": "#dc2626"
+            "fundo": "#d97706"
           }
         ],
         "etiquetas": [
           {
-            "texto": "Promoção",
+            "texto": "Oferta",
             "cor": "#ffffff",
-            "fundo": "#dc2626"
+            "fundo": "#d97706"
           }
         ],
         "labels": [
           {
-            "texto": "Promoção",
+            "texto": "Oferta",
             "cor": "#ffffff",
-            "fundo": "#dc2626"
+            "fundo": "#d97706"
           }
         ],
         "product_point_offer": {
