@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-12T19:18:59.215-03:00",
-  "webBuild": "2026.07.12.739",
-  "apiBaseUrl": "https://plus-chosen-frog-silver.trycloudflare.com",
+  "updatedAt": "2026-07-12T19:50:05.015-03:00",
+  "webBuild": "2026.07.12.605",
+  "apiBaseUrl": "https://begun-weights-rrp-preventing.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
 }
