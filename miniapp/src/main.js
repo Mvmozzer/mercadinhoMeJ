@@ -1,4 +1,4 @@
-import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.12.580';
+import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.12.827';
 import {
   atualizarStatusLoja,
   authenticateBridge,
@@ -8,13 +8,13 @@ import {
   loadCatalogWithFallback,
   loadCustomer,
   loadHealth
-} from './api.js?v=2026.07.12.580';
-import { createRenderer } from './render.js?v=2026.07.12.580';
-import { createState, applySnapshot, normalizeMiniAppUi, loyaltyProgramEnabled, setRuntimeOnline } from './state.js?v=2026.07.12.580';
-import { normalizeCatalog } from './catalog.js?v=2026.07.12.580';
-import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.12.580';
-import { loadLoyalty } from './loyalty.js?v=2026.07.12.580';
-import { loadOrders } from './orders.js?v=2026.07.12.580';
+} from './api.js?v=2026.07.12.827';
+import { createRenderer } from './render.js?v=2026.07.12.827';
+import { createState, applySnapshot, normalizeMiniAppUi, loyaltyProgramEnabled, setRuntimeOnline } from './state.js?v=2026.07.12.827';
+import { normalizeCatalog } from './catalog.js?v=2026.07.12.827';
+import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.12.827';
+import { loadLoyalty } from './loyalty.js?v=2026.07.12.827';
+import { loadOrders } from './orders.js?v=2026.07.12.827';
 
 function sincronizarStatusLoja(state, health) {
   return atualizarStatusLoja(state, health || {});
