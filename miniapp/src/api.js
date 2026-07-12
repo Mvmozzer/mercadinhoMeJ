@@ -1,5 +1,5 @@
-import { isTemporaryPublicApiBase } from './utils.js?v=2026.07.12.342';
-import { applySnapshot, applyStoreSnapshot } from './state.js?v=2026.07.12.342';
+import { isTemporaryPublicApiBase } from './utils.js?v=2026.07.12.650';
+import { applySnapshot, applyStoreSnapshot } from './state.js?v=2026.07.12.650';
 
 export const TELEGRAM_AUTH_PATH = '/api/telegram/auth';
 export const MINIAPP_API_PATHS = {

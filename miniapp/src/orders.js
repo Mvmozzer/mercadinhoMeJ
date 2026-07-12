@@ -1,2 +1,2 @@
-﻿import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.07.12.342';
+﻿import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.07.12.650';
 export async function loadOrders(state) { return retryApiFetchWithFreshRuntimeConfig(state, '/api/miniapp/pedidos').catch(() => ({ ok: false, pedidos: [] })); }
