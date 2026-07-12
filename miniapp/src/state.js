@@ -1,5 +1,5 @@
-﻿import { restoreMiniAppUiState } from './storage.js?v=2026.07.12.675';
-import { normalizeWholesaleConfig } from './catalog.js?v=2026.07.12.675';
+﻿import { restoreMiniAppUiState } from './storage.js?v=2026.07.12.340';
+import { normalizeWholesaleConfig } from './catalog.js?v=2026.07.12.340';
 
 export const MINIAPP_UI_DEFAULTS = {
   header: {
@@ -219,6 +219,15 @@ export function storeAcceptsOrders(state = {}) {
   return store.aceitaPedidos === true || store.aceita_pedidos === true || store.acceptsOrders === true;
 }
 
+export function setRuntimeOnline(state = {}, online = false) {
+  state.runtimeOnline = online === true;
+  return state.runtimeOnline;
+}
+
+export function miniappStoreIsAvailable(state = {}) {
+  return state.runtimeOnline === true && storeAcceptsOrders(state);
+}
+
 export function applyStoreSnapshot(state = {}, incoming = {}) {
   if (!incoming || typeof incoming !== 'object') return state.store || state.loja || {};
   const current = state.store || state.loja || {};
@@ -248,6 +257,7 @@ export function createState() {
     telegramId: '',
     bridgeReady: false,
     authOk: false,
+    runtimeOnline: false,
     pollingMs: 7000,
     loading: true,
     sending: false,

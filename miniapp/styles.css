@@ -75,6 +75,109 @@ img{max-width:100%}
   box-shadow:var(--mj-shadow);
 }
 
+.store-unavailable-app{
+  width:min(100%,430px);
+  min-height:100dvh;
+  padding:0;
+  background:#f4f8ff;
+}
+
+.store-unavailable{
+  position:relative;
+  isolation:isolate;
+  min-height:100dvh;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  padding:clamp(28px,7vh,64px) 28px;
+  background:
+    radial-gradient(circle at 12% 12%,rgba(0,108,255,.2),transparent 34%),
+    radial-gradient(circle at 88% 82%,rgba(8,123,255,.16),transparent 38%),
+    linear-gradient(145deg,#f8fbff 0%,#eaf3ff 48%,#f6f9ff 100%);
+  background-size:140% 140%,150% 150%,180% 180%;
+  animation:storeUnavailableBackground 14s ease-in-out infinite alternate;
+}
+
+.store-unavailable-content{
+  width:min(100%,340px);
+  display:grid;
+  justify-items:center;
+  gap:0;
+  text-align:center;
+  transform:translateY(-3vh);
+}
+
+.store-unavailable-logo{
+  width:clamp(148px,47vw,196px);
+  height:auto;
+  aspect-ratio:1;
+  object-fit:contain;
+  border-radius:24px;
+  box-shadow:0 22px 58px rgba(0,73,184,.18);
+}
+
+.store-unavailable h1{
+  margin:34px 0 0;
+  color:var(--mj-primary);
+  font-size:clamp(42px,12vw,58px);
+  font-weight:900;
+  line-height:1.02;
+  letter-spacing:-.04em;
+}
+
+.store-unavailable p{
+  max-width:320px;
+  margin:22px 0 0;
+  color:var(--mj-text);
+  font-size:clamp(17px,4.8vw,21px);
+  font-weight:500;
+  line-height:1.5;
+}
+
+.store-unavailable-status{
+  min-height:48px;
+  margin-top:26px;
+  padding:11px 20px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  border:1px solid rgba(0,108,255,.08);
+  border-radius:999px;
+  background:rgba(255,255,255,.72);
+  color:#0756b8;
+  font-size:17px;
+  font-weight:800;
+  box-shadow:0 12px 30px rgba(0,73,184,.1);
+  backdrop-filter:blur(10px);
+}
+
+.store-unavailable-status-dot{
+  width:13px;
+  height:13px;
+  flex:0 0 13px;
+  border-radius:50%;
+  background:var(--mj-danger);
+  box-shadow:0 0 0 0 rgba(229,57,53,.38);
+  animation:storeUnavailableStatusPulse 1.8s ease-out infinite;
+}
+
+@keyframes storeUnavailableBackground{
+  0%{background-position:0% 0%,100% 100%,0% 50%}
+  50%{background-position:55% 30%,45% 72%,100% 50%}
+  100%{background-position:100% 70%,0% 28%,35% 50%}
+}
+
+@keyframes storeUnavailableStatusPulse{
+  0%{box-shadow:0 0 0 0 rgba(229,57,53,.38)}
+  70%,100%{box-shadow:0 0 0 10px rgba(229,57,53,0)}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .store-unavailable,
+  .store-unavailable-status-dot{animation:none}
+}
+
 .miniapp-splash{
   position:fixed;
   inset:0;
@@ -139,6 +242,11 @@ img{max-width:100%}
     linear-gradient(180deg,rgba(255,255,255,.72),rgba(255,255,255,0) 220px),
     var(--mj-bg);
   padding-bottom:calc(112px + env(safe-area-inset-bottom));
+}
+
+.mj-fresh-app.store-unavailable-app{
+  overflow:hidden;
+  padding-bottom:0;
 }
 
 .page{

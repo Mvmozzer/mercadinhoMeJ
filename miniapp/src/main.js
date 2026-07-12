@@ -1,4 +1,4 @@
-import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.12.675';
+import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.12.340';
 import {
   atualizarStatusLoja,
   authenticateBridge,
@@ -8,13 +8,13 @@ import {
   loadCatalogWithFallback,
   loadCustomer,
   loadHealth
-} from './api.js?v=2026.07.12.675';
-import { createRenderer } from './render.js?v=2026.07.12.675';
-import { createState, applySnapshot, normalizeMiniAppUi, loyaltyProgramEnabled } from './state.js?v=2026.07.12.675';
-import { normalizeCatalog } from './catalog.js?v=2026.07.12.675';
-import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.12.675';
-import { loadLoyalty } from './loyalty.js?v=2026.07.12.675';
-import { loadOrders } from './orders.js?v=2026.07.12.675';
+} from './api.js?v=2026.07.12.340';
+import { createRenderer } from './render.js?v=2026.07.12.340';
+import { createState, applySnapshot, normalizeMiniAppUi, loyaltyProgramEnabled, setRuntimeOnline } from './state.js?v=2026.07.12.340';
+import { normalizeCatalog } from './catalog.js?v=2026.07.12.340';
+import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.12.340';
+import { loadLoyalty } from './loyalty.js?v=2026.07.12.340';
+import { loadOrders } from './orders.js?v=2026.07.12.340';
 
 function sincronizarStatusLoja(state, health) {
   return atualizarStatusLoja(state, health || {});
@@ -30,6 +30,7 @@ function stableStringify(value) {
 }
 function miniappRefreshSignature(state = {}) {
   return stableStringify({
+    runtimeOnline: state.runtimeOnline === true,
     pollingMs: state.pollingMs || 0,
     store: state.store || {},
     cliente: state.cliente || {},
@@ -90,6 +91,8 @@ async function hydrateCustomerBeforeRender(state) {
 async function refreshMiniAppVisualConfig(state) {
   const before = miniappRefreshSignature(state);
   const health = await loadHealth(state);
+  setRuntimeOnline(state, Boolean(health?.ok !== false && health?.loja));
+  if (!state.runtimeOnline) return { health, changed: miniappRefreshSignature(state) !== before };
   if (health?.checkout?.pollingMs) state.pollingMs = health.checkout.pollingMs;
   sincronizarStatusLoja(state, health);
   if (health?.checkout) state.checkout = { ...state.checkout, ...health.checkout };
@@ -182,6 +185,7 @@ async function init() {
   await carregarRuntimeConfigPages(state);
   await authenticateBridge(state);
   const health = await loadHealth(state);
+  setRuntimeOnline(state, Boolean(health?.ok !== false && health?.loja));
   if (health?.checkout?.pollingMs) state.pollingMs = health.checkout.pollingMs;
   sincronizarStatusLoja(state, health);
   if (miniappUiFromPayload(health)) state.miniappUi = normalizeMiniAppUi(miniappUiFromPayload(health));
@@ -205,15 +209,17 @@ async function init() {
     state.atacado = normalized.wholesale;
     reconcileCartWithCatalog(state);
   } catch {
-    const catalog = await loadCatalogWithFallback(state);
-    sincronizarStatusLoja(state, catalog);
-    if (miniappUiFromPayload(catalog)) state.miniappUi = normalizeMiniAppUi(miniappUiFromPayload(catalog));
-    const normalized = normalizeCatalog(catalog);
-    state.sections = normalized.sections;
-    state.products = normalized.products;
-    state.wholesale = normalized.wholesale;
-    state.atacado = normalized.wholesale;
-    reconcileCartWithCatalog(state);
+    const catalog = await loadCatalogWithFallback(state).catch(() => null);
+    if (catalog) {
+      sincronizarStatusLoja(state, catalog);
+      if (miniappUiFromPayload(catalog)) state.miniappUi = normalizeMiniAppUi(miniappUiFromPayload(catalog));
+      const normalized = normalizeCatalog(catalog);
+      state.sections = normalized.sections;
+      state.products = normalized.products;
+      state.wholesale = normalized.wholesale;
+      state.atacado = normalized.wholesale;
+      reconcileCartWithCatalog(state);
+    }
   }
   if (loyaltyProgramEnabled(state)) {
     const loyalty = await loadLoyalty(state);

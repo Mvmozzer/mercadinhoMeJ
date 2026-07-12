@@ -78,15 +78,15 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.12.675';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.12.675';
-import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.12.675';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.12.675';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.12.675';
-import { persistMiniAppUiState } from './storage.js?v=2026.07.12.675';
-import { updateMainButton } from './telegram.js?v=2026.07.12.675';
-import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.12.675';
-import { loyaltyProgramEnabled, storeAcceptsOrders } from './state.js?v=2026.07.12.675';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.12.340';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.12.340';
+import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.12.340';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.12.340';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.12.340';
+import { persistMiniAppUiState } from './storage.js?v=2026.07.12.340';
+import { updateMainButton } from './telegram.js?v=2026.07.12.340';
+import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.12.340';
+import { loyaltyProgramEnabled, miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.12.340';
 import {
   activeOrderId,
   applyOrderStatusToState,
@@ -95,7 +95,7 @@ import {
   mapFromTrackingPayload,
   orderFlowPollingMs,
   shouldOpenTrackingAfterPayment
-} from './orderFlow.js?v=2026.07.12.675';
+} from './orderFlow.js?v=2026.07.12.340';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -561,6 +561,23 @@ export function createRenderer(state) {
       <section class="miniapp-splash" id="miniappSplash" data-splash-animation="${escapeHtml(splashAnimation)}" aria-label="Inicializando Mercadinho M&J">
         ${splashMedia(ui)}
       </section>
+    `;
+  }
+
+  function renderStoreUnavailable() {
+    const logo = appendBuildTag(logoSrc(state), state);
+    return `
+      <main class="store-unavailable" id="storeUnavailable" aria-labelledby="storeUnavailableTitle" aria-live="polite">
+        <section class="store-unavailable-content">
+          <img class="store-unavailable-logo" src="${escapeHtml(logo)}" alt="Mercadinho M&J">
+          <h1 id="storeUnavailableTitle">Loja fechada</h1>
+          <p>Assim que abrirmos, a loja aparecerá automaticamente.</p>
+          <div class="store-unavailable-status" role="status">
+            <span class="store-unavailable-status-dot" aria-hidden="true"></span>
+            <span>Fechada agora</span>
+          </div>
+        </section>
+      </main>
     `;
   }
 
@@ -1962,6 +1979,14 @@ export function createRenderer(state) {
   function render() {
     let html = '';
     const activeUi = normalizeMiniAppUi(state.miniappUi || state.miniappui || {});
+    if (!miniappStoreIsAvailable(state)) {
+      if (state.__bannerAutoTimer) window.clearTimeout(state.__bannerAutoTimer);
+      state.__bannerAutoTimer = null;
+      root.className = 'mj-fresh-app store-unavailable-app';
+      root.innerHTML = renderStoreUnavailable();
+      window.Telegram?.WebApp?.MainButton?.hide?.();
+      return;
+    }
     if (state.page === 'product' && !productDetailsEnabled(activeUi)) {
       state.page = state.previousPage || 'home';
       if (state.page === 'product') state.page = 'home';
