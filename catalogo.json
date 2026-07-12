@@ -278,9 +278,27 @@
         "textoPesoAproximado": "",
         "observacaoProduto": "",
         "productObservation": "",
-        "tarjas": [],
-        "etiquetas": [],
-        "labels": [],
+        "tarjas": [
+          {
+            "texto": "Promoção",
+            "cor": "#ffffff",
+            "fundo": "#dc2626"
+          }
+        ],
+        "etiquetas": [
+          {
+            "texto": "Promoção",
+            "cor": "#ffffff",
+            "fundo": "#dc2626"
+          }
+        ],
+        "labels": [
+          {
+            "texto": "Promoção",
+            "cor": "#ffffff",
+            "fundo": "#dc2626"
+          }
+        ],
         "product_point_offer": {
           "id": "higiene:4",
           "product_id": "higiene:4",
