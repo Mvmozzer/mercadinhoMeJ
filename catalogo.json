@@ -16,7 +16,7 @@
         "ordem": -1,
         "virtual": true,
         "atacado": true,
-        "produtos": 1
+        "produtos": 2
       },
       {
         "id": "ovos",
@@ -53,20 +53,20 @@
         "descricao": "",
         "nome_completo": "Ovo Branco c/30 unidades",
         "nomeCompleto": "Ovo Branco c/30 unidades",
-        "preco": 20,
-        "preco_normal": 20,
-        "precoOriginal": 20,
-        "preco_original": 20,
+        "preco": 16,
+        "preco_normal": 16,
+        "precoOriginal": 16,
+        "preco_original": 16,
         "preco_promocional": 0,
         "precoPromocional": 0,
-        "atacado_ativo": false,
-        "atacadoAtivo": false,
-        "preco_atacado": 0,
-        "precoAtacado": 0,
-        "quantidade_atacado": 0,
-        "quantidadeAtacado": 0,
-        "estoque": 13,
-        "estoque_pronta_entrega": 13,
+        "atacado_ativo": true,
+        "atacadoAtivo": true,
+        "preco_atacado": 15,
+        "precoAtacado": 15,
+        "quantidade_atacado": 3,
+        "quantidadeAtacado": 3,
+        "estoque": 14,
+        "estoque_pronta_entrega": 14,
         "disponibilidade": "retirada_rapida",
         "disponibilidade_produto": "retirada_rapida",
         "availabilityMode": "retirada_rapida",
@@ -109,8 +109,8 @@
         "saleUnit": "un",
         "unidadeBasePreco": "un",
         "priceBaseUnit": "un",
-        "precoBaseCentavos": 2000,
-        "priceBaseCents": 2000,
+        "precoBaseCentavos": 1600,
+        "priceBaseCents": 1600,
         "pesoMinimo": 0,
         "minWeight": 0,
         "pesoMaximo": 0,
@@ -188,7 +188,7 @@
         "secao_ordem": 5,
         "index": 1,
         "grupo": "Ovos Extra",
-        "preco_base": 20
+        "preco_base": 16
       },
       {
         "id": "higiene_2",
@@ -412,7 +412,7 @@
       "ordem": -1,
       "virtual": true,
       "atacado": true,
-      "produtos": 1
+      "produtos": 2
     },
     "mostrar_produtos_sem_estoque": true
   }
