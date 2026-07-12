@@ -1,7 +1,7 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-12T16:30:50.441-03:00",
-  "webBuild": "2026.07.12.650",
+  "updatedAt": "2026-07-12T16:31:15.789-03:00",
+  "webBuild": "2026.07.12.675",
   "apiBaseUrl": "https://motivation-again-fields-board.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
