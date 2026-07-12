@@ -78,15 +78,15 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.12.930';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.12.930';
-import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.12.930';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.12.930';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.12.930';
-import { persistMiniAppUiState } from './storage.js?v=2026.07.12.930';
-import { updateMainButton } from './telegram.js?v=2026.07.12.930';
-import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.12.930';
-import { loyaltyProgramEnabled, miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.12.930';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.12.924';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.12.924';
+import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.12.924';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.12.924';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.12.924';
+import { persistMiniAppUiState } from './storage.js?v=2026.07.12.924';
+import { updateMainButton } from './telegram.js?v=2026.07.12.924';
+import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.12.924';
+import { loyaltyProgramEnabled, miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.12.924';
 import {
   activeOrderId,
   applyOrderStatusToState,
@@ -95,7 +95,7 @@ import {
   mapFromTrackingPayload,
   orderFlowPollingMs,
   shouldOpenTrackingAfterPayment
-} from './orderFlow.js?v=2026.07.12.930';
+} from './orderFlow.js?v=2026.07.12.924';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -1000,13 +1000,17 @@ export function createRenderer(state) {
       brand ? `<span class="product-brand">${escapeHtml(brand)}</span>` : '',
       unit ? `<span class="product-unit-chip">${escapeHtml(unit)}</span>` : ''
     ].filter(Boolean).join('');
+    const productMedia = `
+      ${productThumb(product)}
+      ${renderProductOverlayStack(product, badges)}
+    `;
+    const productImage = productDetailsEnabled()
+      ? `<button type="button" class="product-image" data-product-open="${escapeHtml(product.id)}" aria-label="Abrir ${escapeHtml(product.name)}">${productMedia}</button>`
+      : `<div class="product-image">${productMedia}</div>`;
     return `
       <article class="product-card mini-product-card" data-product-id="${escapeHtml(product.id)}">
         <div class="product-media-frame product-media">
-          <button class="product-image" data-product-open="${escapeHtml(product.id)}" aria-label="Abrir ${escapeHtml(product.name)}">
-            ${productThumb(product)}
-            ${renderProductOverlayStack(product, badges)}
-          </button>
+          ${productImage}
           <div class="product-actions${quantity ? ' product-actions--quantity product-stepper' : ''}">
             ${quantity ? `
               <button data-qty-minus="${escapeHtml(product.id)}" aria-label="Diminuir quantidade"><span class="product-action-symbol" aria-hidden="true">-</span></button>

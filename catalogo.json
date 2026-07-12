@@ -2,9 +2,9 @@
   "ok": true,
   "catalogo": {
     "loja": {
-      "status": "aberta",
-      "mensagem": "Loja aberta. Pode fazer seu pedido.",
-      "aceitaPedidos": true
+      "status": "fechada",
+      "mensagem": "A loja esta fechada no momento. Assim que abrirmos voce sera bem-vindo para pedir.",
+      "aceitaPedidos": false
     },
     "secoes": [
       {
@@ -368,7 +368,7 @@
         "enabled": true
       },
       "productDetails": {
-        "enabled": true
+        "enabled": false
       },
       "banners": [
         {
