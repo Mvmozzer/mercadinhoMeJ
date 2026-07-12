@@ -78,15 +78,15 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.11.640';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.11.640';
-import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.11.640';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.11.640';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.11.640';
-import { persistMiniAppUiState } from './storage.js?v=2026.07.11.640';
-import { updateMainButton } from './telegram.js?v=2026.07.11.640';
-import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.11.640';
-import { loyaltyProgramEnabled, storeAcceptsOrders } from './state.js?v=2026.07.11.640';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.12.730';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.12.730';
+import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.12.730';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.12.730';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.12.730';
+import { persistMiniAppUiState } from './storage.js?v=2026.07.12.730';
+import { updateMainButton } from './telegram.js?v=2026.07.12.730';
+import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.12.730';
+import { loyaltyProgramEnabled, storeAcceptsOrders } from './state.js?v=2026.07.12.730';
 import {
   activeOrderId,
   applyOrderStatusToState,
@@ -95,7 +95,7 @@ import {
   mapFromTrackingPayload,
   orderFlowPollingMs,
   shouldOpenTrackingAfterPayment
-} from './orderFlow.js?v=2026.07.11.640';
+} from './orderFlow.js?v=2026.07.12.730';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -256,6 +256,9 @@ function resolveAssetUrl(value, fallback) {
   }
   if (raw.startsWith('/miniapp/assets/')) {
     return new URL(raw.replace(/^\/miniapp\//, ''), new URL('../', import.meta.url)).href;
+  }
+  if (raw.startsWith('/uploads/')) {
+    return new URL(raw.replace(/^\//, ''), new URL('../../', import.meta.url)).href;
   }
   if (raw.startsWith('/')) return raw;
   try {
@@ -452,7 +455,9 @@ function productThumb(product) {
   if (!product?.image) {
     return fallback;
   }
-  return `<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name || 'Produto')}" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`;
+  const imageUrl = resolveAssetUrl(product.image, '');
+  if (!imageUrl) return fallback;
+  return `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(product.name || 'Produto')}" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`;
 }
 
 function productPriceBlock(product = {}, quantity = 0) {
@@ -803,7 +808,7 @@ export function createRenderer(state) {
     return `
       <label class="search-box">
         <span aria-hidden="true">${svgIcon('search', 18)}</span>
-        <input id="search" type="search" value="${escapeHtml(state.query)}" placeholder="${escapeHtml(placeholder)}">
+        <input id="search" type="search" value="${escapeHtml(state.query)}" placeholder="${escapeHtml(placeholder)}" aria-label="${escapeHtml(placeholder)}">
       </label>
     `;
   }
@@ -1296,6 +1301,8 @@ export function createRenderer(state) {
     const items = cartItems(state);
     const useNativeTelegramButton = hasTelegramMainButton();
     const acceptsOrders = storeAcceptsOrders(state);
+    const allowQuantityChange = state.checkout?.permitirAlterarQuantidade !== false;
+    const allowClearCart = state.checkout?.permitirLimparCarrinho !== false;
     const miniAppPayment = isMiniAppPaymentEnabled(state);
     const finishLabel = miniAppPayment ? 'Pagar no Mini App' : 'Finalizar no Telegram';
     const checkoutSubtitle = acceptsOrders
@@ -1315,7 +1322,7 @@ export function createRenderer(state) {
             <small>${escapeHtml(checkoutSubtitle)}</small>
           </div>
           <img class="topbar-logo" src="${escapeHtml(logoSrc(state))}" alt="Mercadinho M&J" referrerpolicy="no-referrer">
-          <button data-clear-cart aria-label="Limpar carrinho">${svgIcon('trash', 18)}</button>
+          ${allowClearCart ? `<button data-clear-cart aria-label="Limpar carrinho">${svgIcon('trash', 18)}</button>` : '<span aria-hidden="true"></span>'}
         </div>
         ${items.length ? `
           <section class="cart-list">
@@ -1331,11 +1338,13 @@ export function createRenderer(state) {
                   ${item.wholesaleApplied || item.atacado_aplicado ? `<small class="wholesale-cart-label">Atacado aplicado</small>` : ''}
                   ${item.sob_encomenda || item.sobEncomenda ? `<small class="wholesale-cart-label">${escapeHtml(item.previsao_retirada_texto ? `Somente sob encomenda • ${item.previsao_retirada_texto}` : 'Somente sob encomenda')}</small>` : ''}
                 </div>
-                <div class="qty">
-                  <button data-qty-minus="${escapeHtml(item.id)}" aria-label="Diminuir quantidade">-</button>
-                  <b>${item.quantity}</b>
-                  <button data-qty-plus="${escapeHtml(item.id)}" aria-label="Adicionar ao carrinho">+</button>
-                </div>
+                ${allowQuantityChange ? `
+                  <div class="qty">
+                    <button data-qty-minus="${escapeHtml(item.id)}" aria-label="Diminuir quantidade">-</button>
+                    <b>${item.quantity}</b>
+                    <button data-qty-plus="${escapeHtml(item.id)}" aria-label="Adicionar ao carrinho">+</button>
+                  </div>
+                ` : `<div class="qty qty-readonly" aria-label="Quantidade ${item.quantity}"><b>${item.quantity}</b></div>`}
                 <strong class="line-total">${formatMoney(item.price * item.quantity)}</strong>
               </article>
             `).join('')}
@@ -1921,6 +1930,8 @@ export function createRenderer(state) {
       });
     });
     root.querySelector('[data-clear-cart]')?.addEventListener('click', () => {
+      if (state.checkout?.permitirLimparCarrinho === false) return;
+      if (typeof window.confirm === 'function' && !window.confirm('Limpar todos os itens do carrinho?')) return;
       clearCart(state);
       render();
     });
@@ -1934,6 +1945,10 @@ export function createRenderer(state) {
     });
     root.querySelector('#search')?.addEventListener('input', event => {
       state.query = event.target.value;
+      state.searchInputFocus = {
+        start: Number(event.target.selectionStart ?? state.query.length),
+        end: Number(event.target.selectionEnd ?? state.query.length)
+      };
       render();
     });
 
@@ -1994,6 +2009,15 @@ export function createRenderer(state) {
       );
     }
     bind();
+    if (state.searchInputFocus) {
+      const searchInput = root.querySelector('#search');
+      if (searchInput) {
+        const { start, end } = state.searchInputFocus;
+        searchInput.focus({ preventScroll: true });
+        searchInput.setSelectionRange?.(start, end);
+      }
+      state.searchInputFocus = null;
+    }
     scheduleBannerAutoSlide(activeUi);
     syncOrderFlowPolling();
   }

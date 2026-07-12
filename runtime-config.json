@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-11T16:54:00.488-03:00",
-  "webBuild": "2026.07.11.640",
-  "apiBaseUrl": "",
-  "allowTemporaryApiBase": false,
-  "apiBaseKind": ""
+  "updatedAt": "2026-07-12T11:15:30.770-03:00",
+  "webBuild": "2026.07.12.730",
+  "apiBaseUrl": "https://shoot-columbus-milan-gathering.trycloudflare.com",
+  "allowTemporaryApiBase": true,
+  "apiBaseKind": "temporary_tunnel"
 }
