@@ -54,11 +54,11 @@
         "nome_completo": "Ovo Branco c/30 unidades",
         "nomeCompleto": "Ovo Branco c/30 unidades",
         "preco": 16,
-        "preco_normal": 16,
-        "precoOriginal": 16,
-        "preco_original": 16,
-        "preco_promocional": 0,
-        "precoPromocional": 0,
+        "preco_normal": 20,
+        "precoOriginal": 20,
+        "preco_original": 20,
+        "preco_promocional": 16,
+        "precoPromocional": 16,
         "atacado_ativo": true,
         "atacadoAtivo": true,
         "preco_atacado": 15.5,
@@ -86,12 +86,12 @@
         "imagem": "https://assets.ibecom.com.br/ib.item.image.large/l-2d006fce5d3f401b862c37f199740699.jpeg",
         "imagem_url": "https://assets.ibecom.com.br/ib.item.image.large/l-2d006fce5d3f401b862c37f199740699.jpeg",
         "imagemUrl": "https://assets.ibecom.com.br/ib.item.image.large/l-2d006fce5d3f401b862c37f199740699.jpeg",
-        "promocao": false,
-        "promocao_ativa": false,
-        "promocaoAtiva": false,
-        "promocao_inicio": "",
-        "promocao_fim": "",
-        "texto_promocao": "",
+        "promocao": true,
+        "promocao_ativa": true,
+        "promocaoAtiva": true,
+        "promocao_inicio": "2026-07-12T23:25:45.774Z",
+        "promocao_fim": "2026-07-15T23:24:00.000Z",
+        "texto_promocao": "Por tempo limitado ou enquanto durar o estoque",
         "codigoBarras": "",
         "codigo_barras": "",
         "sku": "OVOS-OVOB-002",
@@ -126,6 +126,11 @@
         "productObservation": "",
         "tarjas": [
           {
+            "texto": "Promoção",
+            "cor": "#FFFFFF",
+            "fundo": "#DC2626"
+          },
+          {
             "texto": "Fresco",
             "cor": "#ffffff",
             "fundo": "#0956e6"
@@ -133,12 +138,22 @@
         ],
         "etiquetas": [
           {
+            "texto": "Promoção",
+            "cor": "#FFFFFF",
+            "fundo": "#DC2626"
+          },
+          {
             "texto": "Fresco",
             "cor": "#ffffff",
             "fundo": "#0956e6"
           }
         ],
         "labels": [
+          {
+            "texto": "Promoção",
+            "cor": "#FFFFFF",
+            "fundo": "#DC2626"
+          },
           {
             "texto": "Fresco",
             "cor": "#ffffff",
