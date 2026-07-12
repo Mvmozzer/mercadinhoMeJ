@@ -1,7 +1,7 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-12T17:49:40.851-03:00",
-  "webBuild": "2026.07.12.380",
+  "updatedAt": "2026-07-12T17:49:48.983-03:00",
+  "webBuild": "2026.07.12.388",
   "apiBaseUrl": "https://subsequent-license-tourism-relative.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
