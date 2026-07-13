@@ -1,4 +1,4 @@
-import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.13.727';
+import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.13.765';
 import {
   atualizarStatusLoja,
   authenticateBridge,
@@ -8,13 +8,13 @@ import {
   loadCatalogWithFallback,
   loadCustomer,
   loadHealth
-} from './api.js?v=2026.07.13.727';
-import { createRenderer } from './render.js?v=2026.07.13.727';
-import { createState, applySnapshot, normalizeMiniAppUi, loyaltyProgramEnabled, setRuntimeOnline } from './state.js?v=2026.07.13.727';
-import { normalizeCatalog } from './catalog.js?v=2026.07.13.727';
-import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.13.727';
-import { loadLoyalty } from './loyalty.js?v=2026.07.13.727';
-import { loadOrders } from './orders.js?v=2026.07.13.727';
+} from './api.js?v=2026.07.13.765';
+import { createRenderer } from './render.js?v=2026.07.13.765';
+import { createState, applySnapshot, normalizeMiniAppUi, loyaltyProgramEnabled, setRuntimeOnline } from './state.js?v=2026.07.13.765';
+import { normalizeCatalog } from './catalog.js?v=2026.07.13.765';
+import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.13.765';
+import { loadLoyalty } from './loyalty.js?v=2026.07.13.765';
+import { loadOrders } from './orders.js?v=2026.07.13.765';
 
 function sincronizarStatusLoja(state, health) {
   return atualizarStatusLoja(state, health || {});
@@ -83,14 +83,8 @@ async function hydrateCustomerBeforeRender(state) {
   if (!state.apiBase && !state.authOk && !state.bridgeReady) return null;
   const customer = await withTimeout(loadCustomer(state).catch(() => null));
   if (customer?.cliente) {
-    const customerTelegramId = String(
-      customer.telegramId ||
-      customer.cliente.telegramId ||
-      customer.cliente.telegram_id ||
-      customer.cliente.chatId ||
-      ''
-    ).trim();
-    applySnapshot(state, { telegramId: customerTelegramId, cliente: customer.cliente });
+    state.telegramId = String(customer.cliente.telegramId || customer.cliente.telegram_id || customer.cliente.chatId || state.telegramId || '').trim();
+    applySnapshot(state, { telegramId: customer.cliente.telegramId || state.telegramId, cliente: customer.cliente });
   }
   return customer;
 }

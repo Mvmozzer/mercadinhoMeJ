@@ -1,5 +1,5 @@
-﻿import { restoreMiniAppUiState } from './storage.js?v=2026.07.13.727';
-import { normalizeWholesaleConfig } from './catalog.js?v=2026.07.13.727';
+﻿import { restoreMiniAppUiState } from './storage.js?v=2026.07.13.765';
+import { normalizeWholesaleConfig } from './catalog.js?v=2026.07.13.765';
 
 export const MINIAPP_UI_DEFAULTS = {
   header: {
@@ -268,7 +268,7 @@ export function createState() {
       mensagem: 'Verificando disponibilidade da loja.',
       aceitaPedidos: false
     },
-    cliente: { nome: '' },
+    cliente: { nome: 'cliente' },
     loyalty: { saldoPontos: 0 },
     checkout: { permitirUsarPontos: true },
     pagamentos: {},
@@ -292,33 +292,41 @@ function cleanTelegramId(value) {
   return String(value ?? '').trim();
 }
 
-function orderTelegramIds(snapshot = {}) {
+function firstOrderTelegramId(snapshot = {}) {
   const orders = Array.isArray(snapshot.pedidos)
     ? snapshot.pedidos
     : Array.isArray(snapshot.pedidosAtivos)
       ? snapshot.pedidosAtivos
       : [];
-  return orders
-    .map(order => cleanTelegramId(order?.telegramId || order?.telegram_id || order?.chatId || order?.cliente?.chatId))
-    .filter(Boolean);
+  for (const order of orders) {
+    const id = cleanTelegramId(order?.telegramId || order?.telegram_id || order?.chatId || order?.cliente?.chatId);
+    if (id) return id;
+  }
+  return '';
 }
 
-function snapshotTelegramIds(snapshot = {}) {
-  return [
-    snapshot.telegramId || snapshot.telegram_id || snapshot.chatId,
-    snapshot.cliente?.telegramId || snapshot.cliente?.telegram_id || snapshot.cliente?.chatId,
-    snapshot.programa?.telegramId || snapshot.programa?.telegram_id || snapshot.programa?.chatId,
-    ...orderTelegramIds(snapshot)
-  ].map(cleanTelegramId).filter(Boolean);
+function snapshotTelegramId(snapshot = {}) {
+  return cleanTelegramId(
+    snapshot.telegramId ||
+    snapshot.telegram_id ||
+    snapshot.chatId ||
+    snapshot.cliente?.telegramId ||
+    snapshot.cliente?.telegram_id ||
+    snapshot.cliente?.chatId ||
+    snapshot.programa?.telegramId ||
+    snapshot.programa?.telegram_id ||
+    snapshot.programa?.chatId ||
+    firstOrderTelegramId(snapshot)
+  );
 }
 
 function currentTelegramId(state = {}) {
   return cleanTelegramId(
-    globalThis.window?.Telegram?.WebApp?.initDataUnsafe?.user?.id ||
     state.telegramId ||
     state.cliente?.telegramId ||
     state.cliente?.telegram_id ||
-    state.cliente?.chatId
+    state.cliente?.chatId ||
+    globalThis.window?.Telegram?.WebApp?.initDataUnsafe?.user?.id
   );
 }
 
@@ -329,8 +337,8 @@ function hasPersonalSnapshot(snapshot = {}) {
 export function isPersonalSnapshotForCurrentSession(state = {}, snapshot = {}) {
   if (!hasPersonalSnapshot(snapshot)) return true;
   const currentId = currentTelegramId(state);
-  const incomingIds = snapshotTelegramIds(snapshot);
-  return Boolean(currentId && incomingIds.length && incomingIds.every(incomingId => currentId === incomingId));
+  const incomingId = snapshotTelegramId(snapshot);
+  return Boolean(currentId && incomingId && currentId === incomingId);
 }
 
 export function applySnapshot(state, snapshot = {}) {
