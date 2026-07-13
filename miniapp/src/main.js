@@ -1,4 +1,4 @@
-import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.13.814';
+import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.13.536';
 import {
   atualizarStatusLoja,
   authenticateBridge,
@@ -8,13 +8,13 @@ import {
   loadCatalogWithFallback,
   loadCustomer,
   loadHealth
-} from './api.js?v=2026.07.13.814';
-import { createRenderer } from './render.js?v=2026.07.13.814';
-import { createState, applySnapshot, normalizeMiniAppUi, loyaltyProgramEnabled, setRuntimeOnline } from './state.js?v=2026.07.13.814';
-import { normalizeCatalog } from './catalog.js?v=2026.07.13.814';
-import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.13.814';
-import { loadLoyalty } from './loyalty.js?v=2026.07.13.814';
-import { loadOrders } from './orders.js?v=2026.07.13.814';
+} from './api.js?v=2026.07.13.536';
+import { createRenderer } from './render.js?v=2026.07.13.536';
+import { createState, applySnapshot, normalizeMiniAppUi, loyaltyProgramEnabled, setRuntimeOnline } from './state.js?v=2026.07.13.536';
+import { normalizeCatalog } from './catalog.js?v=2026.07.13.536';
+import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.13.536';
+import { loadLoyalty } from './loyalty.js?v=2026.07.13.536';
+import { loadOrders } from './orders.js?v=2026.07.13.536';
 
 function sincronizarStatusLoja(state, health) {
   return atualizarStatusLoja(state, health || {});
@@ -84,7 +84,11 @@ async function hydrateCustomerBeforeRender(state) {
   const customer = await withTimeout(loadCustomer(state).catch(() => null));
   if (customer?.cliente) {
     state.telegramId = String(customer.cliente.telegramId || customer.cliente.telegram_id || customer.cliente.chatId || state.telegramId || '').trim();
-    applySnapshot(state, { telegramId: customer.cliente.telegramId || state.telegramId, cliente: customer.cliente });
+    applySnapshot(state, {
+      telegramId: customer.cliente.telegramId || state.telegramId,
+      cliente: customer.cliente,
+      identidadeTelegram: customer.identidadeTelegram
+    });
   }
   return customer;
 }
@@ -98,7 +102,11 @@ async function refreshMiniAppVisualConfig(state) {
   if (health?.checkout) state.checkout = { ...state.checkout, ...health.checkout };
   if (health?.programa) state.loyalty = { ...state.loyalty, ...health.programa };
   const customer = await loadCustomer(state);
-  if (customer?.cliente) applySnapshot(state, { telegramId: customer.cliente.telegramId, cliente: customer.cliente });
+  if (customer?.cliente) applySnapshot(state, {
+    telegramId: customer.cliente.telegramId,
+    cliente: customer.cliente,
+    identidadeTelegram: customer.identidadeTelegram
+  });
   const orders = await loadOrders(state);
   if (Array.isArray(orders?.pedidos)) applySnapshot(state, { telegramId: orders.telegramId, pedidos: orders.pedidos });
   const ui = miniappUiFromPayload(health);
@@ -137,7 +145,11 @@ async function refreshPersonalDataFromBridge(renderer, state) {
     loadCustomer(state).catch(() => null),
     loadOrders(state).catch(() => null)
   ]);
-  if (customer?.cliente) applySnapshot(state, { telegramId: customer.cliente.telegramId, cliente: customer.cliente });
+  if (customer?.cliente) applySnapshot(state, {
+    telegramId: customer.cliente.telegramId,
+    cliente: customer.cliente,
+    identidadeTelegram: customer.identidadeTelegram
+  });
   if (Array.isArray(orders?.pedidos)) applySnapshot(state, { telegramId: orders.telegramId, pedidos: orders.pedidos });
   if (miniappRefreshSignature(state) !== before) renderer?.render?.();
   renderer?.refreshActiveOrderFlow?.();
@@ -193,6 +205,7 @@ async function init() {
     const boot = await loadBootstrap(state);
     applySnapshot(state, {
       telegramId: boot?.telegramId || boot?.cliente?.telegramId,
+      identidadeTelegram: boot?.identidadeTelegram,
       loja: boot?.loja,
       cliente: boot?.cliente,
       programa: boot?.programa,

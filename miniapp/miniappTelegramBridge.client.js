@@ -1,5 +1,6 @@
 (function bootstrapMJMiniAppBridge(window) {
   const TOKEN_KEY = 'mj_miniapp_bridge_token';
+  const TOKEN_OWNER_KEY = 'mj_miniapp_bridge_token_owner';
   const SINCE_KEY = 'mj_miniapp_bridge_since';
 
   function normalizeUrlProtocol(value) {
@@ -22,6 +23,26 @@
 
   function getTelegram() {
     return window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+  }
+
+  function telegramUserId() {
+    const id = getTelegram()?.initDataUnsafe?.user?.id;
+    return id === undefined || id === null ? '' : String(id).trim();
+  }
+
+  function safeStoredToken() {
+    const currentId = telegramUserId();
+    const ownerId = String(window.localStorage.getItem(TOKEN_OWNER_KEY) || '').trim();
+    const token = window.localStorage.getItem(TOKEN_KEY) || '';
+    if (!token || !currentId || ownerId !== currentId) {
+      if (token && currentId && ownerId !== currentId) {
+        window.localStorage.removeItem(TOKEN_KEY);
+        window.localStorage.removeItem(TOKEN_OWNER_KEY);
+        window.localStorage.removeItem(SINCE_KEY);
+      }
+      return '';
+    }
+    return token;
   }
 
   function headers(state) {
@@ -62,7 +83,7 @@
       apiBase: apiBaseFromLocation(),
       initData: '',
       reopenState: '',
-      sessionToken: window.localStorage.getItem(TOKEN_KEY) || '',
+      sessionToken: safeStoredToken(),
       since: Number(window.localStorage.getItem(SINCE_KEY) || 0) || 0,
       pollingTimer: null,
       eventSource: null,
@@ -76,6 +97,7 @@
       state.apiBase = cleanBase(state.apiBase || apiBaseFromLocation());
       const webApp = getTelegram();
       state.initData = state.initData || webApp?.initData || '';
+      if (state.initData) state.sessionToken = '';
       const data = await request(state, '/api/telegram-miniapp/session', {
         method: 'POST',
         body: JSON.stringify({
@@ -87,7 +109,11 @@
         })
       });
       state.sessionToken = data.sessionToken || data.token || state.sessionToken;
-      if (state.sessionToken) window.localStorage.setItem(TOKEN_KEY, state.sessionToken);
+      if (state.sessionToken) {
+        const ownerId = String(data.chatId || data.cliente?.telegramId || telegramUserId() || '').trim();
+        window.localStorage.setItem(TOKEN_KEY, state.sessionToken);
+        if (ownerId) window.localStorage.setItem(TOKEN_OWNER_KEY, ownerId);
+      }
       if (data.snapshot) state.onSnapshot?.(data.snapshot);
       return data;
     }
@@ -181,6 +207,7 @@
       startStream,
       stopStream,
       installActionInterceptor,
+      getSessionToken: safeStoredToken,
       state
     };
   }

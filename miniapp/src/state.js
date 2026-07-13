@@ -1,5 +1,5 @@
-﻿import { restoreMiniAppUiState } from './storage.js?v=2026.07.13.814';
-import { normalizeWholesaleConfig } from './catalog.js?v=2026.07.13.814';
+﻿import { restoreMiniAppUiState } from './storage.js?v=2026.07.13.536';
+import { normalizeWholesaleConfig } from './catalog.js?v=2026.07.13.536';
 
 export const MINIAPP_UI_DEFAULTS = {
   header: {
@@ -255,6 +255,7 @@ export function createState() {
     pageMenuOpen: false,
     apiBase: '',
     telegramId: '',
+    telegramIdentity: null,
     bridgeReady: false,
     authOk: false,
     runtimeOnline: false,
@@ -331,7 +332,7 @@ function currentTelegramId(state = {}) {
 }
 
 function hasPersonalSnapshot(snapshot = {}) {
-  return Boolean(snapshot.cliente || snapshot.programa || Array.isArray(snapshot.pedidos) || Array.isArray(snapshot.pedidosAtivos));
+  return Boolean(snapshot.cliente || snapshot.identidadeTelegram || snapshot.programa || Array.isArray(snapshot.pedidos) || Array.isArray(snapshot.pedidosAtivos));
 }
 
 export function isPersonalSnapshotForCurrentSession(state = {}, snapshot = {}) {
@@ -343,6 +344,9 @@ export function isPersonalSnapshotForCurrentSession(state = {}, snapshot = {}) {
 
 export function applySnapshot(state, snapshot = {}) {
   const canApplyPersonal = isPersonalSnapshotForCurrentSession(state, snapshot);
+  if (canApplyPersonal && snapshot.identidadeTelegram?.verificada === true) {
+    state.telegramIdentity = { ...snapshot.identidadeTelegram };
+  }
   if (canApplyPersonal && snapshot.cliente) state.cliente = { ...state.cliente, ...snapshot.cliente };
   if (canApplyPersonal && Array.isArray(snapshot.pedidos)) state.orders = snapshot.pedidos;
   if (snapshot.loja) applyStoreSnapshot(state, snapshot.loja);

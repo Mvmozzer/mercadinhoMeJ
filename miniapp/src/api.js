@@ -1,5 +1,5 @@
-import { isTemporaryPublicApiBase } from './utils.js?v=2026.07.13.814';
-import { applySnapshot, applyStoreSnapshot } from './state.js?v=2026.07.13.814';
+import { isTemporaryPublicApiBase } from './utils.js?v=2026.07.13.536';
+import { applySnapshot, applyStoreSnapshot } from './state.js?v=2026.07.13.536';
 
 export const TELEGRAM_AUTH_PATH = '/api/telegram/auth';
 export const MINIAPP_API_PATHS = {
@@ -72,7 +72,11 @@ export async function carregarRuntimeConfigPages(state, options = {}) {
 
 export function headers(state) {
   const initData = globalThis.window?.Telegram?.WebApp?.initData || '';
-  const token = globalThis.window?.MJMiniAppBridge?.getSessionToken?.() || globalThis.localStorage?.getItem?.('mj_miniapp_bridge_token') || globalThis.window?.localStorage?.getItem?.('mj_miniapp_bridge_token') || '';
+  const telegramId = String(globalThis.window?.Telegram?.WebApp?.initDataUnsafe?.user?.id || '').trim();
+  const storage = globalThis.localStorage || globalThis.window?.localStorage;
+  const tokenOwner = String(storage?.getItem?.('mj_miniapp_bridge_token_owner') || '').trim();
+  const storedToken = globalThis.window?.MJMiniAppBridge?.getSessionToken?.() || storage?.getItem?.('mj_miniapp_bridge_token') || '';
+  const token = !initData && telegramId && tokenOwner === telegramId ? storedToken : '';
   return {
     'Content-Type': 'application/json',
     ...(initData ? { 'X-Telegram-Init-Data': initData } : {}),
@@ -109,9 +113,10 @@ export async function authenticateBridge(state) {
   const bridge = globalThis.window?.MJMiniAppBridge;
   if (!bridge?.init) return null;
   try {
+    const url = new URL(currentLocation().href);
     const data = await bridge.init({
       apiBase: apiBase(state),
-      devChatId: globalThis.window?.Telegram?.WebApp?.initDataUnsafe?.user?.id || '970814630',
+      devChatId: globalThis.window?.Telegram?.WebApp?.initDataUnsafe?.user?.id || url.searchParams.get('devChatId') || '',
     });
     state.authOk = true;
     state.bridgeReady = true;

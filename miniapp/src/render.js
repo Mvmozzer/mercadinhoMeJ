@@ -78,15 +78,15 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.13.814';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.13.814';
-import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.13.814';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.13.814';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.13.814';
-import { persistMiniAppUiState } from './storage.js?v=2026.07.13.814';
-import { updateMainButton } from './telegram.js?v=2026.07.13.814';
-import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.13.814';
-import { loyaltyProgramEnabled, miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.13.814';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.13.536';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.13.536';
+import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.13.536';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.13.536';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.13.536';
+import { persistMiniAppUiState } from './storage.js?v=2026.07.13.536';
+import { updateMainButton } from './telegram.js?v=2026.07.13.536';
+import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.13.536';
+import { loyaltyProgramEnabled, miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.13.536';
 import {
   activeOrderId,
   applyOrderStatusToState,
@@ -95,7 +95,7 @@ import {
   mapFromTrackingPayload,
   orderFlowPollingMs,
   shouldOpenTrackingAfterPayment
-} from './orderFlow.js?v=2026.07.13.814';
+} from './orderFlow.js?v=2026.07.13.536';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -354,12 +354,13 @@ function loyaltyChallenges(state = {}) {
 
 function customerName(state = {}) {
   const nameFromClient =
-    state.cliente?.nome ||
+    (state.telegramIdentity?.verificada === true ? state.telegramIdentity?.nome : '') ||
     state.cliente?.telegramNome ||
     state.cliente?.telegram_nome ||
     state.cliente?.first_name ||
     state.cliente?.telegramUsername ||
     state.cliente?.username ||
+    state.cliente?.nome ||
     'cliente';
   return String(nameFromClient || 'cliente').trim() || 'cliente';
 }
