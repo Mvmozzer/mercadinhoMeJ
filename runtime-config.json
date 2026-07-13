@@ -1,7 +1,7 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-12T21:47:43.533-03:00",
-  "webBuild": "2026.07.12.663",
+  "updatedAt": "2026-07-12T21:51:27.167-03:00",
+  "webBuild": "2026.07.12.887",
   "apiBaseUrl": "https://reggae-when-dans-court.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"

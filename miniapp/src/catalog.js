@@ -1,4 +1,4 @@
-import { slugify } from './utils.js?v=2026.07.12.663';
+import { slugify } from './utils.js?v=2026.07.12.887';
 
 const WEIGHTED_CATALOG_MARKERS = ['item.tarjas'];
 export const WHOLESALE_DEFAULTS = {
