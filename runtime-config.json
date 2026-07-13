@@ -1,7 +1,7 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-13T10:58:58.290-03:00",
-  "webBuild": "2026.07.13.138",
+  "updatedAt": "2026-07-13T11:14:03.934-03:00",
+  "webBuild": "2026.07.13.043",
   "apiBaseUrl": "https://textiles-flavor-pdf-edt.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"

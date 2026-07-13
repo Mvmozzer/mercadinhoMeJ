@@ -1,5 +1,5 @@
-﻿import { restoreMiniAppUiState } from './storage.js?v=2026.07.13.138';
-import { normalizeWholesaleConfig } from './catalog.js?v=2026.07.13.138';
+﻿import { restoreMiniAppUiState } from './storage.js?v=2026.07.13.043';
+import { normalizeWholesaleConfig } from './catalog.js?v=2026.07.13.043';
 
 export const MINIAPP_UI_DEFAULTS = {
   header: {
@@ -292,41 +292,33 @@ function cleanTelegramId(value) {
   return String(value ?? '').trim();
 }
 
-function firstOrderTelegramId(snapshot = {}) {
+function orderTelegramIds(snapshot = {}) {
   const orders = Array.isArray(snapshot.pedidos)
     ? snapshot.pedidos
     : Array.isArray(snapshot.pedidosAtivos)
       ? snapshot.pedidosAtivos
       : [];
-  for (const order of orders) {
-    const id = cleanTelegramId(order?.telegramId || order?.telegram_id || order?.chatId || order?.cliente?.chatId);
-    if (id) return id;
-  }
-  return '';
+  return orders
+    .map(order => cleanTelegramId(order?.telegramId || order?.telegram_id || order?.chatId || order?.cliente?.chatId))
+    .filter(Boolean);
 }
 
-function snapshotTelegramId(snapshot = {}) {
-  return cleanTelegramId(
-    snapshot.telegramId ||
-    snapshot.telegram_id ||
-    snapshot.chatId ||
-    snapshot.cliente?.telegramId ||
-    snapshot.cliente?.telegram_id ||
-    snapshot.cliente?.chatId ||
-    snapshot.programa?.telegramId ||
-    snapshot.programa?.telegram_id ||
-    snapshot.programa?.chatId ||
-    firstOrderTelegramId(snapshot)
-  );
+function snapshotTelegramIds(snapshot = {}) {
+  return [
+    snapshot.telegramId || snapshot.telegram_id || snapshot.chatId,
+    snapshot.cliente?.telegramId || snapshot.cliente?.telegram_id || snapshot.cliente?.chatId,
+    snapshot.programa?.telegramId || snapshot.programa?.telegram_id || snapshot.programa?.chatId,
+    ...orderTelegramIds(snapshot)
+  ].map(cleanTelegramId).filter(Boolean);
 }
 
 function currentTelegramId(state = {}) {
   return cleanTelegramId(
+    globalThis.window?.Telegram?.WebApp?.initDataUnsafe?.user?.id ||
     state.telegramId ||
     state.cliente?.telegramId ||
     state.cliente?.telegram_id ||
-    state.cliente?.chatId ||
-    globalThis.window?.Telegram?.WebApp?.initDataUnsafe?.user?.id
+    state.cliente?.chatId
   );
 }
 
@@ -337,8 +329,8 @@ function hasPersonalSnapshot(snapshot = {}) {
 export function isPersonalSnapshotForCurrentSession(state = {}, snapshot = {}) {
   if (!hasPersonalSnapshot(snapshot)) return true;
   const currentId = currentTelegramId(state);
-  const incomingId = snapshotTelegramId(snapshot);
-  return Boolean(currentId && incomingId && currentId === incomingId);
+  const incomingIds = snapshotTelegramIds(snapshot);
+  return Boolean(currentId && incomingIds.length && incomingIds.every(incomingId => currentId === incomingId));
 }
 
 export function applySnapshot(state, snapshot = {}) {
