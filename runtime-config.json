@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-13T10:24:22.043-03:00",
-  "webBuild": "2026.07.13.062",
-  "apiBaseUrl": "https://hybrid-before-bridge-documented.trycloudflare.com",
+  "updatedAt": "2026-07-13T10:34:54.878-03:00",
+  "webBuild": "2026.07.13.694",
+  "apiBaseUrl": "https://rover-plenty-communities-vegetables.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
 }
