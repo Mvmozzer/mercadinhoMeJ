@@ -1,8 +1,9 @@
-import { cartPayload } from './cart.js?v=2026.07.13.439';
-import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.07.13.439';
-import { fallbackSendData, telegramPayloadBytes, TELEGRAM_SEND_DATA_MAX_BYTES } from './telegram.js?v=2026.07.13.439';
+import { cartPayload } from './cart.js?v=2026.07.13.138';
+import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.07.13.138';
+import { fallbackSendData, telegramPayloadBytes, TELEGRAM_SEND_DATA_MAX_BYTES } from './telegram.js?v=2026.07.13.138';
 
 const MINIAPP_CHECKOUT_CREATE_PATH = '/api/miniapp/checkout/create';
+const MINIAPP_TELEGRAM_HANDOFF_PATH = '/api/miniapp/checkout/telegram-handoff';
 const TELEGRAM_OFFLINE_ATTEMPT_KEY = 'mj_telegram_offline_attempt_v1';
 const TELEGRAM_OFFLINE_ATTEMPT_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -120,14 +121,36 @@ export async function telegramHandoff(state) {
   const enviado = fallbackSendData(payload);
   if (!enviado) {
     const tamanho = telegramPayloadBytes(payload);
-    return {
-      ok: false,
-      fallback: false,
-      client_order_id: payload.client_order_id,
-      mensagem: tamanho > TELEGRAM_SEND_DATA_MAX_BYTES
-        ? 'Seu carrinho ficou grande demais para a contingencia do Telegram. Remova alguns itens e tente novamente pelo botao Abrir lojinha dentro da conversa do bot.'
-        : 'Nao foi possivel enviar ao Telegram. Abra a lojinha pelo botao Abrir lojinha dentro da conversa do bot. O menu do Telegram nao envia carrinho em Mini App estatico.'
-    };
+    try {
+      const data = await retryApiFetchWithFreshRuntimeConfig(state, MINIAPP_TELEGRAM_HANDOFF_PATH, {
+        method: 'POST',
+        critical: true,
+        body: JSON.stringify(payload)
+      });
+      if (data?.telegram?.enfileirado === false) throw new Error('A fila do Telegram nao confirmou o envio.');
+      const mensagem = data?.telegram?.mensagem || data?.mensagem || 'Carrinho enviado. Continue no Telegram para concluir o pedido.';
+      return {
+        ...data,
+        ok: data?.ok !== false,
+        fallback: false,
+        client_order_id: payload.client_order_id,
+        mensagem,
+        checkout: {
+          ...(data?.checkout || {}),
+          modo: 'telegram',
+          fallbackTelegramAtivo: true
+        }
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        fallback: false,
+        client_order_id: payload.client_order_id,
+        mensagem: tamanho > TELEGRAM_SEND_DATA_MAX_BYTES
+          ? 'Seu carrinho ficou grande demais e a conexao com o Telegram esta indisponivel. Remova alguns itens e tente novamente.'
+          : `Nao foi possivel enviar ao Telegram agora. Tente novamente em instantes. ${error?.message || ''}`.trim()
+      };
+    }
   }
   const mensagem = 'Solicitacao entregue ao Telegram e aguardando confirmacao do bot. Quando o sistema se conectar, preco e estoque serao validados e o bot respondera na conversa. O Telegram pode guardar a solicitacao por ate 24 horas.';
   return {
