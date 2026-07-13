@@ -2,7 +2,10 @@ const TELEGRAM_WEBAPP_MARKER = 'Telegram.WebApp';
 export const TELEGRAM_SEND_DATA_MAX_BYTES = 4096;
 export function getTelegram() { const telegramRoot = window.Telegram; return telegramRoot && telegramRoot.WebApp ? telegramRoot.WebApp : null; }
 export function initTelegram() { const app = getTelegram(); try { app?.ready?.(); app?.expand?.(); } catch {} return app; }
-export function telegramUserName() { const user = getTelegram()?.initDataUnsafe?.user || {}; return user.first_name || user.username || ''; }
+export function telegramUserName() {
+  const user = getTelegram()?.initDataUnsafe?.user || {};
+  return [user.first_name, user.last_name].map(value => String(value || '').trim()).filter(Boolean).join(' ') || user.username || '';
+}
 export function telegramUserId() {
   const id = getTelegram()?.initDataUnsafe?.user?.id;
   return id === undefined || id === null ? '' : String(id);
