@@ -78,15 +78,15 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.13.286';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.13.286';
-import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.13.286';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.13.286';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.13.286';
-import { persistMiniAppUiState } from './storage.js?v=2026.07.13.286';
-import { updateMainButton } from './telegram.js?v=2026.07.13.286';
-import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.13.286';
-import { loyaltyProgramEnabled, miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.13.286';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.13.567';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.13.567';
+import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.13.567';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.13.567';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.13.567';
+import { persistMiniAppUiState } from './storage.js?v=2026.07.13.567';
+import { updateMainButton } from './telegram.js?v=2026.07.13.567';
+import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.13.567';
+import { loyaltyProgramEnabled, miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.13.567';
 import {
   activeOrderId,
   applyOrderStatusToState,
@@ -95,7 +95,7 @@ import {
   mapFromTrackingPayload,
   orderFlowPollingMs,
   shouldOpenTrackingAfterPayment
-} from './orderFlow.js?v=2026.07.13.286';
+} from './orderFlow.js?v=2026.07.13.567';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -496,7 +496,6 @@ function svgIcon(name, size = 20) {
     clipboard: '<rect x="6" y="4" width="12" height="16" rx="2"/><path d="M9 4.5h6"/><path d="M9 10h6"/><path d="M9 14h5"/>',
     user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
     arrowLeft: '<path d="m15 18-6-6 6-6"/>',
-    trash: '<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/>',
     receipt: '<path d="M5 3v18l2-1 2 1 2-1 2 1 2-1 2 1V3Z"/><path d="M8 7h8"/><path d="M8 11h8"/><path d="M8 15h5"/>',
     check: '<path d="m5 12 4 4L19 6"/>',
     settings: '<path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.42 1.1V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.42H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .42-1.1V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.4.2.75.52 1 .9.25.38.39.82.42 1.27V11a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z"/>'
@@ -1345,7 +1344,6 @@ export function createRenderer(state) {
             <small>${escapeHtml(checkoutSubtitle)}</small>
           </div>
           <img class="topbar-logo" src="${escapeHtml(logoSrc(state))}" alt="Mercadinho M&J" referrerpolicy="no-referrer">
-          ${allowClearCart ? `<button data-clear-cart aria-label="Limpar carrinho">${svgIcon('trash', 18)}</button>` : '<span aria-hidden="true"></span>'}
         </div>
         ${items.length ? `
           <div class="cart-content">
@@ -1355,7 +1353,10 @@ export function createRenderer(state) {
                   <strong id="cartItemsTitle">Itens do pedido</strong>
                   <small>Confira quantidades e valores</small>
                 </div>
-                <span>${escapeHtml(itemCountLabel)}</span>
+                <div class="cart-section-actions">
+                  <span>${escapeHtml(itemCountLabel)}</span>
+                  ${allowClearCart ? '<button class="cart-clear-button" data-clear-cart aria-label="Remover todos os itens do carrinho">Remover</button>' : ''}
+                </div>
               </div>
               <div class="cart-list">
                 ${items.map(item => `
