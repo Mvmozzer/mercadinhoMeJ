@@ -1,5 +1,5 @@
-import { CART_KEY, readJson, writeJson } from './storage.js?v=2026.07.13.359';
-import { productAvailability, productWholesale } from './catalog.js?v=2026.07.13.359';
+import { CART_KEY, readJson, writeJson } from './storage.js?v=2026.07.13.439';
+import { productAvailability, productWholesale } from './catalog.js?v=2026.07.13.439';
 
 function itemQuantity(item = {}) {
   const quantity = Number(item.quantity ?? item.quantidade ?? item.qtd ?? 0);
