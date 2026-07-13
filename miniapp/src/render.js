@@ -78,15 +78,15 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.13.724';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.13.724';
-import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.13.724';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.13.724';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.13.724';
-import { persistMiniAppUiState } from './storage.js?v=2026.07.13.724';
-import { updateMainButton } from './telegram.js?v=2026.07.13.724';
-import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.13.724';
-import { loyaltyProgramEnabled, miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.13.724';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.13.319';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.13.319';
+import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.13.319';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.13.319';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.13.319';
+import { persistMiniAppUiState } from './storage.js?v=2026.07.13.319';
+import { updateMainButton } from './telegram.js?v=2026.07.13.319';
+import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.13.319';
+import { loyaltyProgramEnabled, miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.13.319';
 import {
   activeOrderId,
   applyOrderStatusToState,
@@ -95,7 +95,7 @@ import {
   mapFromTrackingPayload,
   orderFlowPollingMs,
   shouldOpenTrackingAfterPayment
-} from './orderFlow.js?v=2026.07.13.724';
+} from './orderFlow.js?v=2026.07.13.319';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -1320,6 +1320,8 @@ export function createRenderer(state) {
 
   function renderCart() {
     const items = cartItems(state);
+    const itemCount = cartCount(state);
+    const itemCountLabel = `${itemCount} ${itemCount === 1 ? 'item' : 'itens'}`;
     const useNativeTelegramButton = hasTelegramMainButton();
     const acceptsOrders = storeAcceptsOrders(state);
     const allowQuantityChange = state.checkout?.permitirAlterarQuantidade !== false;
@@ -1346,42 +1348,69 @@ export function createRenderer(state) {
           ${allowClearCart ? `<button data-clear-cart aria-label="Limpar carrinho">${svgIcon('trash', 18)}</button>` : '<span aria-hidden="true"></span>'}
         </div>
         ${items.length ? `
-          <section class="cart-list">
-            ${items.map(item => `
-              <article class="cart-item">
-              <div class="cart-thumb">
-                  ${item.image ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}" referrerpolicy="no-referrer" onerror="this.remove()">` : `<span class="cart-thumb-fallback" aria-hidden="true">${escapeHtml(String(item.name || 'P').slice(0, 1).toUpperCase())}</span>`}
+          <div class="cart-content">
+            <section class="cart-products" aria-labelledby="cartItemsTitle">
+              <div class="cart-section-heading">
+                <div>
+                  <strong id="cartItemsTitle">Itens do pedido</strong>
+                  <small>Confira quantidades e valores</small>
                 </div>
-                <div class="cart-item-text">
-                  <strong>${escapeHtml(item.name)}</strong>
-                  <small>${escapeHtml(item.unit || 'un')}</small>
-                  <span>${formatMoney(item.price)} un.</span>
-                  ${item.wholesaleApplied || item.atacado_aplicado ? `<small class="wholesale-cart-label">Atacado aplicado</small>` : ''}
-                  ${item.sob_encomenda || item.sobEncomenda ? `<small class="wholesale-cart-label">${escapeHtml(item.previsao_retirada_texto ? `Somente sob encomenda • ${item.previsao_retirada_texto}` : 'Somente sob encomenda')}</small>` : ''}
-                </div>
-                ${allowQuantityChange ? `
-                  <div class="qty">
-                    <button data-qty-minus="${escapeHtml(item.id)}" aria-label="Diminuir quantidade">-</button>
-                    <b>${item.quantity}</b>
-                    <button data-qty-plus="${escapeHtml(item.id)}" aria-label="Adicionar ao carrinho">+</button>
-                  </div>
-                ` : `<div class="qty qty-readonly" aria-label="Quantidade ${item.quantity}"><b>${item.quantity}</b></div>`}
-                <strong class="line-total">${formatMoney(item.price * item.quantity)}</strong>
-              </article>
-            `).join('')}
-          </section>
-          <section class="total-card">
-            <div><span>Subtotal</span><strong>${formatMoney(cartTotal(state))}</strong></div>
-            <div class="summary-total"><span>Total</span><strong>${formatMoney(cartTotal(state))}</strong></div>
+                <span>${escapeHtml(itemCountLabel)}</span>
+              </div>
+              <div class="cart-list">
+                ${items.map(item => `
+                  <article class="cart-item">
+                    <div class="cart-thumb">
+                      ${item.image ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}" referrerpolicy="no-referrer" onerror="this.remove()">` : `<span class="cart-thumb-fallback" aria-hidden="true">${escapeHtml(String(item.name || 'P').slice(0, 1).toUpperCase())}</span>`}
+                    </div>
+                    <div class="cart-item-body">
+                      <div class="cart-item-text">
+                        <strong>${escapeHtml(item.name)}</strong>
+                        <small>${escapeHtml(item.unit || 'un')} • ${formatMoney(item.price)} por unidade</small>
+                        ${item.wholesaleApplied || item.atacado_aplicado ? `<small class="wholesale-cart-label">Atacado aplicado</small>` : ''}
+                        ${item.sob_encomenda || item.sobEncomenda ? `<small class="wholesale-cart-label">${escapeHtml(item.previsao_retirada_texto ? `Somente sob encomenda • ${item.previsao_retirada_texto}` : 'Somente sob encomenda')}</small>` : ''}
+                      </div>
+                      <div class="cart-item-controls">
+                        ${allowQuantityChange ? `
+                          <div class="qty" aria-label="Quantidade de ${escapeHtml(item.name)}">
+                            <button data-qty-minus="${escapeHtml(item.id)}" aria-label="Diminuir quantidade de ${escapeHtml(item.name)}">-</button>
+                            <b>${item.quantity}</b>
+                            <button data-qty-plus="${escapeHtml(item.id)}" aria-label="Adicionar ${escapeHtml(item.name)} ao carrinho">+</button>
+                          </div>
+                        ` : `<div class="qty qty-readonly" aria-label="Quantidade ${item.quantity}"><b>${item.quantity}</b></div>`}
+                        <div class="cart-item-total">
+                          <small>Total do item</small>
+                          <strong class="line-total">${formatMoney(item.price * item.quantity)}</strong>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                `).join('')}
+              </div>
+            </section>
+          </div>
+          <section class="total-card" aria-labelledby="cartSummaryTitle">
+            <div class="cart-summary-heading">
+              <strong id="cartSummaryTitle">Resumo do pedido</strong>
+              <small>${escapeHtml(itemCountLabel)}</small>
+            </div>
+            <div class="cart-summary-values">
+              <div class="cart-summary-row"><span>Subtotal</span><strong>${formatMoney(cartTotal(state))}</strong></div>
+              <div class="cart-summary-row summary-total"><span>Total</span><strong>${formatMoney(cartTotal(state))}</strong></div>
+            </div>
             <p class="telegram-checkout-note">${escapeHtml(checkoutNote)}</p>
-            <div class="card-actions">
+            <div class="card-actions${acceptsOrders && !useNativeTelegramButton ? '' : ' card-actions--single'}">
               <button id="continueShopping" data-page="${state.previousPage || 'home'}">Continuar comprando</button>
               ${acceptsOrders && !useNativeTelegramButton ? `<button id="finishInTelegram">${escapeHtml(finishLabel)}</button>` : ''}
             </div>
           </section>
         ` : `
-          <div class="empty">Seu carrinho está vazio.</div>
-          <button data-page="home" class="primary-wide">Continuar comprando</button>
+          <section class="cart-empty-state">
+            <span class="cart-empty-icon" aria-hidden="true">${svgIcon('bag', 28)}</span>
+            <strong>Seu carrinho está vazio</strong>
+            <small>Adicione produtos para montar seu pedido.</small>
+            <button data-page="home" class="primary-wide">Continuar comprando</button>
+          </section>
         `}
       </main>
     `;
