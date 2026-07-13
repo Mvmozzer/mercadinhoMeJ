@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-12T21:16:23.664-03:00",
-  "webBuild": "2026.07.12.783",
-  "apiBaseUrl": "https://suddenly-heater-attention-brothers.trycloudflare.com",
+  "updatedAt": "2026-07-12T21:29:36.913-03:00",
+  "webBuild": "2026.07.12.576",
+  "apiBaseUrl": "https://sampling-software-attacks-measurement.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
 }
