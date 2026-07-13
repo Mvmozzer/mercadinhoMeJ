@@ -1,6 +1,5 @@
-import { slugify } from './utils.js?v=2026.07.13.752';
+import { slugify } from './utils.js?v=2026.07.13.052';
 
-const WEIGHTED_CATALOG_MARKERS = ['item.tarjas'];
 export const WHOLESALE_DEFAULTS = {
   ativo: true,
   barraProgressoAtiva: true,
@@ -20,7 +19,18 @@ export const WHOLESALE_DEFAULTS = {
 export const STATIC_CATALOG_FALLBACKS = ['./catalogo.json', '../catalogo.json'];
 
 export function isWeightedProduct(item = {}) {
-  return item.vendidoPorPeso === true || item.pesavel === true || item.tipoVenda === 'granel' || item.modo_venda === 'granel' || item.saleMode === 'weighted';
+  const mode = String(
+    item.saleMode ||
+    item.modoVenda ||
+    item.modo_venda ||
+    item.tipoVenda ||
+    item.tipo_venda ||
+    ''
+  ).trim().toLowerCase();
+  return item.vendidoPorPeso === true ||
+    item.vendido_por_peso === true ||
+    item.pesavel === true ||
+    ['granel', 'weighted', 'peso', 'por_peso'].includes(mode);
 }
 
 function normalizeBadge(item = {}) {
@@ -51,6 +61,49 @@ export function productBadges(item = {}) {
 
 function num(value) {
   return Number(String(value ?? 0).replace(',', '.')) || 0;
+}
+
+function decimalPlaces(value) {
+  const text = String(value ?? '').replace(',', '.');
+  return Math.min(3, Math.max(0, (text.split('.')[1] || '').length));
+}
+
+export function weightedProductRules(product = {}) {
+  const weighted = isWeightedProduct(product);
+  const configuredMin = Math.max(0, num(product.pesoMinimo ?? product.minWeight ?? product.peso_minimo ?? product.medidaMinima));
+  const configuredMax = Math.max(0, num(product.pesoMaximo ?? product.maxWeight ?? product.peso_maximo ?? product.medidaMaxima));
+  const configuredStep = Math.max(0, num(product.incrementoPeso ?? product.weightStep ?? product.incremento_peso ?? product.incrementoMedida));
+  const unit = String(
+    product.unidadeVenda ||
+    product.saleUnit ||
+    product.unidade_venda ||
+    product.unidadeMedida ||
+    product.unidade_medida ||
+    product.unit ||
+    product.unidade ||
+    (weighted ? 'kg' : 'un')
+  ).trim() || (weighted ? 'kg' : 'un');
+  const min = weighted ? (configuredMin || configuredStep || 0.1) : 1;
+  const step = weighted ? (configuredStep || configuredMin || 0.1) : 1;
+  const knownStock = Number(product.stock ?? product.estoque_pronta_entrega ?? product.estoque_atual ?? product.estoque);
+  const availability = productAvailability(product);
+  const stockMax = !availability.preorder && Number.isFinite(knownStock) && knownStock >= 0 ? knownStock : 0;
+  const max = configuredMax > 0 && stockMax > 0
+    ? Math.min(configuredMax, stockMax)
+    : configuredMax || stockMax || 0;
+  return {
+    weighted,
+    unit,
+    min,
+    max,
+    step,
+    precision: Math.max(decimalPlaces(min), decimalPlaces(step), decimalPlaces(configuredMax)),
+    notice: String(
+      product.textoPesoAproximado ||
+      product.texto_peso_aproximado ||
+      'Produto vendido por peso. O valor final pode mudar apos a pesagem na loja.'
+    ).trim()
+  };
 }
 
 function bool(value, fallback = false) {
@@ -259,6 +312,10 @@ export function normalizeProduct(raw = {}, sectionName = '', index = 0) {
     badges.splice(0, badges.length, { text: 'Somente sob encomenda', color: '#1E1E1E', background: '#FFECBD' }, ...withoutLegacyPreorder);
   }
   const wholesale = productWholesale(raw);
+  const weighted = isWeightedProduct(raw);
+  const saleMode = weighted ? 'weighted' : 'unit';
+  const modoVenda = weighted ? 'granel' : 'unidade';
+  const weightRules = weightedProductRules({ ...raw, saleMode, modoVenda });
   return {
     ...raw,
     id,
@@ -301,8 +358,20 @@ export function normalizeProduct(raw = {}, sectionName = '', index = 0) {
     previsaoRetiradaTexto: raw.previsaoRetiradaTexto || raw.previsao_retirada_texto || availability.forecast,
     availableForPurchase: raw.availableForPurchase !== false && raw.disponivel_para_compra !== false && !availability.hidden,
     disponivel_para_compra: raw.disponivel_para_compra !== false && raw.availableForPurchase !== false && !availability.hidden,
-    unit: raw.unidade || raw.unidadeVenda || raw.tamanho || raw.medida || 'un',
-    points: productPoints(raw, price)
+    unit: weightRules.unit,
+    points: productPoints(raw, price),
+    saleMode,
+    modoVenda,
+    modo_venda: modoVenda,
+    unidadeVenda: weightRules.unit,
+    saleUnit: weightRules.unit,
+    pesoMinimo: weightRules.weighted ? weightRules.min : 0,
+    minWeight: weightRules.weighted ? weightRules.min : 0,
+    pesoMaximo: weightRules.weighted ? weightRules.max : 0,
+    maxWeight: weightRules.weighted ? weightRules.max : 0,
+    incrementoPeso: weightRules.weighted ? weightRules.step : 0,
+    weightStep: weightRules.weighted ? weightRules.step : 0,
+    textoPesoAproximado: weightRules.weighted ? weightRules.notice : ''
   };
 }
 
@@ -397,6 +466,16 @@ export function filterProducts(products = [], query = '', sectionId = '') {
   const q = String(query || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
   return products.filter(product =>
     (!sectionId || product.sectionId === sectionId) &&
-    (!q || `${product.name} ${product.section} ${product.marca || ''}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(q))
+    (!q || [
+      product.name,
+      product.section,
+      product.marca,
+      product.tamanho,
+      product.sabor,
+      product.descricao,
+      product.sku,
+      product.codigoBarras,
+      product.codigo_barras
+    ].filter(Boolean).join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(q))
   );
 }

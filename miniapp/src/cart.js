@@ -1,9 +1,29 @@
-import { CART_KEY, readJson, writeJson } from './storage.js?v=2026.07.13.752';
-import { productAvailability, productWholesale } from './catalog.js?v=2026.07.13.752';
+import { CART_KEY, readJson, writeJson } from './storage.js?v=2026.07.13.052';
+import { isWeightedProduct, productAvailability, productWholesale, weightedProductRules } from './catalog.js?v=2026.07.13.052';
 
 function itemQuantity(item = {}) {
   const quantity = Number(item.quantity ?? item.quantidade ?? item.qtd ?? 0);
   return Number.isFinite(quantity) && quantity > 0 ? quantity : 0;
+}
+
+function roundedQuantity(value, precision = 0) {
+  return Number(Number(value || 0).toFixed(Math.max(0, Math.min(3, precision))));
+}
+
+export function normalizeProductQuantity(product = {}, requested = 0) {
+  const value = Number(requested);
+  if (!Number.isFinite(value) || value <= 0) return 0;
+  const rules = weightedProductRules(product);
+  if (!rules.weighted) {
+    const integer = Math.max(0, Math.floor(value));
+    return rules.max > 0 ? Math.min(integer, Math.floor(rules.max)) : integer;
+  }
+  if (rules.max > 0 && rules.max + 1e-6 < rules.min) return 0;
+  const steps = Math.max(0, Math.round((value - rules.min) / rules.step));
+  let normalized = roundedQuantity(rules.min + (steps * rules.step), rules.precision);
+  if (rules.max > 0) normalized = Math.min(normalized, rules.max);
+  if (normalized + 1e-6 < rules.min) return 0;
+  return roundedQuantity(normalized, rules.precision);
 }
 
 function productId(product = {}) {
@@ -70,8 +90,9 @@ function cartItemFromProduct(product = {}, quantity = 1) {
   const name = product.name || product.nome || 'Produto';
   const priceInfo = wholesalePriceInfo(product, quantity);
   const price = priceInfo.price;
-  const saleMode = product.saleMode || product.modo_venda || product.modoVenda || 'unit';
   const availability = productAvailability(product);
+  const weightRules = weightedProductRules(product);
+  const saleMode = weightRules.weighted ? 'weighted' : 'unit';
   return {
     id,
     produto_id: String(product.produto_id || product.produtoId || id),
@@ -90,10 +111,16 @@ function cartItemFromProduct(product = {}, quantity = 1) {
     wholesaleProgress: priceInfo.progress,
     progresso_atacado: priceInfo.progress,
     image: product.image || product.imagem || '',
-    unit: product.unit || product.unidade || product.tamanho || 'un',
+    unit: weightRules.unit,
     section: product.section || product.secao_nome || product.secao || '',
     points: Number(product.points || product.pontos || 0),
     saleMode,
+    modoVenda: weightRules.weighted ? 'granel' : 'unidade',
+    modo_venda: weightRules.weighted ? 'granel' : 'unidade',
+    pesoMinimo: weightRules.weighted ? weightRules.min : 0,
+    pesoMaximo: weightRules.weighted ? weightRules.max : 0,
+    incrementoPeso: weightRules.weighted ? weightRules.step : 0,
+    textoPesoAproximado: weightRules.weighted ? weightRules.notice : '',
     disponibilidade: availability.mode,
     disponibilidade_label: product.disponibilidade_label || product.disponibilidadeLabel || availability.label,
     sob_encomenda: availability.preorder,
@@ -126,7 +153,9 @@ export function reconcileCartWithCatalog(state, options = {}) {
     if (!quantity) return;
     const product = byId.get(cartItemId(item));
     if (!product) return;
-    const normalized = cartItemFromProduct(product, quantity);
+    const safeQuantity = normalizeProductQuantity(product, quantity);
+    if (!safeQuantity) return;
+    const normalized = cartItemFromProduct(product, safeQuantity);
     if (!normalized.id || normalized.price <= 0) return;
     next[normalized.id] = normalized;
   });
@@ -145,7 +174,7 @@ export function cartItems(state) {
 }
 
 export function cartCount(state) {
-  return cartItems(state).reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+  return cartItems(state).reduce((sum, item) => sum + (isWeightedProduct(item) ? 1 : Number(item.quantity || 0)), 0);
 }
 
 export function cartTotal(state) {
@@ -154,7 +183,21 @@ export function cartTotal(state) {
 
 export function changeQty(state, product, delta) {
   const id = productId(product);
-  const next = Math.max(0, cartQty(state, id) + delta);
+  const current = cartQty(state, id);
+  const rules = weightedProductRules(product);
+  const requested = rules.weighted
+    ? (current > 0 ? current + (Number(delta || 0) * rules.step) : (Number(delta || 0) > 0 ? rules.min : 0))
+    : current + Number(delta || 0);
+  const next = normalizeProductQuantity(product, requested);
+  if (!next) delete state.cart[id];
+  else state.cart[id] = cartItemFromProduct(product, next);
+  saveCart(state);
+  return next;
+}
+
+export function setQty(state, product, quantity) {
+  const id = productId(product);
+  const next = normalizeProductQuantity(product, quantity);
   if (!next) delete state.cart[id];
   else state.cart[id] = cartItemFromProduct(product, next);
   saveCart(state);
@@ -185,6 +228,10 @@ export function cartPayload(state) {
     prazo_retirada_dias: item.prazo_retirada_dias,
     previsao_retirada_texto: item.previsao_retirada_texto,
     saleMode: item.saleMode,
+    modoVenda: item.modoVenda,
+    pesoMinimo: item.pesoMinimo,
+    pesoMaximo: item.pesoMaximo,
+    incrementoPeso: item.incrementoPeso,
     quantidade_solicitada: item.quantity,
     peso_estimado: item.saleMode === 'weighted' ? item.quantity : null,
     subtotal_estimado_exibido: Number((Number(item.quantity || 0) * Number(item.price || 0)).toFixed(2)),

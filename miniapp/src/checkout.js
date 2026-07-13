@@ -1,6 +1,6 @@
-import { cartPayload } from './cart.js?v=2026.07.13.752';
-import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.07.13.752';
-import { fallbackSendData, telegramPayloadBytes, TELEGRAM_SEND_DATA_MAX_BYTES } from './telegram.js?v=2026.07.13.752';
+import { cartPayload } from './cart.js?v=2026.07.13.052';
+import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.07.13.052';
+import { fallbackSendData, telegramPayloadBytes, TELEGRAM_SEND_DATA_MAX_BYTES } from './telegram.js?v=2026.07.13.052';
 
 const MINIAPP_CHECKOUT_CREATE_PATH = '/api/miniapp/checkout/create';
 const MINIAPP_TELEGRAM_HANDOFF_PATH = '/api/miniapp/checkout/telegram-handoff';
@@ -67,6 +67,16 @@ function ensureClientOrderId(state, items = []) {
   state.clientOrderFingerprint = fingerprint;
   saveOfflineAttempt(state.clientOrderId, fingerprint);
   return state.clientOrderId;
+}
+
+export function completeCheckoutAttempt(state = {}) {
+  state.clientOrderId = '';
+  state.clientOrderFingerprint = '';
+  try {
+    offlineAttemptStorage()?.removeItem(TELEGRAM_OFFLINE_ATTEMPT_KEY);
+  } catch (_) {
+    // A conclusao do pedido nao depende da limpeza do armazenamento local.
+  }
 }
 
 function telegramCartPayload(state) {
@@ -167,17 +177,21 @@ export async function telegramHandoff(state) {
 }
 
 export async function miniAppPaymentCheckout(state) {
+  const submittedItems = cartPayload(state);
   const data = await retryApiFetchWithFreshRuntimeConfig(state, MINIAPP_CHECKOUT_CREATE_PATH, {
     method: 'POST',
     critical: true,
     body: JSON.stringify(miniAppOrderPayload(state))
   });
-  state.lastMiniAppCheckout = data || {};
+  state.lastMiniAppCheckout = {
+    ...(data || {}),
+    itens: Array.isArray(data?.itens) && data.itens.length ? data.itens : submittedItems
+  };
   state.pedidoAtual = data?.pedido || null;
   state.pix = data?.pix || null;
   const modo = data?.checkout?.modo || data?.modo || 'miniapp';
   return {
-    ...data,
+    ...state.lastMiniAppCheckout,
     ok: data?.ok !== false,
     checkout: {
       ...(data?.checkout || {}),

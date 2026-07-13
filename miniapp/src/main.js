@@ -1,4 +1,4 @@
-import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.13.752';
+import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.13.052';
 import {
   atualizarStatusLoja,
   authenticateBridge,
@@ -8,13 +8,13 @@ import {
   loadCatalogWithFallback,
   loadCustomer,
   loadHealth
-} from './api.js?v=2026.07.13.752';
-import { createRenderer } from './render.js?v=2026.07.13.752';
-import { createState, applySnapshot, normalizeMiniAppUi, loyaltyProgramEnabled, setRuntimeOnline } from './state.js?v=2026.07.13.752';
-import { normalizeCatalog } from './catalog.js?v=2026.07.13.752';
-import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.13.752';
-import { loadLoyalty } from './loyalty.js?v=2026.07.13.752';
-import { loadOrders } from './orders.js?v=2026.07.13.752';
+} from './api.js?v=2026.07.13.052';
+import { createRenderer } from './render.js?v=2026.07.13.052';
+import { createState, applySnapshot, normalizeMiniAppUi, loyaltyProgramEnabled, setRuntimeOnline } from './state.js?v=2026.07.13.052';
+import { normalizeCatalog } from './catalog.js?v=2026.07.13.052';
+import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.13.052';
+import { loadLoyalty } from './loyalty.js?v=2026.07.13.052';
+import { loadOrders } from './orders.js?v=2026.07.13.052';
 
 function sincronizarStatusLoja(state, health) {
   return atualizarStatusLoja(state, health || {});
@@ -40,7 +40,9 @@ function miniappRefreshSignature(state = {}) {
       id: order.id || order.pedidoId || '',
       status: order.status || '',
       statusPagamento: order.statusPagamento || order.status_pagamento || order.pagamento?.status || '',
-      updatedAt: order.updatedAt || order.atualizadoEm || ''
+      updatedAt: order.updatedAt || order.atualizadoEm || '',
+      actions: order.acoes || order.actions || {},
+      evaluation: order.avaliacao || order.evaluation || null
     })),
     wholesale: state.wholesale || state.atacado || {},
     products: (state.products || []).map(product => ({
@@ -58,7 +60,12 @@ function miniappRefreshSignature(state = {}) {
       availability: product.disponibilidade || product.availabilityMode || '',
       preorder: product.sob_encomenda === true || product.sobEncomenda === true,
       pickupDeadlineDays: Number(product.prazo_retirada_dias ?? product.prazoRetiradaDias ?? 0),
-      pickupForecast: product.previsao_retirada_texto || product.previsaoRetiradaTexto || ''
+      pickupForecast: product.previsao_retirada_texto || product.previsaoRetiradaTexto || '',
+      saleMode: product.saleMode || product.modoVenda || product.modo_venda || '',
+      saleUnit: product.unidadeVenda || product.saleUnit || product.unit || '',
+      minWeight: Number(product.pesoMinimo ?? product.minWeight ?? 0),
+      maxWeight: Number(product.pesoMaximo ?? product.maxWeight ?? 0),
+      weightStep: Number(product.incrementoPeso ?? product.weightStep ?? 0)
     })),
     miniappUi: state.miniappUi || {}
   });

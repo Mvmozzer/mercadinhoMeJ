@@ -1,8 +1,3 @@
-const WEIGHTED_RENDER_MARKERS = [
-  'Produto vendido por peso. O valor final pode mudar apos a pesagem na loja.',
-  'data-action="set-weight"',
-  'function productBadges'
-];
 const STORE_STATUS_LABELS = ['Pedidos pausados', 'Loja fechada.'];
 
 const RUNTIME_LOGO_BUILD = String(globalThis?.__MJ_LOGO_BUILD || '').trim();
@@ -78,15 +73,16 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.13.752';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.13.752';
-import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.13.752';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.13.752';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.13.752';
-import { persistMiniAppUiState } from './storage.js?v=2026.07.13.752';
-import { updateMainButton } from './telegram.js?v=2026.07.13.752';
-import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.13.752';
-import { loyaltyProgramEnabled, miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.13.752';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, setQty, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.13.052';
+import { emojiForSection, filterProducts, isWeightedProduct, looksLikeSectionEmoji, productAvailability, productBadges, weightedProductRules } from './catalog.js?v=2026.07.13.052';
+import { checkoutCreate, completeCheckoutAttempt, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.13.052';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.13.052';
+import { escapeHtml, formatMeasure, greetingFor, money } from './utils.js?v=2026.07.13.052';
+import { persistMiniAppUiState } from './storage.js?v=2026.07.13.052';
+import { updateMainButton } from './telegram.js?v=2026.07.13.052';
+import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.13.052';
+import { cancelOrder, submitOrderEvaluation } from './orders.js?v=2026.07.13.052';
+import { loyaltyProgramEnabled, miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.13.052';
 import {
   activeOrderId,
   applyOrderStatusToState,
@@ -95,7 +91,7 @@ import {
   mapFromTrackingPayload,
   orderFlowPollingMs,
   shouldOpenTrackingAfterPayment
-} from './orderFlow.js?v=2026.07.13.752';
+} from './orderFlow.js?v=2026.07.13.052';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -470,13 +466,15 @@ function productPriceBlock(product = {}, quantity = 0) {
   const atacadoLinha = product.wholesaleActive === true && Number(product.wholesalePrice || product.preco_atacado || 0) > 0
     ? `<em class="wholesale-price-hint">Atacado ${formatMoney(product.wholesalePrice || product.preco_atacado)} a partir de ${Number(product.wholesaleMinQuantity || product.quantidade_atacado || 0)} un.</em>`
     : '';
+  const weightRules = weightedProductRules(product);
+  const unitSuffix = weightRules.weighted ? `<em class="weighted-unit-price">por ${escapeHtml(weightRules.unit)}</em>` : '';
   if (priceInfo.wholesaleApplied) {
-    return `<strong>${formatMoney(precoAtual)}</strong><small>${formatMoney(priceInfo.retailPrice)}</small><em class="wholesale-price-hint wholesale-price-hint--active">Atacado aplicado</em>`;
+    return `<strong>${formatMoney(precoAtual)}</strong>${unitSuffix}<small>${formatMoney(priceInfo.retailPrice)}</small><em class="wholesale-price-hint wholesale-price-hint--active">Atacado aplicado</em>`;
   }
   if (!isPromocao) {
-    return `<strong>${formatMoney(precoAtual)}</strong>${atacadoLinha}`;
+    return `<strong>${formatMoney(precoAtual)}</strong>${unitSuffix}${atacadoLinha}`;
   }
-  return `<strong>${formatMoney(precoAtual)}</strong><small>${formatMoney(precoOriginal)}</small>${atacadoLinha}`;
+  return `<strong>${formatMoney(precoAtual)}</strong>${unitSuffix}<small>${formatMoney(precoOriginal)}</small>${atacadoLinha}`;
 }
 
 function svgIcon(name, size = 20) {
@@ -878,6 +876,57 @@ export function createRenderer(state) {
     return text;
   }
 
+  function productQuantityLabel(product = {}, quantity = 0) {
+    const value = Number(quantity || 0);
+    if (!isWeightedProduct(product)) return String(Math.max(0, Math.floor(value)));
+    return formatMeasure(value, weightedProductRules(product).unit);
+  }
+
+  function weightedPresetValues(product = {}) {
+    const rules = weightedProductRules(product);
+    if (!rules.weighted) return [];
+    const candidates = [
+      rules.min,
+      rules.min + rules.step,
+      rules.min + (rules.step * 4),
+      rules.min + (rules.step * 9),
+      rules.max
+    ];
+    return Array.from(new Set(candidates
+      .filter(value => Number.isFinite(value) && value >= rules.min && (!rules.max || value <= rules.max))
+      .map(value => Number(value.toFixed(rules.precision)))))
+      .slice(0, 4);
+  }
+
+  function renderWeightedProductControl(product = {}) {
+    if (!isWeightedProduct(product)) return '';
+    const rules = weightedProductRules(product);
+    const quantity = cartQty(state, product.id);
+    const subtotal = Number(quantity || 0) * Number(wholesalePriceInfo(product, quantity).price || product.price || 0);
+    return `
+      <section class="weighted-product-control" data-weight-product="${escapeHtml(product.id)}">
+        <div class="weighted-product-heading">
+          <strong>Escolha o peso aproximado</strong>
+          <span>${quantity > 0 ? escapeHtml(productQuantityLabel(product, quantity)) : 'Ainda nao escolhido'}</span>
+        </div>
+        <p>${escapeHtml(rules.notice)}</p>
+        <div class="weighted-product-presets" aria-label="Pesos sugeridos">
+          ${weightedPresetValues(product).map(value => `
+            <button type="button" data-action="set-weight" data-weight-product-id="${escapeHtml(product.id)}" data-weight-value="${escapeHtml(value)}" class="${Math.abs(quantity - value) < 1e-6 ? 'active' : ''}">
+              ${escapeHtml(formatMeasure(value, rules.unit))}
+            </button>
+          `).join('')}
+        </div>
+        <div class="weighted-product-stepper">
+          <button type="button" data-qty-minus="${escapeHtml(product.id)}" aria-label="Diminuir peso de ${escapeHtml(product.name)}">-</button>
+          <strong>${quantity > 0 ? escapeHtml(productQuantityLabel(product, quantity)) : escapeHtml(formatMeasure(rules.min, rules.unit))}</strong>
+          <button type="button" data-qty-plus="${escapeHtml(product.id)}" aria-label="Aumentar peso de ${escapeHtml(product.name)}">+</button>
+        </div>
+        ${quantity > 0 ? `<small>Subtotal estimado: ${formatMoney(subtotal)}</small>` : ''}
+      </section>
+    `;
+  }
+
   function productAvailabilityLine(product = {}) {
     const availability = productAvailability(product);
     if (availability.hidden) return 'Indisponivel';
@@ -1015,7 +1064,7 @@ export function createRenderer(state) {
           <div class="product-actions${quantity ? ' product-actions--quantity product-stepper' : ''}">
             ${quantity ? `
               <button data-qty-minus="${escapeHtml(product.id)}" aria-label="Diminuir quantidade"><span class="product-action-symbol" aria-hidden="true">-</span></button>
-              <b>${quantity}</b>
+              <b>${escapeHtml(productQuantityLabel(product, quantity))}</b>
               <button class="product-quick-add" data-qty-plus="${escapeHtml(product.id)}" aria-label="Adicionar ao carrinho: ${escapeHtml(product.name)}"><span class="product-action-symbol" aria-hidden="true">+</span></button>
             ` : `
               <button class="add-button product-quick-add" data-qty-plus="${escapeHtml(product.id)}" aria-label="Adicionar ao carrinho: ${escapeHtml(product.name)}">
@@ -1306,6 +1355,7 @@ export function createRenderer(state) {
           <h1>${escapeHtml(product.name)}</h1>
           ${description ? `<p class="product-description">${escapeHtml(description)}</p>` : ''}
           ${renderProductDetailInfo(product, section?.name || section?.nome || '')}
+          ${renderWeightedProductControl(product)}
           <div class="product-price-line">
             ${productPriceBlock(product, quantity)}
           </div>
@@ -1367,7 +1417,8 @@ export function createRenderer(state) {
                     <div class="cart-item-body">
                       <div class="cart-item-text">
                         <strong>${escapeHtml(item.name)}</strong>
-                        <small>${escapeHtml(item.unit || 'un')} • ${formatMoney(item.price)} por unidade</small>
+                        <small>${escapeHtml(item.unit || 'un')} • ${formatMoney(item.price)} por ${escapeHtml(isWeightedProduct(item) ? (item.unit || 'kg') : 'unidade')}</small>
+                        ${isWeightedProduct(item) ? `<small class="weighted-cart-notice">${escapeHtml(item.textoPesoAproximado || 'Peso aproximado; o valor final pode mudar apos a pesagem.')}</small>` : ''}
                         ${item.wholesaleApplied || item.atacado_aplicado ? `<small class="wholesale-cart-label">Atacado aplicado</small>` : ''}
                         ${item.sob_encomenda || item.sobEncomenda ? `<small class="wholesale-cart-label">${escapeHtml(item.previsao_retirada_texto ? `Somente sob encomenda • ${item.previsao_retirada_texto}` : 'Somente sob encomenda')}</small>` : ''}
                       </div>
@@ -1375,12 +1426,12 @@ export function createRenderer(state) {
                         ${allowQuantityChange ? `
                           <div class="qty" aria-label="Quantidade de ${escapeHtml(item.name)}">
                             <button data-qty-minus="${escapeHtml(item.id)}" aria-label="Diminuir quantidade de ${escapeHtml(item.name)}">-</button>
-                            <b>${item.quantity}</b>
+                            <b>${escapeHtml(productQuantityLabel(item, item.quantity))}</b>
                             <button data-qty-plus="${escapeHtml(item.id)}" aria-label="Adicionar ${escapeHtml(item.name)} ao carrinho">+</button>
                           </div>
-                        ` : `<div class="qty qty-readonly" aria-label="Quantidade ${item.quantity}"><b>${item.quantity}</b></div>`}
+                        ` : `<div class="qty qty-readonly" aria-label="Quantidade ${escapeHtml(productQuantityLabel(item, item.quantity))}"><b>${escapeHtml(productQuantityLabel(item, item.quantity))}</b></div>`}
                         <div class="cart-item-total">
-                          <small>Total do item</small>
+                          <small>${isWeightedProduct(item) ? 'Subtotal estimado' : 'Total do item'}</small>
                           <strong class="line-total">${formatMoney(item.price * item.quantity)}</strong>
                         </div>
                       </div>
@@ -1446,7 +1497,7 @@ export function createRenderer(state) {
             const subtotal = Number(item.subtotal ?? (preco * quantidade));
             return `
               <div>
-                <span>${escapeHtml(quantidade)}x ${escapeHtml(item.nome || item.name || 'Produto')}</span>
+                <span>${escapeHtml(productQuantityLabel(item, quantidade))}${isWeightedProduct(item) ? '' : 'x'} ${escapeHtml(item.nome || item.name || 'Produto')}</span>
                 <strong>${formatMoney(subtotal)}</strong>
               </div>
             `;
@@ -1465,7 +1516,11 @@ export function createRenderer(state) {
     const checkout = state.lastMiniAppCheckout || {};
     const pedido = state.pedidoAtual || checkout.pedido || {};
     const pix = state.pix || checkout.pix || {};
-    const itens = Array.isArray(pedido.itens) && pedido.itens.length ? pedido.itens : cartItems(state);
+    const itens = Array.isArray(pedido.itens) && pedido.itens.length
+      ? pedido.itens
+      : Array.isArray(checkout.itens) && checkout.itens.length
+        ? checkout.itens
+        : cartItems(state);
     const total = Number(pedido.total ?? cartTotal(state) ?? pix.valor ?? 0);
     const pedidoId = String(pedido.id || checkout.pedidoId || '').trim();
     const copiaCola = String(pix.copiaCola || pix.pix || '').trim();
@@ -1501,7 +1556,7 @@ export function createRenderer(state) {
             const subtotal = Number(item.subtotal ?? ((item.preco_unitario || item.preco || item.price || 0) * quantidade));
             return `
               <div>
-                <span>${escapeHtml(quantidade)}x ${escapeHtml(item.nome || item.name || 'Produto')}</span>
+                <span>${escapeHtml(productQuantityLabel(item, quantidade))}${isWeightedProduct(item) ? '' : 'x'} ${escapeHtml(item.nome || item.name || 'Produto')}</span>
                 <strong>${formatMoney(subtotal)}</strong>
               </div>
             `;
@@ -1513,6 +1568,69 @@ export function createRenderer(state) {
           <button data-page="cart">Voltar ao carrinho</button>
         </section>
       </main>
+    `;
+  }
+
+  function orderActionCapabilities(order = {}) {
+    const actions = order.acoes || order.actions || {};
+    const status = String(order.status || '').trim().toLowerCase();
+    const evaluation = order.avaliacao || order.evaluation || null;
+    const evaluated = Boolean(evaluation || order.avaliado === true || order.evaluated === true);
+    const explicitCancel = [actions.podeCancelar, actions.canCancel, order.podeCancelar, order.canCancel]
+      .find(value => typeof value === 'boolean');
+    const explicitEvaluate = [actions.podeAvaliar, actions.canEvaluate, order.podeAvaliar, order.canEvaluate]
+      .find(value => typeof value === 'boolean');
+    return {
+      canCancel: explicitCancel === undefined
+        ? ['novo', 'recebido', 'pendente', 'aguardando_pagamento'].includes(status)
+        : explicitCancel,
+      canEvaluate: !evaluated && (explicitEvaluate === undefined ? status === 'entregue' : explicitEvaluate),
+      evaluated,
+      evaluation
+    };
+  }
+
+  function renderOrderCustomerActions(order = {}) {
+    const pedidoId = String(order.id || order.pedidoId || '').trim();
+    if (!pedidoId) return '';
+    const capabilities = orderActionCapabilities(order);
+    const pending = state.orderActionPending === pedidoId;
+    const draft = state.evaluationDraft?.pedidoId === pedidoId
+      ? state.evaluationDraft
+      : { pedidoId, nota: 0, comentario: '' };
+    const evaluation = capabilities.evaluation || {};
+    const evaluationMessage = capabilities.evaluated
+      ? `Avaliacao enviada: ${Number(evaluation.nota || order.notaAvaliacao || 0) || '-'} de 5${evaluation.comentario ? ` - ${evaluation.comentario}` : ''}`
+      : '';
+    const actionMessage = state.orderActionMessageOrderId === pedidoId ? state.orderActionMessage : '';
+    if (!capabilities.canCancel && !capabilities.canEvaluate && !evaluationMessage && !actionMessage) return '';
+    return `
+      <section class="order-customer-actions" aria-labelledby="orderActionsTitle">
+        <div class="section-title">
+          <h2 id="orderActionsTitle">Acoes do pedido</h2>
+        </div>
+        ${actionMessage ? `<p class="order-action-message" role="status">${escapeHtml(actionMessage)}</p>` : ''}
+        ${capabilities.canCancel ? `
+          <button type="button" class="order-cancel-button" id="cancelCurrentOrder" data-order-id="${escapeHtml(pedidoId)}" ${pending ? 'disabled' : ''}>
+            ${pending ? 'Processando...' : 'Cancelar pedido'}
+          </button>
+          <small>Disponivel somente antes da separacao. O sistema confirma a situacao novamente antes de cancelar.</small>
+        ` : ''}
+        ${capabilities.canEvaluate ? `
+          <form id="orderEvaluationForm" data-order-id="${escapeHtml(pedidoId)}">
+            <strong>Avalie sua compra</strong>
+            <div class="order-rating" role="radiogroup" aria-label="Nota da compra">
+              ${[1, 2, 3, 4, 5].map(nota => `
+                <button type="button" data-evaluation-rating="${nota}" role="radio" aria-checked="${draft.nota === nota ? 'true' : 'false'}" class="${draft.nota === nota ? 'active' : ''}">${nota}</button>
+              `).join('')}
+            </div>
+            <label for="orderEvaluationComment">Comentario opcional</label>
+            <textarea id="orderEvaluationComment" maxlength="1000" rows="3" placeholder="Conte como foi sua experiencia">${escapeHtml(draft.comentario || '')}</textarea>
+            <button type="submit" class="primary-wide" ${pending || !draft.nota ? 'disabled' : ''}>${pending ? 'Enviando...' : 'Enviar avaliacao'}</button>
+          </form>
+        ` : ''}
+        ${evaluationMessage ? `<p class="order-evaluation-sent">${escapeHtml(evaluationMessage)}</p>` : ''}
+      </section>
     `;
   }
 
@@ -1532,7 +1650,7 @@ export function createRenderer(state) {
               <strong>Pedido #${escapeHtml(orderId(order))}</strong>
               <span>${escapeHtml(order.status || 'Em andamento')}</span>
               <p>${escapeHtml(order.pagamento?.status || order.status_pagamento || 'Aguardando pagamento')}</p>
-              <button data-tracking-order="${escapeHtml(orderId(order))}">Acompanhar entrega</button>
+              <button data-tracking-order="${escapeHtml(orderId(order))}">Ver detalhes</button>
             </article>
           `).join('') : '<div class="empty">Seus pedidos aparecerão aqui.</div>'}
         </section>
@@ -1644,6 +1762,7 @@ export function createRenderer(state) {
         <section class="tracking-timeline">
           ${trackingStepsForStatus(statusAtual, pagamentoStatus).map(renderTrackingStep).join('')}
         </section>
+        ${renderOrderCustomerActions(pedido)}
         <section class="tracking-map-card">
           ${mapaUrl ? `
             <a class="track-map" href="${escapeHtml(mapaUrl)}" target="_blank" rel="noopener">Abrir localizacao ao vivo do entregador</a>
@@ -1799,6 +1918,9 @@ export function createRenderer(state) {
       state.lastMiniAppCheckout = result || {};
       state.pedidoAtual = result?.pedido || state.pedidoAtual || null;
       state.pix = result?.pix || state.pix || null;
+      if (state.pedidoAtual) applyOrderStatusToState(state, { pedido: state.pedidoAtual });
+      clearCart(state);
+      completeCheckoutAttempt(state);
       state.checkoutMessage = result?.mensagem || result?.message || 'Pix gerado no Mini App. Copie o codigo ou use o QR Code para pagar.';
       state.sending = false;
       renderer.navigateTo('payment');
@@ -1811,6 +1933,75 @@ export function createRenderer(state) {
     const webApp = window.Telegram?.WebApp;
     if (webApp?.close && (result?.ok !== false || result?.fallback === true)) {
       webApp.close();
+    }
+  }
+
+  function applyCustomerOrderAction(pedidoId, result = {}, extra = {}) {
+    const current = trackingPedidoAtual(state.tracking || {});
+    const pedido = {
+      ...current,
+      ...(result.pedido || {}),
+      ...extra,
+      id: String(result.pedido?.id || current.id || pedidoId)
+    };
+    applyOrderStatusToState(state, { ...result, pedido });
+    state.tracking = {
+      ...(state.tracking || {}),
+      pedido: {
+        ...(state.tracking?.pedido || {}),
+        ...pedido
+      }
+    };
+    return pedido;
+  }
+
+  async function handleCancelCurrentOrder(button) {
+    const pedidoId = String(button?.dataset?.orderId || '').trim();
+    if (!pedidoId || state.orderActionPending) return;
+    if (typeof window.confirm === 'function' && !window.confirm('Cancelar este pedido? A loja confirmara se ele ainda pode ser cancelado.')) return;
+    state.orderActionPending = pedidoId;
+    state.orderActionMessage = '';
+    state.orderActionMessageOrderId = pedidoId;
+    render();
+    try {
+      const result = await cancelOrder(state, pedidoId);
+      applyCustomerOrderAction(pedidoId, result, { status: result?.pedido?.status || 'cancelado' });
+      state.orderActionMessage = result?.mensagem || 'Pedido cancelado com sucesso.';
+    } catch (error) {
+      state.orderActionMessage = error?.message || 'Nao foi possivel cancelar o pedido.';
+    } finally {
+      state.orderActionPending = '';
+      render();
+    }
+  }
+
+  async function handleSubmitOrderEvaluation(form) {
+    const pedidoId = String(form?.dataset?.orderId || '').trim();
+    if (!pedidoId || state.orderActionPending) return;
+    const draft = state.evaluationDraft?.pedidoId === pedidoId
+      ? state.evaluationDraft
+      : { pedidoId, nota: 0, comentario: '' };
+    if (!draft.nota) {
+      state.orderActionMessage = 'Escolha uma nota de 1 a 5.';
+      state.orderActionMessageOrderId = pedidoId;
+      render();
+      return;
+    }
+    state.orderActionPending = pedidoId;
+    state.orderActionMessage = '';
+    state.orderActionMessageOrderId = pedidoId;
+    render();
+    try {
+      const result = await submitOrderEvaluation(state, pedidoId, draft);
+      const avaliacao = result?.avaliacao || { nota: draft.nota, comentario: draft.comentario };
+      applyCustomerOrderAction(pedidoId, result, { avaliacao, avaliado: true });
+      state.orderActionMessage = result?.mensagem || 'Avaliacao enviada. Obrigado por ajudar o Mercadinho M&J a melhorar.';
+      state.evaluationDraft = { pedidoId, nota: draft.nota, comentario: draft.comentario };
+    } catch (error) {
+      state.orderActionMessage = error?.message || 'Nao foi possivel enviar a avaliacao.';
+    } finally {
+      state.orderActionPending = '';
+      render();
     }
   }
 
@@ -1900,6 +2091,8 @@ export function createRenderer(state) {
         const order = (state.orders || []).find(item => String(item.id || item.pedidoId || '').trim() === pedidoId) || null;
         if (order) state.pedidoAtual = order;
         state.tracking = null;
+        state.orderActionMessage = '';
+        state.orderActionMessageOrderId = '';
         navigateTo('tracking');
       });
     });
@@ -1952,6 +2145,15 @@ export function createRenderer(state) {
       });
     });
     bindBannerControls(root);
+    root.querySelectorAll('[data-action="set-weight"]').forEach(button => {
+      button.addEventListener('click', () => {
+        const product = state.products.find(item => item.id === button.dataset.weightProductId);
+        if (!product) return;
+        setQty(state, product, Number(button.dataset.weightValue || 0));
+        syncCart(state, { itens: cartItems(state) });
+        render();
+      });
+    });
     root.querySelectorAll('[data-qty-plus]').forEach(button => {
       button.addEventListener('click', () => {
         const product = state.products.find(item => item.id === button.dataset.qtyPlus);
@@ -1989,6 +2191,33 @@ export function createRenderer(state) {
     root.querySelector('#continueShopping')?.addEventListener('click', () => navigateTo(state.previousPage || 'home'));
     root.querySelector('#finishInTelegram')?.addEventListener('click', finishCheckout);
     root.querySelector('#retryTelegramHandoff')?.addEventListener('click', finishCheckout);
+    root.querySelector('#cancelCurrentOrder')?.addEventListener('click', event => {
+      handleCancelCurrentOrder(event.currentTarget);
+    });
+    root.querySelectorAll('[data-evaluation-rating]').forEach(button => {
+      button.addEventListener('click', () => {
+        const pedidoId = String(root.querySelector('#orderEvaluationForm')?.dataset?.orderId || '').trim();
+        const comment = String(root.querySelector('#orderEvaluationComment')?.value || '');
+        state.evaluationDraft = {
+          pedidoId,
+          nota: Number(button.dataset.evaluationRating || 0),
+          comentario: comment
+        };
+        render();
+      });
+    });
+    root.querySelector('#orderEvaluationComment')?.addEventListener('input', event => {
+      const pedidoId = String(root.querySelector('#orderEvaluationForm')?.dataset?.orderId || '').trim();
+      state.evaluationDraft = {
+        pedidoId,
+        nota: Number(state.evaluationDraft?.pedidoId === pedidoId ? state.evaluationDraft.nota : 0),
+        comentario: String(event.target.value || '')
+      };
+    });
+    root.querySelector('#orderEvaluationForm')?.addEventListener('submit', event => {
+      event.preventDefault();
+      handleSubmitOrderEvaluation(event.currentTarget);
+    });
     root.querySelector('#copyPixPayment')?.addEventListener('click', () => {
       const pix = state.pix?.copiaCola || state.lastMiniAppCheckout?.pix?.copiaCola || '';
       if (!pix) return;

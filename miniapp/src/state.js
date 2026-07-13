@@ -1,5 +1,5 @@
-﻿import { restoreMiniAppUiState } from './storage.js?v=2026.07.13.752';
-import { normalizeWholesaleConfig } from './catalog.js?v=2026.07.13.752';
+﻿import { restoreMiniAppUiState } from './storage.js?v=2026.07.13.052';
+import { normalizeWholesaleConfig } from './catalog.js?v=2026.07.13.052';
 
 export const MINIAPP_UI_DEFAULTS = {
   header: {
@@ -283,6 +283,10 @@ export function createState() {
     pix: null,
     pedidoAtual: null,
     checkoutMessage: '',
+    orderActionMessage: '',
+    orderActionMessageOrderId: '',
+    orderActionPending: '',
+    evaluationDraft: { pedidoId: '', nota: 0, comentario: '' },
     selectedDeliveryMode: 'retirada',
     bannerIndex: 0,
     miniappUi: normalizeMiniAppUi(saved.miniappUi || saved.miniappui || {})
