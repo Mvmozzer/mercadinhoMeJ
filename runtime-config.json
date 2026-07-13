@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-12T20:44:48.815-03:00",
-  "webBuild": "2026.07.12.888",
-  "apiBaseUrl": "https://voluntary-contribution-secretary-reads.trycloudflare.com",
+  "updatedAt": "2026-07-12T21:14:39.825-03:00",
+  "webBuild": "2026.07.12.679",
+  "apiBaseUrl": "https://clean-theories-gif-wave.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
 }
