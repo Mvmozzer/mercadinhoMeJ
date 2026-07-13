@@ -78,15 +78,15 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.13.043';
-import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.13.043';
-import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.13.043';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.13.043';
-import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.13.043';
-import { persistMiniAppUiState } from './storage.js?v=2026.07.13.043';
-import { updateMainButton } from './telegram.js?v=2026.07.13.043';
-import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.13.043';
-import { loyaltyProgramEnabled, miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.13.043';
+import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.13.286';
+import { emojiForSection, filterProducts, looksLikeSectionEmoji, productAvailability, productBadges } from './catalog.js?v=2026.07.13.286';
+import { checkoutCreate, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.13.286';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.13.286';
+import { escapeHtml, greetingFor, money } from './utils.js?v=2026.07.13.286';
+import { persistMiniAppUiState } from './storage.js?v=2026.07.13.286';
+import { updateMainButton } from './telegram.js?v=2026.07.13.286';
+import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.13.286';
+import { loyaltyProgramEnabled, miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.13.286';
 import {
   activeOrderId,
   applyOrderStatusToState,
@@ -95,7 +95,7 @@ import {
   mapFromTrackingPayload,
   orderFlowPollingMs,
   shouldOpenTrackingAfterPayment
-} from './orderFlow.js?v=2026.07.13.043';
+} from './orderFlow.js?v=2026.07.13.286';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
