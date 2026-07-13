@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-13T09:55:19.563-03:00",
-  "webBuild": "2026.07.13.319",
-  "apiBaseUrl": "https://refine-create-riverside-conviction.trycloudflare.com",
+  "updatedAt": "2026-07-13T10:11:50.687-03:00",
+  "webBuild": "2026.07.13.310",
+  "apiBaseUrl": "https://insured-planes-candidates-either.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
 }
