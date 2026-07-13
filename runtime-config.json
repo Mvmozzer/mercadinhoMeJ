@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-13T18:52:16.822-03:00",
-  "webBuild": "2026.07.13.536",
-  "apiBaseUrl": "https://domain-personals-sub-colleges.trycloudflare.com",
+  "updatedAt": "2026-07-13T20:35:52.216-03:00",
+  "webBuild": "2026.07.13.752",
+  "apiBaseUrl": "https://surveys-pens-warriors-diana.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
 }
