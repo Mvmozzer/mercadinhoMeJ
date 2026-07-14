@@ -9,6 +9,7 @@ const PAID_STATUSES = new Set([
 ]);
 
 const FINAL_STATUSES = new Set(['entregue', 'cancelado']);
+const FINAL_WEIGHT_FLAGS = ['aguardandoPesagem', 'aguardando_pesagem', 'awaitingWeight', 'awaitingFinalWeight'];
 
 function clean(value = '') {
   return String(value || '').trim();
@@ -16,6 +17,40 @@ function clean(value = '') {
 
 function cleanLower(value = '') {
   return clean(value).toLowerCase();
+}
+
+function booleanFlag(value) {
+  if (value === true || value === 1) return true;
+  if (value === false || value === 0) return false;
+  const text = cleanLower(value);
+  if (['true', '1', 'sim', 'yes'].includes(text)) return true;
+  if (['false', '0', 'nao', 'não', 'no'].includes(text)) return false;
+  return null;
+}
+
+export function awaitingFinalWeightState(...sources) {
+  const queue = sources.filter(source => source && typeof source === 'object');
+  const visited = new Set();
+  let explicitFalse = false;
+  while (queue.length) {
+    const source = queue.shift();
+    if (!source || typeof source !== 'object' || visited.has(source)) continue;
+    visited.add(source);
+    for (const field of FINAL_WEIGHT_FLAGS) {
+      if (!Object.prototype.hasOwnProperty.call(source, field)) continue;
+      const value = booleanFlag(source[field]);
+      if (value === true) return true;
+      if (value === false) explicitFalse = true;
+    }
+    ['checkout', 'pedido', 'ordem', 'order'].forEach(field => {
+      if (source[field] && typeof source[field] === 'object') queue.push(source[field]);
+    });
+  }
+  return explicitFalse ? false : null;
+}
+
+export function isAwaitingFinalWeight(...sources) {
+  return awaitingFinalWeightState(...sources) === true;
 }
 
 function orderId(order = {}) {
@@ -56,6 +91,8 @@ export function activeOrderId(state = {}) {
     state.pedidoAtual?.id ||
     state.pedidoAtual?.pedidoId ||
     state.lastMiniAppCheckout?.pedido?.id ||
+    state.lastMiniAppCheckout?.ordem?.id ||
+    state.lastMiniAppCheckout?.order?.id ||
     state.lastMiniAppCheckout?.pedidoId ||
     state.lastMiniAppCheckout?.pedido_id ||
     ''
@@ -71,7 +108,13 @@ export function isFinalOrderStatus(status = '') {
 }
 
 function statusOrderFromPayload(state = {}, payload = {}) {
-  const source = payload.pedido && typeof payload.pedido === 'object' ? payload.pedido : payload;
+  const source = payload.pedido && typeof payload.pedido === 'object'
+    ? payload.pedido
+    : payload.ordem && typeof payload.ordem === 'object'
+      ? payload.ordem
+      : payload.order && typeof payload.order === 'object'
+        ? payload.order
+        : payload;
   const id = orderId(source) || clean(payload.pedidoId || payload.pedido_id || activeOrderId(state));
   const current = orderId(state.pedidoAtual || {}) === id ? state.pedidoAtual : {};
   const pagamento = {
@@ -88,6 +131,7 @@ function statusOrderFromPayload(state = {}, payload = {}) {
     current.statusPagamento ||
     current.status_pagamento
   );
+  const awaitingWeight = awaitingFinalWeightState(payload, source);
   if (statusPagamento) pagamento.status = statusPagamento;
   return {
     ...current,
@@ -97,6 +141,9 @@ function statusOrderFromPayload(state = {}, payload = {}) {
     statusPagamento,
     status_pagamento: statusPagamento || current.status_pagamento || '',
     pagamento,
+    aguardandoPesagem: awaitingWeight === null
+      ? isAwaitingFinalWeight(current)
+      : awaitingWeight,
     acompanhamentoModo: trackingModeFrom(payload, state) || current.acompanhamentoModo || '',
     modoAcompanhamentoCliente: trackingModeFrom(payload, state) || current.modoAcompanhamentoCliente || '',
     updatedAt: payload.updatedAt || source.updatedAt || source.atualizadoEm || current.updatedAt || new Date().toISOString()
@@ -108,6 +155,7 @@ function stableOrderSignature(order = {}) {
     id: orderId(order),
     status: order.status || '',
     statusPagamento: order.statusPagamento || order.status_pagamento || order.pagamento?.status || '',
+    aguardandoPesagem: isAwaitingFinalWeight(order),
     updatedAt: order.updatedAt || order.atualizadoEm || ''
   });
 }

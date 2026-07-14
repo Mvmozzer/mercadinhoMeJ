@@ -1,4 +1,4 @@
-import { slugify } from './utils.js?v=2026.07.13.052';
+import { slugify } from './utils.js?v=2026.07.13.185';
 
 export const WHOLESALE_DEFAULTS = {
   ativo: true,
@@ -68,12 +68,33 @@ function decimalPlaces(value) {
   return Math.min(3, Math.max(0, (text.split('.')[1] || '').length));
 }
 
-export function weightedProductRules(product = {}) {
+export function normalizeCommercialUnit(value = '', fallback = 'un') {
+  const text = String(value || fallback || 'un').trim().toLowerCase();
+  if (['un', 'unid', 'unidade', 'unit', 'unitario', 'unitaria'].includes(text)) return 'un';
+  if (['kg', 'quilo', 'quilos', 'kilograma', 'kilogramas'].includes(text)) return 'kg';
+  if (['g', 'gr', 'grama', 'gramas'].includes(text)) return 'g';
+  if (['l', 'lt', 'litro', 'litros'].includes(text)) return 'litro';
+  if (['ml', 'mililitro', 'mililitros'].includes(text)) return 'ml';
+  return text || 'un';
+}
+
+export function measureConversionFactor(saleUnit = 'un', priceBaseUnit = saleUnit) {
+  const sale = normalizeCommercialUnit(saleUnit);
+  const base = normalizeCommercialUnit(priceBaseUnit, sale);
+  if (sale === base) return 1;
+  if (sale === 'g' && base === 'kg') return 0.001;
+  if (sale === 'kg' && base === 'g') return 1000;
+  if (sale === 'ml' && base === 'litro') return 0.001;
+  if (sale === 'litro' && base === 'ml') return 1000;
+  return 1;
+}
+
+export function weightedProductRules(product = {}, options = {}) {
   const weighted = isWeightedProduct(product);
   const configuredMin = Math.max(0, num(product.pesoMinimo ?? product.minWeight ?? product.peso_minimo ?? product.medidaMinima));
   const configuredMax = Math.max(0, num(product.pesoMaximo ?? product.maxWeight ?? product.peso_maximo ?? product.medidaMaxima));
   const configuredStep = Math.max(0, num(product.incrementoPeso ?? product.weightStep ?? product.incremento_peso ?? product.incrementoMedida));
-  const unit = String(
+  const unit = normalizeCommercialUnit(
     product.unidadeVenda ||
     product.saleUnit ||
     product.unidade_venda ||
@@ -81,20 +102,36 @@ export function weightedProductRules(product = {}) {
     product.unidade_medida ||
     product.unit ||
     product.unidade ||
-    (weighted ? 'kg' : 'un')
-  ).trim() || (weighted ? 'kg' : 'un');
+    (weighted ? 'kg' : 'un'),
+    weighted ? 'kg' : 'un'
+  );
+  const priceBaseUnit = normalizeCommercialUnit(
+    product.unidadeBasePreco ||
+    product.priceBaseUnit ||
+    product.unidade_base_preco ||
+    unit,
+    unit
+  );
   const min = weighted ? (configuredMin || configuredStep || 0.1) : 1;
   const step = weighted ? (configuredStep || configuredMin || 0.1) : 1;
+  const selectionMin = weighted && step > 0
+    ? Number((Math.ceil((min / step) - 1e-9) * step).toFixed(Math.max(decimalPlaces(min), decimalPlaces(step))))
+    : min;
   const knownStock = Number(product.stock ?? product.estoque_pronta_entrega ?? product.estoque_atual ?? product.estoque);
   const availability = productAvailability(product);
-  const stockMax = !availability.preorder && Number.isFinite(knownStock) && knownStock >= 0 ? knownStock : 0;
+  const stockMax = options.respectStock !== false && !availability.preorder && Number.isFinite(knownStock) && knownStock >= 0 ? knownStock : 0;
   const max = configuredMax > 0 && stockMax > 0
     ? Math.min(configuredMax, stockMax)
     : configuredMax || stockMax || 0;
   return {
     weighted,
     unit,
+    priceBaseUnit,
+    configuredMin,
+    configuredMax,
+    configuredStep,
     min,
+    selectionMin,
     max,
     step,
     precision: Math.max(decimalPlaces(min), decimalPlaces(step), decimalPlaces(configuredMax)),
@@ -365,12 +402,15 @@ export function normalizeProduct(raw = {}, sectionName = '', index = 0) {
     modo_venda: modoVenda,
     unidadeVenda: weightRules.unit,
     saleUnit: weightRules.unit,
-    pesoMinimo: weightRules.weighted ? weightRules.min : 0,
-    minWeight: weightRules.weighted ? weightRules.min : 0,
-    pesoMaximo: weightRules.weighted ? weightRules.max : 0,
-    maxWeight: weightRules.weighted ? weightRules.max : 0,
-    incrementoPeso: weightRules.weighted ? weightRules.step : 0,
-    weightStep: weightRules.weighted ? weightRules.step : 0,
+    unidadeBasePreco: weightRules.priceBaseUnit,
+    priceBaseUnit: weightRules.priceBaseUnit,
+    unidade_base_preco: weightRules.priceBaseUnit,
+    pesoMinimo: weightRules.weighted ? weightRules.configuredMin : 0,
+    minWeight: weightRules.weighted ? weightRules.configuredMin : 0,
+    pesoMaximo: weightRules.weighted ? weightRules.configuredMax : 0,
+    maxWeight: weightRules.weighted ? weightRules.configuredMax : 0,
+    incrementoPeso: weightRules.weighted ? weightRules.configuredStep : 0,
+    weightStep: weightRules.weighted ? weightRules.configuredStep : 0,
     textoPesoAproximado: weightRules.weighted ? weightRules.notice : ''
   };
 }

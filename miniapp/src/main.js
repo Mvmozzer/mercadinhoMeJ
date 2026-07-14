@@ -1,4 +1,4 @@
-import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.13.052';
+import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.13.185';
 import {
   atualizarStatusLoja,
   authenticateBridge,
@@ -8,13 +8,13 @@ import {
   loadCatalogWithFallback,
   loadCustomer,
   loadHealth
-} from './api.js?v=2026.07.13.052';
-import { createRenderer } from './render.js?v=2026.07.13.052';
-import { createState, applySnapshot, normalizeMiniAppUi, loyaltyProgramEnabled, setRuntimeOnline } from './state.js?v=2026.07.13.052';
-import { normalizeCatalog } from './catalog.js?v=2026.07.13.052';
-import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.13.052';
-import { loadLoyalty } from './loyalty.js?v=2026.07.13.052';
-import { loadOrders } from './orders.js?v=2026.07.13.052';
+} from './api.js?v=2026.07.13.185';
+import { createRenderer } from './render.js?v=2026.07.13.185';
+import { createState, applySnapshot, normalizeMiniAppUi, loyaltyProgramEnabled, setRuntimeOnline } from './state.js?v=2026.07.13.185';
+import { normalizeCatalog } from './catalog.js?v=2026.07.13.185';
+import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.13.185';
+import { loadLoyalty } from './loyalty.js?v=2026.07.13.185';
+import { loadOrders } from './orders.js?v=2026.07.13.185';
 
 function sincronizarStatusLoja(state, health) {
   return atualizarStatusLoja(state, health || {});
@@ -63,6 +63,7 @@ function miniappRefreshSignature(state = {}) {
       pickupForecast: product.previsao_retirada_texto || product.previsaoRetiradaTexto || '',
       saleMode: product.saleMode || product.modoVenda || product.modo_venda || '',
       saleUnit: product.unidadeVenda || product.saleUnit || product.unit || '',
+      priceBaseUnit: product.unidadeBasePreco || product.priceBaseUnit || product.unidade_base_preco || product.unit || '',
       minWeight: Number(product.pesoMinimo ?? product.minWeight ?? 0),
       maxWeight: Number(product.pesoMaximo ?? product.maxWeight ?? 0),
       weightStep: Number(product.incrementoPeso ?? product.weightStep ?? 0)

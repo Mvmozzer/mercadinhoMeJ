@@ -1,5 +1,5 @@
-import { CART_KEY, readJson, writeJson } from './storage.js?v=2026.07.13.052';
-import { isWeightedProduct, productAvailability, productWholesale, weightedProductRules } from './catalog.js?v=2026.07.13.052';
+import { CART_KEY, readJson, writeJson } from './storage.js?v=2026.07.13.185';
+import { isWeightedProduct, measureConversionFactor, productAvailability, productWholesale, weightedProductRules } from './catalog.js?v=2026.07.13.185';
 
 function itemQuantity(item = {}) {
   const quantity = Number(item.quantity ?? item.quantidade ?? item.qtd ?? 0);
@@ -10,19 +10,34 @@ function roundedQuantity(value, precision = 0) {
   return Number(Number(value || 0).toFixed(Math.max(0, Math.min(3, precision))));
 }
 
-export function normalizeProductQuantity(product = {}, requested = 0) {
+export function quantityInPriceBase(product = {}, quantity = itemQuantity(product)) {
+  const informedQuantity = Number(quantity);
+  if (!Number.isFinite(informedQuantity) || informedQuantity <= 0) return 0;
+  const rules = weightedProductRules(product, { respectStock: false });
+  return Number((informedQuantity * measureConversionFactor(rules.unit, rules.priceBaseUnit)).toFixed(6));
+}
+
+export function cartLineSubtotal(item = {}, quantity = itemQuantity(item)) {
+  const price = Number(item.price ?? item.preco ?? item.preco_unitario ?? 0);
+  if (!Number.isFinite(price) || price <= 0) return 0;
+  const priceCents = Math.max(0, Math.round(price * 100));
+  const baseQuantity = quantityInPriceBase(item, quantity);
+  return Number((Math.round(priceCents * baseQuantity) / 100).toFixed(2));
+}
+
+export function normalizeProductQuantity(product = {}, requested = 0, options = {}) {
   const value = Number(requested);
   if (!Number.isFinite(value) || value <= 0) return 0;
-  const rules = weightedProductRules(product);
+  const rules = weightedProductRules(product, options);
   if (!rules.weighted) {
     const integer = Math.max(0, Math.floor(value));
     return rules.max > 0 ? Math.min(integer, Math.floor(rules.max)) : integer;
   }
-  if (rules.max > 0 && rules.max + 1e-6 < rules.min) return 0;
-  const steps = Math.max(0, Math.round((value - rules.min) / rules.step));
-  let normalized = roundedQuantity(rules.min + (steps * rules.step), rules.precision);
+  if (rules.max > 0 && rules.max + 1e-6 < rules.selectionMin) return 0;
+  const steps = Math.max(1, Math.round(value / rules.step));
+  let normalized = roundedQuantity(Math.max(rules.selectionMin, steps * rules.step), rules.precision);
   if (rules.max > 0) normalized = Math.min(normalized, rules.max);
-  if (normalized + 1e-6 < rules.min) return 0;
+  if (normalized + 1e-6 < rules.selectionMin) return 0;
   return roundedQuantity(normalized, rules.precision);
 }
 
@@ -112,14 +127,19 @@ function cartItemFromProduct(product = {}, quantity = 1) {
     progresso_atacado: priceInfo.progress,
     image: product.image || product.imagem || '',
     unit: weightRules.unit,
+    unidadeVenda: weightRules.unit,
+    saleUnit: weightRules.unit,
+    unidadeBasePreco: weightRules.priceBaseUnit,
+    priceBaseUnit: weightRules.priceBaseUnit,
+    unidade_base_preco: weightRules.priceBaseUnit,
     section: product.section || product.secao_nome || product.secao || '',
     points: Number(product.points || product.pontos || 0),
     saleMode,
     modoVenda: weightRules.weighted ? 'granel' : 'unidade',
     modo_venda: weightRules.weighted ? 'granel' : 'unidade',
-    pesoMinimo: weightRules.weighted ? weightRules.min : 0,
-    pesoMaximo: weightRules.weighted ? weightRules.max : 0,
-    incrementoPeso: weightRules.weighted ? weightRules.step : 0,
+    pesoMinimo: weightRules.weighted ? weightRules.configuredMin : 0,
+    pesoMaximo: weightRules.weighted ? weightRules.configuredMax : 0,
+    incrementoPeso: weightRules.weighted ? weightRules.configuredStep : 0,
     textoPesoAproximado: weightRules.weighted ? weightRules.notice : '',
     disponibilidade: availability.mode,
     disponibilidade_label: product.disponibilidade_label || product.disponibilidadeLabel || availability.label,
@@ -153,7 +173,9 @@ export function reconcileCartWithCatalog(state, options = {}) {
     if (!quantity) return;
     const product = byId.get(cartItemId(item));
     if (!product) return;
-    const safeQuantity = normalizeProductQuantity(product, quantity);
+    const safeQuantity = normalizeProductQuantity(product, quantity, {
+      respectStock: state.checkout?.bloquearCompraAcimaEstoque !== false
+    });
     if (!safeQuantity) return;
     const normalized = cartItemFromProduct(product, safeQuantity);
     if (!normalized.id || normalized.price <= 0) return;
@@ -178,17 +200,18 @@ export function cartCount(state) {
 }
 
 export function cartTotal(state) {
-  return cartItems(state).reduce((sum, item) => sum + Number(item.quantity || 0) * Number(item.price || 0), 0);
+  return Number(cartItems(state).reduce((sum, item) => sum + cartLineSubtotal(item), 0).toFixed(2));
 }
 
 export function changeQty(state, product, delta) {
   const id = productId(product);
   const current = cartQty(state, id);
-  const rules = weightedProductRules(product);
+  const quantityOptions = { respectStock: state.checkout?.bloquearCompraAcimaEstoque !== false };
+  const rules = weightedProductRules(product, quantityOptions);
   const requested = rules.weighted
-    ? (current > 0 ? current + (Number(delta || 0) * rules.step) : (Number(delta || 0) > 0 ? rules.min : 0))
+    ? (current > 0 ? current + (Number(delta || 0) * rules.step) : (Number(delta || 0) > 0 ? rules.selectionMin : 0))
     : current + Number(delta || 0);
-  const next = normalizeProductQuantity(product, requested);
+  const next = normalizeProductQuantity(product, requested, quantityOptions);
   if (!next) delete state.cart[id];
   else state.cart[id] = cartItemFromProduct(product, next);
   saveCart(state);
@@ -197,7 +220,9 @@ export function changeQty(state, product, delta) {
 
 export function setQty(state, product, quantity) {
   const id = productId(product);
-  const next = normalizeProductQuantity(product, quantity);
+  const next = normalizeProductQuantity(product, quantity, {
+    respectStock: state.checkout?.bloquearCompraAcimaEstoque !== false
+  });
   if (!next) delete state.cart[id];
   else state.cart[id] = cartItemFromProduct(product, next);
   saveCart(state);
@@ -232,9 +257,14 @@ export function cartPayload(state) {
     pesoMinimo: item.pesoMinimo,
     pesoMaximo: item.pesoMaximo,
     incrementoPeso: item.incrementoPeso,
+    unidadeVenda: item.unidadeVenda || item.saleUnit || item.unit,
+    saleUnit: item.saleUnit || item.unidadeVenda || item.unit,
+    unidadeBasePreco: item.unidadeBasePreco || item.priceBaseUnit || item.unidade_base_preco || item.unit,
+    priceBaseUnit: item.priceBaseUnit || item.unidadeBasePreco || item.unidade_base_preco || item.unit,
+    quantidade_base_preco: quantityInPriceBase(item),
     quantidade_solicitada: item.quantity,
     peso_estimado: item.saleMode === 'weighted' ? item.quantity : null,
-    subtotal_estimado_exibido: Number((Number(item.quantity || 0) * Number(item.price || 0)).toFixed(2)),
+    subtotal_estimado_exibido: cartLineSubtotal(item),
     modo_venda: item.saleMode === 'weighted' ? 'granel' : 'unidade'
   }));
 }

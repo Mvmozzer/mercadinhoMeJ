@@ -73,25 +73,27 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartQty, cartTotal, changeQty, clearCart, setQty, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.13.052';
-import { emojiForSection, filterProducts, isWeightedProduct, looksLikeSectionEmoji, productAvailability, productBadges, weightedProductRules } from './catalog.js?v=2026.07.13.052';
-import { checkoutCreate, completeCheckoutAttempt, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.13.052';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.13.052';
-import { escapeHtml, formatMeasure, greetingFor, money } from './utils.js?v=2026.07.13.052';
-import { persistMiniAppUiState } from './storage.js?v=2026.07.13.052';
-import { updateMainButton } from './telegram.js?v=2026.07.13.052';
-import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.13.052';
-import { cancelOrder, submitOrderEvaluation } from './orders.js?v=2026.07.13.052';
-import { loyaltyProgramEnabled, miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.13.052';
+import { cartCount, cartItems, cartLineSubtotal, cartQty, cartTotal, changeQty, clearCart, setQty, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.13.185';
+import { emojiForSection, filterProducts, isWeightedProduct, looksLikeSectionEmoji, productAvailability, productBadges, weightedProductRules } from './catalog.js?v=2026.07.13.185';
+import { checkoutCreate, completeCheckoutAttempt, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.13.185';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.13.185';
+import { escapeHtml, formatMeasure, greetingFor, money } from './utils.js?v=2026.07.13.185';
+import { persistMiniAppUiState } from './storage.js?v=2026.07.13.185';
+import { updateMainButton } from './telegram.js?v=2026.07.13.185';
+import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.13.185';
+import { cancelOrder, submitOrderEvaluation } from './orders.js?v=2026.07.13.185';
+import { loyaltyProgramEnabled, miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.13.185';
 import {
   activeOrderId,
   applyOrderStatusToState,
   applyTrackingToState,
+  awaitingFinalWeightState,
+  isAwaitingFinalWeight,
   isFinalOrderStatus,
   mapFromTrackingPayload,
   orderFlowPollingMs,
   shouldOpenTrackingAfterPayment
-} from './orderFlow.js?v=2026.07.13.052';
+} from './orderFlow.js?v=2026.07.13.185';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -497,6 +499,7 @@ function svgIcon(name, size = 20) {
     arrowLeft: '<path d="m15 18-6-6 6-6"/>',
     trash: '<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/>',
     receipt: '<path d="M5 3v18l2-1 2 1 2-1 2 1 2-1 2 1V3Z"/><path d="M8 7h8"/><path d="M8 11h8"/><path d="M8 15h5"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
     check: '<path d="m5 12 4 4L19 6"/>',
     settings: '<path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.42 1.1V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.42H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .42-1.1V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.4.2.75.52 1 .9.25.38.39.82.42 1.27V11a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z"/>'
   };
@@ -886,14 +889,14 @@ export function createRenderer(state) {
     const rules = weightedProductRules(product);
     if (!rules.weighted) return [];
     const candidates = [
-      rules.min,
-      rules.min + rules.step,
-      rules.min + (rules.step * 4),
-      rules.min + (rules.step * 9),
+      rules.selectionMin,
+      rules.selectionMin + rules.step,
+      rules.selectionMin + (rules.step * 4),
+      rules.selectionMin + (rules.step * 9),
       rules.max
     ];
     return Array.from(new Set(candidates
-      .filter(value => Number.isFinite(value) && value >= rules.min && (!rules.max || value <= rules.max))
+      .filter(value => Number.isFinite(value) && value >= rules.selectionMin && (!rules.max || value <= rules.max))
       .map(value => Number(value.toFixed(rules.precision)))))
       .slice(0, 4);
   }
@@ -902,7 +905,10 @@ export function createRenderer(state) {
     if (!isWeightedProduct(product)) return '';
     const rules = weightedProductRules(product);
     const quantity = cartQty(state, product.id);
-    const subtotal = Number(quantity || 0) * Number(wholesalePriceInfo(product, quantity).price || product.price || 0);
+    const subtotal = cartLineSubtotal({
+      ...product,
+      price: wholesalePriceInfo(product, quantity).price || product.price || 0
+    }, quantity);
     return `
       <section class="weighted-product-control" data-weight-product="${escapeHtml(product.id)}">
         <div class="weighted-product-heading">
@@ -919,7 +925,7 @@ export function createRenderer(state) {
         </div>
         <div class="weighted-product-stepper">
           <button type="button" data-qty-minus="${escapeHtml(product.id)}" aria-label="Diminuir peso de ${escapeHtml(product.name)}">-</button>
-          <strong>${quantity > 0 ? escapeHtml(productQuantityLabel(product, quantity)) : escapeHtml(formatMeasure(rules.min, rules.unit))}</strong>
+          <strong>${quantity > 0 ? escapeHtml(productQuantityLabel(product, quantity)) : escapeHtml(formatMeasure(rules.selectionMin, rules.unit))}</strong>
           <button type="button" data-qty-plus="${escapeHtml(product.id)}" aria-label="Aumentar peso de ${escapeHtml(product.name)}">+</button>
         </div>
         ${quantity > 0 ? `<small>Subtotal estimado: ${formatMoney(subtotal)}</small>` : ''}
@@ -1432,7 +1438,7 @@ export function createRenderer(state) {
                         ` : `<div class="qty qty-readonly" aria-label="Quantidade ${escapeHtml(productQuantityLabel(item, item.quantity))}"><b>${escapeHtml(productQuantityLabel(item, item.quantity))}</b></div>`}
                         <div class="cart-item-total">
                           <small>${isWeightedProduct(item) ? 'Subtotal estimado' : 'Total do item'}</small>
-                          <strong class="line-total">${formatMoney(item.price * item.quantity)}</strong>
+                          <strong class="line-total">${formatMoney(cartLineSubtotal(item))}</strong>
                         </div>
                       </div>
                     </div>
@@ -1494,7 +1500,7 @@ export function createRenderer(state) {
           ${itens.map(item => {
             const quantidade = Number(item.quantidade || item.quantity || 1);
             const preco = Number(item.price || item.preco || item.preco_unitario || 0);
-            const subtotal = Number(item.subtotal ?? (preco * quantidade));
+            const subtotal = Number(item.subtotal ?? cartLineSubtotal({ ...item, price: preco }, quantidade));
             return `
               <div>
                 <span>${escapeHtml(productQuantityLabel(item, quantidade))}${isWeightedProduct(item) ? '' : 'x'} ${escapeHtml(item.nome || item.name || 'Produto')}</span>
@@ -1514,17 +1520,73 @@ export function createRenderer(state) {
 
   function renderMiniAppPayment() {
     const checkout = state.lastMiniAppCheckout || {};
-    const pedido = state.pedidoAtual || checkout.pedido || {};
+    const pedido = state.pedidoAtual || checkout.pedido || checkout.ordem || checkout.order || {};
+    const orderAwaitingWeight = awaitingFinalWeightState(pedido);
+    const awaitingWeight = orderAwaitingWeight === null
+      ? isAwaitingFinalWeight(checkout)
+      : orderAwaitingWeight;
     const pix = state.pix || checkout.pix || {};
     const itens = Array.isArray(pedido.itens) && pedido.itens.length
       ? pedido.itens
       : Array.isArray(checkout.itens) && checkout.itens.length
         ? checkout.itens
         : cartItems(state);
-    const total = Number(pedido.total ?? cartTotal(state) ?? pix.valor ?? 0);
+    const total = Number(pedido.total ?? pix.valor ?? cartTotal(state) ?? 0);
+    const estimatedTotal = Number(
+      pedido.totalEstimado ??
+      pedido.total_estimado ??
+      pedido.subtotalEstimado ??
+      pedido.subtotal_estimado ??
+      pedido.subtotal ??
+      checkout.totalEstimado ??
+      checkout.total_estimado ??
+      pedido.total ??
+      0
+    );
     const pedidoId = String(pedido.id || checkout.pedidoId || '').trim();
     const copiaCola = String(pix.copiaCola || pix.pix || '').trim();
     const qrCodeDataUrl = String(pix.qrCodeDataUrl || pix.qrCode || '').trim();
+    const receipt = `
+      <section class="receipt">
+        <h2>${svgIcon('receipt', 18)} Resumo</h2>
+        ${itens.map(item => {
+          const quantidade = Number(item.quantidade || item.qtd || item.quantity || 1);
+          const subtotal = Number(item.subtotal ?? cartLineSubtotal(item, quantidade));
+          return `
+            <div>
+              <span>${escapeHtml(productQuantityLabel(item, quantidade))}${isWeightedProduct(item) ? '' : 'x'} ${escapeHtml(item.nome || item.name || 'Produto')}</span>
+              <strong>${formatMoney(subtotal)}</strong>
+            </div>
+          `;
+        }).join('')}
+      </section>
+    `;
+    if (awaitingWeight) {
+      return `
+        <main class="page telegram-checkout-panel success-screen" id="miniAppPaymentPanel" data-page="payment" data-awaiting-final-weight="true">
+          <div class="topbar">
+            <button data-page="orders" aria-label="Voltar">${svgIcon('arrowLeft', 20)}</button>
+            <strong>Aguardando pesagem</strong>
+            <span></span>
+          </div>
+          <section class="success-card telegram-handoff-card awaiting-weight-card">
+            <span class="success-icon" aria-hidden="true">${svgIcon('clock', 38)}</span>
+            <p class="greeting">Pedido recebido</p>
+            <h1>Aguardando pesagem e valor final</h1>
+            ${pedidoId ? `<strong class="order-id">Pedido ${escapeHtml(pedidoId)}</strong>` : ''}
+            <p>A loja vai pesar os itens e confirmar o valor final. O pagamento sera liberado somente depois dessa conferencia.</p>
+            ${estimatedTotal > 0 ? `<p><strong>Estimativa atual: ${formatMoney(estimatedTotal)}</strong></p>` : ''}
+          </section>
+          ${receipt}
+          <section class="telegram-success-actions">
+            ${pedidoId
+              ? `<button class="primary-wide" data-tracking-order="${escapeHtml(pedidoId)}">Acompanhar pedido</button>`
+              : '<button class="primary-wide" data-page="orders">Acompanhar pedido</button>'}
+            <button data-page="home">Voltar aos produtos</button>
+          </section>
+        </main>
+      `;
+    }
     return `
       <main class="page telegram-checkout-panel success-screen" id="miniAppPaymentPanel" data-page="payment">
         <div class="topbar">
@@ -1549,19 +1611,7 @@ export function createRenderer(state) {
             ${pix.txid ? `<div><span>TXID</span><strong>${escapeHtml(pix.txid)}</strong></div>` : ''}
           </div>
         </section>
-        <section class="receipt">
-          <h2>${svgIcon('receipt', 18)} Resumo</h2>
-          ${itens.map(item => {
-            const quantidade = Number(item.quantidade || item.qtd || item.quantity || 1);
-            const subtotal = Number(item.subtotal ?? ((item.preco_unitario || item.preco || item.price || 0) * quantidade));
-            return `
-              <div>
-                <span>${escapeHtml(productQuantityLabel(item, quantidade))}${isWeightedProduct(item) ? '' : 'x'} ${escapeHtml(item.nome || item.name || 'Produto')}</span>
-                <strong>${formatMoney(subtotal)}</strong>
-              </div>
-            `;
-          }).join('')}
-        </section>
+        ${receipt}
         <section class="telegram-success-actions">
           <button class="primary-wide" id="copyPixPayment">Copiar Pix</button>
           <button data-page="orders">Acompanhar pedido</button>
@@ -1582,7 +1632,7 @@ export function createRenderer(state) {
       .find(value => typeof value === 'boolean');
     return {
       canCancel: explicitCancel === undefined
-        ? ['novo', 'recebido', 'pendente', 'aguardando_pagamento'].includes(status)
+        ? ['novo', 'recebido', 'pendente', 'aguardando_pesagem', 'aguardando_pagamento'].includes(status)
         : explicitCancel,
       canEvaluate: !evaluated && (explicitEvaluate === undefined ? status === 'entregue' : explicitEvaluate),
       evaluated,
@@ -1645,14 +1695,17 @@ export function createRenderer(state) {
           <span></span>
         </div>
         <section class="orders-list">
-          ${state.orders.length ? state.orders.map(order => `
-            <article class="order-card">
+          ${state.orders.length ? state.orders.map(order => {
+            const awaitingWeight = isAwaitingFinalWeight(order);
+            return `
+            <article class="order-card"${awaitingWeight ? ' data-awaiting-final-weight="true"' : ''}>
               <strong>Pedido #${escapeHtml(orderId(order))}</strong>
-              <span>${escapeHtml(order.status || 'Em andamento')}</span>
-              <p>${escapeHtml(order.pagamento?.status || order.status_pagamento || 'Aguardando pagamento')}</p>
-              <button data-tracking-order="${escapeHtml(orderId(order))}">Ver detalhes</button>
+              <span>${escapeHtml(awaitingWeight ? 'Aguardando pesagem e valor final' : (order.status || 'Em andamento'))}</span>
+              <p>${escapeHtml(awaitingWeight ? 'O pagamento sera liberado apos a conferencia da loja.' : (order.pagamento?.status || order.status_pagamento || 'Aguardando pagamento'))}</p>
+              <button data-tracking-order="${escapeHtml(orderId(order))}">${awaitingWeight ? 'Acompanhar pedido' : 'Acompanhar entrega'}</button>
             </article>
-          `).join('') : '<div class="empty">Seus pedidos aparecerão aqui.</div>'}
+          `;
+          }).join('') : '<div class="empty">Seus pedidos aparecerão aqui.</div>'}
         </section>
       </main>
     `;
@@ -1684,6 +1737,7 @@ export function createRenderer(state) {
 
   function trackingStatusLabel(status) {
     const labels = {
+      aguardando_pesagem: 'Aguardando pesagem e valor final',
       aguardando_pagamento: 'Aguardando pagamento',
       pago: 'Pagamento confirmado',
       preparando: 'Em preparacao',
@@ -1695,7 +1749,7 @@ export function createRenderer(state) {
     return labels[status] || status || 'Aguardando atualizacao';
   }
 
-  function trackingStepsForStatus(status = '', pagamentoStatus = '') {
+  function trackingStepsForStatus(status = '', pagamentoStatus = '', awaitingWeight = false) {
     const atual = String(status || '').trim().toLowerCase();
     if (atual === 'cancelado') {
       return [{
@@ -1704,6 +1758,15 @@ export function createRenderer(state) {
         text: 'Status atualizado pelo painel',
         state: 'current'
       }];
+    }
+    if (awaitingWeight) {
+      return [
+        { key: 'recebido', title: 'Pedido recebido', text: 'Pedido registrado na loja', state: 'done' },
+        { key: 'aguardando_pesagem', title: 'Pesagem dos itens', text: 'Aguardando conferencia e valor final', state: 'current' },
+        { key: 'aguardando_pagamento', title: 'Pagamento', text: 'Sera liberado depois da pesagem', state: '' },
+        { key: 'preparando', title: 'Em preparacao', text: 'Separacao dos produtos', state: '' },
+        { key: 'entregue', title: 'Pedido finalizado', text: 'Retirada ou entrega concluida', state: '' }
+      ];
     }
     const ordem = ['aguardando_pagamento', 'pago', 'preparando', 'pronto', 'saiu_entrega', 'entregue'];
     const indice = Math.max(0, ordem.indexOf(atual));
@@ -1731,10 +1794,11 @@ export function createRenderer(state) {
     const tracking = state.tracking || {};
     const pedido = trackingPedidoAtual(tracking);
     const statusAtual = statusTrackingAtual(tracking);
+    const awaitingWeight = isAwaitingFinalWeight(pedido, tracking);
     const detalhe = pedido.statusDetalhe || tracking.statusDetalhe || {};
     const mapa = mapFromTrackingPayload(tracking);
     const mapaUrl = mapa.mapaUrl || '';
-    const status = detalhe.label || trackingStatusLabel(statusAtual);
+    const status = awaitingWeight ? 'Aguardando pesagem e valor final' : (detalhe.label || trackingStatusLabel(statusAtual));
     const modo = trackingModeForCustomer(tracking);
     const pagamentoStatus = pedido.pagamento?.status || pedido.statusPagamento || pedido.status_pagamento || '';
     const resumo = modo === 'miniapp'
@@ -1753,14 +1817,16 @@ export function createRenderer(state) {
         </div>
         <section class="tracking-status-card">
           <h2>${escapeHtml(status)}</h2>
-          <p>${escapeHtml(detalhe.mensagem || tracking?.previsao || tracking?.mensagem || resumo)}</p>
+          <p>${escapeHtml(awaitingWeight
+            ? 'A loja esta pesando os itens. O pagamento sera liberado quando o valor final estiver confirmado.'
+            : (detalhe.mensagem || tracking?.previsao || tracking?.mensagem || resumo))}</p>
         </section>
         <section class="tracking-summary-card">
           <h2>Resumo</h2>
           <p>${escapeHtml(tracking?.resumo || `Pedido #${pedido.id || pedido.pedidoId || ''} - ${resumo}`)}</p>
         </section>
         <section class="tracking-timeline">
-          ${trackingStepsForStatus(statusAtual, pagamentoStatus).map(renderTrackingStep).join('')}
+          ${trackingStepsForStatus(statusAtual, pagamentoStatus, awaitingWeight).map(renderTrackingStep).join('')}
         </section>
         ${renderOrderCustomerActions(pedido)}
         <section class="tracking-map-card">
@@ -1912,16 +1978,20 @@ export function createRenderer(state) {
     const modoPagamento = paymentModeForCustomer(state);
     sendMiniAppEvent(state, modoPagamento === 'miniapp' ? 'checkout_miniapp_payment_start' : 'checkout_telegram_handoff_start', { itemCount: cartCount(state), total: cartTotal(state) });
     const result = await checkoutCreate(state);
+    const resultOrder = result?.pedido || result?.ordem || result?.order || null;
+    const resultAwaitingWeight = isAwaitingFinalWeight(result, result?.checkout, resultOrder);
     const resultMode = String(result?.checkout?.modo || result?.modo || '').trim().toLowerCase();
-    const resultModeMiniApp = resultMode === 'miniapp' || (!resultMode && Boolean(result?.pix));
+    const resultModeMiniApp = resultMode === 'miniapp' || resultAwaitingWeight || (!resultMode && Boolean(result?.pix));
     if (resultModeMiniApp) {
       state.lastMiniAppCheckout = result || {};
-      state.pedidoAtual = result?.pedido || state.pedidoAtual || null;
-      state.pix = result?.pix || state.pix || null;
+      state.pedidoAtual = resultOrder || state.pedidoAtual || null;
+      state.pix = resultAwaitingWeight ? null : (result?.pix || null);
       if (state.pedidoAtual) applyOrderStatusToState(state, { pedido: state.pedidoAtual });
       clearCart(state);
       completeCheckoutAttempt(state);
-      state.checkoutMessage = result?.mensagem || result?.message || 'Pix gerado no Mini App. Copie o codigo ou use o QR Code para pagar.';
+      state.checkoutMessage = resultAwaitingWeight
+        ? 'Pedido recebido. Aguardando pesagem e confirmacao do valor final.'
+        : (result?.mensagem || result?.message || 'Pix gerado no Mini App. Copie o codigo ou use o QR Code para pagar.');
       state.sending = false;
       renderer.navigateTo('payment');
       return;
@@ -2013,13 +2083,26 @@ export function createRenderer(state) {
       if (state.page === 'payment') {
         const status = await loadOrderStatus(state, pedidoId);
         if (!status) return;
+        const previousPix = JSON.stringify(state.pix || null);
         const result = applyOrderStatusToState(state, status);
+        const refreshedWeightState = awaitingFinalWeightState(status, result.order);
+        if (refreshedWeightState === true) state.pix = null;
+        else if (refreshedWeightState === false) {
+          if (state.lastMiniAppCheckout?.checkout) {
+            state.lastMiniAppCheckout.checkout = {
+              ...state.lastMiniAppCheckout.checkout,
+              aguardandoPesagem: false
+            };
+          }
+          if (state.lastMiniAppCheckout) state.lastMiniAppCheckout.aguardandoPesagem = false;
+          if (status.pix || result.order?.pix) state.pix = status.pix || result.order.pix;
+        } else if (status.pix || result.order?.pix) state.pix = status.pix || result.order.pix;
         if (shouldOpenTrackingAfterPayment(state, result.order)) {
           state.tracking = null;
           navigateTo('tracking');
           return;
         }
-        if (result.changed) render();
+        if (result.changed || previousPix !== JSON.stringify(state.pix || null)) render();
         return;
       }
 
@@ -2310,7 +2393,7 @@ export function createRenderer(state) {
     syncOrderFlowPolling();
   }
 
-  const renderer = { render, navigateTo, refreshActiveOrderFlow };
+  const renderer = { render, navigateTo, finishCheckout, refreshActiveOrderFlow };
   return renderer;
 }
 

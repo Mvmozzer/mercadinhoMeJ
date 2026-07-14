@@ -1,5 +1,6 @@
-import { isTemporaryPublicApiBase } from './utils.js?v=2026.07.13.052';
-import { applySnapshot, applyStoreSnapshot } from './state.js?v=2026.07.13.052';
+import { isTemporaryPublicApiBase } from './utils.js?v=2026.07.13.185';
+import { applySnapshot, applyStoreSnapshot } from './state.js?v=2026.07.13.185';
+import { awaitingFinalWeightState, isAwaitingFinalWeight } from './orderFlow.js?v=2026.07.13.185';
 
 export const TELEGRAM_AUTH_PATH = '/api/telegram/auth';
 export const MINIAPP_API_PATHS = {
@@ -178,15 +179,38 @@ export async function loadCatalogWithFallback(state) {
     }
   }
 }
-export async function syncCart(state, payload) {
+export function syncCart(state, payload) {
   const normalizedPayload = payload?.items ? payload : { ...payload, items: payload?.itens || [] };
-  return retryApiFetchWithFreshRuntimeConfig(state, MINIAPP_API_PATHS.cartSync, { method: 'POST', body: JSON.stringify(normalizedPayload) }).catch(() => null);
+  state.__cartSyncQueuedPayload = normalizedPayload;
+  if (state.__cartSyncPromise) return state.__cartSyncPromise;
+  state.__cartSyncPromise = (async () => {
+    let result = null;
+    while (state.__cartSyncQueuedPayload) {
+      const nextPayload = state.__cartSyncQueuedPayload;
+      state.__cartSyncQueuedPayload = null;
+      result = await retryApiFetchWithFreshRuntimeConfig(state, MINIAPP_API_PATHS.cartSync, {
+        method: 'POST',
+        body: JSON.stringify(nextPayload)
+      }).catch(() => null);
+    }
+    return result;
+  })().finally(() => {
+    state.__cartSyncPromise = null;
+  });
+  return state.__cartSyncPromise;
 }
 export async function sendMiniAppEvent(state, tipo, payload = {}) { return retryApiFetchWithFreshRuntimeConfig(state, '/api/miniapp/events', { method: 'POST', body: JSON.stringify({ tipo, payload }) }).catch(() => null); }
 export async function bridgeSendAction(state, action, payload = {}) { return globalThis.window?.MJMiniAppBridge?.sendAction ? globalThis.window.MJMiniAppBridge.sendAction(action, payload) : null; }
 
 export async function uploadPixReceipt(state, pedidoId, options = {}) {
   const id = String(pedidoId || '').trim();
+  const currentOrderWeightState = awaitingFinalWeightState(state?.pedidoAtual);
+  const awaitingWeight = currentOrderWeightState === null
+    ? isAwaitingFinalWeight(state?.lastMiniAppCheckout, state?.checkout)
+    : currentOrderWeightState;
+  if (awaitingWeight) {
+    throw new Error('Aguarde a pesagem e a confirmacao do valor final antes de enviar o comprovante.');
+  }
   if (!id) throw new Error('Pedido não encontrado para enviar comprovante.');
   const path = `/api/miniapp/pedidos/${encodeURIComponent(id)}/comprovante`;
   const texto = String(options.texto || '').trim();
