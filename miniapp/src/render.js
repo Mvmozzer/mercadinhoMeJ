@@ -73,16 +73,16 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartLineSubtotal, cartQty, cartTotal, changeQty, clearCart, setQty, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.14.381';
-import { emojiForSection, filterProducts, isWeightedProduct, looksLikeSectionEmoji, productAvailability, productBadges, weightedProductRules } from './catalog.js?v=2026.07.14.381';
-import { checkoutCreate, completeCheckoutAttempt, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.14.381';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.14.381';
-import { escapeHtml, formatMeasure, greetingFor, money } from './utils.js?v=2026.07.14.381';
-import { persistMiniAppUiState } from './storage.js?v=2026.07.14.381';
-import { updateMainButton } from './telegram.js?v=2026.07.14.381';
-import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.14.381';
-import { cancelOrder, submitOrderEvaluation } from './orders.js?v=2026.07.14.381';
-import { loyaltyProgramEnabled, miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.14.381';
+import { cartCount, cartItems, cartLineSubtotal, cartQty, cartTotal, changeQty, clearCart, setQty, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.14.648';
+import { emojiForSection, filterProducts, isWeightedProduct, looksLikeSectionEmoji, productAvailability, productBadges, weightedProductRules } from './catalog.js?v=2026.07.14.648';
+import { checkoutCreate, completeCheckoutAttempt, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.14.648';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.14.648';
+import { escapeHtml, formatMeasure, greetingFor, money } from './utils.js?v=2026.07.14.648';
+import { persistMiniAppUiState } from './storage.js?v=2026.07.14.648';
+import { updateMainButton } from './telegram.js?v=2026.07.14.648';
+import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.14.648';
+import { cancelOrder, submitOrderEvaluation } from './orders.js?v=2026.07.14.648';
+import { loyaltyProgramEnabled, miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.14.648';
 import {
   activeOrderId,
   applyOrderStatusToState,
@@ -93,7 +93,7 @@ import {
   mapFromTrackingPayload,
   orderFlowPollingMs,
   shouldOpenTrackingAfterPayment
-} from './orderFlow.js?v=2026.07.14.381';
+} from './orderFlow.js?v=2026.07.14.648';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -351,16 +351,29 @@ function loyaltyChallenges(state = {}) {
 }
 
 function customerName(state = {}) {
-  const nameFromClient =
+  const cliente = state.cliente || {};
+  const nomeCadastro = String(
+    cliente.nome ||
+    cliente.nomeCompleto ||
+    cliente.name ||
+    ''
+  ).trim();
+  if (nomeCadastro) return nomeCadastro;
+
+  const telegramId = customerTelegramId(state);
+  if (telegramId) return `Telegram ${telegramId}`;
+
+  const telegramNome =
     (state.telegramIdentity?.verificada === true ? state.telegramIdentity?.nome : '') ||
-    state.cliente?.telegramNome ||
-    state.cliente?.telegram_nome ||
-    state.cliente?.first_name ||
-    state.cliente?.telegramUsername ||
-    state.cliente?.username ||
-    state.cliente?.nome ||
-    'cliente';
-  return String(nameFromClient || 'cliente').trim() || 'cliente';
+    cliente.telegramNome ||
+    cliente.telegram_nome ||
+    cliente.first_name ||
+    cliente.telegramUsername ||
+    cliente.username ||
+    '';
+  if (telegramNome) return String(telegramNome).trim();
+
+  return 'cliente';
 }
 
 function logoSrc(state = {}) {

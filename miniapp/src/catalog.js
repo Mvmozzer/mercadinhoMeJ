@@ -1,4 +1,4 @@
-import { slugify } from './utils.js?v=2026.07.14.381';
+import { slugify } from './utils.js?v=2026.07.14.648';
 
 export const WHOLESALE_DEFAULTS = {
   ativo: true,
