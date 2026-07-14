@@ -1,7 +1,7 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-13T22:39:45.615-03:00",
-  "webBuild": "2026.07.13.185",
+  "updatedAt": "2026-07-13T22:56:05.023-03:00",
+  "webBuild": "2026.07.13.165",
   "apiBaseUrl": "https://external-salary-corn-clerk.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
