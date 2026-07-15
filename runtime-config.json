@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-14T11:36:37.119-03:00",
-  "webBuild": "2026.07.14.797",
-  "apiBaseUrl": "https://tee-rid-imports-lodging.trycloudflare.com",
+  "updatedAt": "2026-07-15T08:54:32.617-03:00",
+  "webBuild": "2026.07.15.472",
+  "apiBaseUrl": "https://coding-started-freeze-changes.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
 }

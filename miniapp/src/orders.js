@@ -1,4 +1,4 @@
-import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.07.14.797';
+import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.07.15.472';
 
 function orderPath(pedidoId, action = '') {
   const id = String(pedidoId || '').trim();
