@@ -1,6 +1,6 @@
-import { cartPayload } from './cart.js?v=2026.07.16.916';
-import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.07.16.916';
-import { fallbackSendData, telegramPayloadBytes, TELEGRAM_SEND_DATA_MAX_BYTES } from './telegram.js?v=2026.07.16.916';
+import { cartPayload } from './cart.js?v=2026.07.16.092';
+import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.07.16.092';
+import { fallbackSendData, telegramPayloadBytes, TELEGRAM_SEND_DATA_MAX_BYTES } from './telegram.js?v=2026.07.16.092';
 
 const MINIAPP_CHECKOUT_CREATE_PATH = '/api/miniapp/checkout/create';
 const MINIAPP_TELEGRAM_HANDOFF_PATH = '/api/miniapp/checkout/telegram-handoff';
@@ -22,8 +22,8 @@ function offlineAttemptStorage() {
   return globalThis.localStorage || globalThis.window?.localStorage || null;
 }
 
-function clientOrderFingerprint(items = []) {
-  return JSON.stringify(items.map(normalizeTelegramCartItem));
+function clientOrderFingerprint(items = [], checkout = {}) {
+  return JSON.stringify({ items: items.map(normalizeTelegramCartItem), checkout });
 }
 
 function saveOfflineAttempt(id, fingerprint) {
@@ -51,8 +51,8 @@ function loadOfflineAttempt(fingerprint) {
   }
 }
 
-function ensureClientOrderId(state, items = []) {
-  const fingerprint = clientOrderFingerprint(items);
+function ensureClientOrderId(state, items = [], checkout = {}) {
+  const fingerprint = clientOrderFingerprint(items, checkout);
   const atual = String(state.clientOrderId || '').trim().slice(0, 80);
   const fingerprintAtual = String(state.clientOrderFingerprint || '');
   if (atual && (!fingerprintAtual || fingerprintAtual === fingerprint)) {
@@ -97,16 +97,30 @@ function miniAppOrderPayload(state) {
     produto_id: item.produto_id || item.id,
     quantidade: item.quantidade || item.quantity || item.qtd || 0
   }));
+  const formaPagamento = paymentMethodForCustomer(state);
+  const modalidadeEntrega = deliveryModeForCustomer(state);
   return {
     type: 'mercadinho_order',
     origem: 'miniapp',
     checkout: 'miniapp',
-    client_order_id: ensureClientOrderId(state, itens),
+    client_order_id: ensureClientOrderId(state, itens, { formaPagamento, modalidadeEntrega }),
     items: itens,
     itens,
-    modalidade_entrega: state.selectedDeliveryMode || 'retirada',
-    forma_pagamento: 'pix'
+    modalidade_entrega: modalidadeEntrega,
+    forma_pagamento: formaPagamento
   };
+}
+
+export function deliveryModeForCustomer(state = {}) {
+  const checkout = state.checkout || {};
+  const entregaClienteAtiva = checkout.entregaClienteAtiva === true || checkout.permitirEscolherEntrega === true;
+  if (!entregaClienteAtiva) return 'retirada';
+  return String(state.selectedDeliveryMode || '').trim().toLowerCase() === 'entrega' ? 'entrega' : 'retirada';
+}
+
+export function paymentMethodForCustomer(state = {}) {
+  const metodo = String(state.selectedPaymentMethod || state.formaPagamento || 'pix').trim().toLowerCase();
+  return ['dinheiro', 'cash'].includes(metodo) ? 'dinheiro' : 'pix';
 }
 
 export function paymentModeForCustomer(state = {}) {

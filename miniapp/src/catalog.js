@@ -1,4 +1,4 @@
-import { slugify } from './utils.js?v=2026.07.16.916';
+import { slugify } from './utils.js?v=2026.07.16.092';
 
 export const WHOLESALE_DEFAULTS = {
   ativo: true,
@@ -259,23 +259,6 @@ export function productPrice(product = {}) {
   return product.promocao === true && promo > 0 ? promo : base;
 }
 
-function productPoints(product = {}, fallbackPrice = 0) {
-  const candidates = [
-    product.points_preview,
-    product.pointsPreview,
-    product.product_point_offer_points,
-    product.productPointOfferPoints,
-    product.product_point_offer?.points,
-    product.productPointOffer?.points,
-    product.pontos,
-    product.points,
-    product.pontos_ganhos
-  ];
-  const configured = candidates.find(value => value !== undefined && value !== null && String(value).trim() !== '');
-  if (configured !== undefined) return num(configured);
-  return Math.max(1, Math.floor(fallbackPrice));
-}
-
 export function emojiForSection(name = '') {
   const text = slugify(name);
   if (/todos|all/.test(text)) return '🧺';
@@ -396,7 +379,6 @@ export function normalizeProduct(raw = {}, sectionName = '', index = 0) {
     availableForPurchase: raw.availableForPurchase !== false && raw.disponivel_para_compra !== false && !availability.hidden,
     disponivel_para_compra: raw.disponivel_para_compra !== false && raw.availableForPurchase !== false && !availability.hidden,
     unit: weightRules.unit,
-    points: productPoints(raw, price),
     saleMode,
     modoVenda,
     modo_venda: modoVenda,
