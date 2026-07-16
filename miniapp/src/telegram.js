@@ -33,19 +33,6 @@ export function fallbackSendData(payload) {
   if (!bytes || bytes > TELEGRAM_SEND_DATA_MAX_BYTES) return false;
   try { app.sendData(serialized); return true; } catch { return false; }
 }
-export function updateMainButton(webApp = getTelegram(), options = {}) {
-  const button = webApp?.MainButton;
-  if (!button) return;
-  if (options.currentPage !== 'cart' || !options.enabled || !options.count) {
-    button.hide?.();
-    return;
-  }
-  const miniapp = options.paymentMode === 'miniapp';
-  const dinheiro = miniapp && options.paymentMethod === 'dinheiro';
-  const label = miniapp ? (dinheiro ? 'Confirmar pedido' : 'Pagar com Pix') : 'Finalizar no Telegram';
-  const loading = miniapp ? (dinheiro ? 'Confirmando pedido...' : 'Gerando Pix no Mini App...') : 'Enviando ao Telegram...';
-  button.setText?.(options.sending ? loading : (`${label} ${options.totalText || ''}`).trim());
-  button.show?.();
-}
+export function updateMainButton(webApp = getTelegram(), options = {}) { const button = webApp?.MainButton; if (!button) return; if (options.currentPage !== 'cart' || !options.enabled || !options.count) { button.hide?.(); return; } const miniapp = options.paymentMode === 'miniapp'; const label = miniapp ? 'Pagar no Mini App' : 'Finalizar no Telegram'; const loading = miniapp ? 'Gerando Pix no Mini App...' : 'Enviando ao Telegram...'; button.setText?.(options.sending ? loading : (`${label} ${options.totalText || ''}`).trim()); button.show?.(); }
 
 export function rawTelegramInitData(webApp = getTelegram()) { return webApp?.initData || ''; }

@@ -63,7 +63,7 @@ const MINIAPP_UI_DEFAULTS = {
 };
 
 const BANNER_TARGETS = new Set(['page', 'section', 'product', 'search', 'url', 'none']);
-const BANNER_PAGES = new Set(['home', 'categories', 'products', 'cart', 'orders', 'tracking', 'profile']);
+const BANNER_PAGES = new Set(['home', 'categories', 'products', 'cart', 'orders', 'tracking', 'loyalty', 'profile']);
 const BANNER_ANIMATIONS = new Set(['slide', 'fade', 'none']);
 function resolveBuildFromHtml() {
   const styles = globalThis.document?.getElementById?.('mainStylesheet');
@@ -73,16 +73,16 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartLineSubtotal, cartQty, cartTotal, changeQty, clearCart, setQty, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.16.713';
-import { emojiForSection, filterProducts, isWeightedProduct, looksLikeSectionEmoji, productAvailability, productBadges, weightedProductRules } from './catalog.js?v=2026.07.16.713';
-import { checkoutCreate, completeCheckoutAttempt, isMiniAppPaymentEnabled, paymentMethodForCustomer, paymentModeForCustomer } from './checkout.js?v=2026.07.16.713';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.16.713';
-import { escapeHtml, formatMeasure, greetingFor, money } from './utils.js?v=2026.07.16.713';
-import { persistMiniAppUiState } from './storage.js?v=2026.07.16.713';
-import { updateMainButton } from './telegram.js?v=2026.07.16.713';
-import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.16.713';
-import { cancelOrder } from './orders.js?v=2026.07.16.713';
-import { miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.16.713';
+import { cartCount, cartItems, cartLineSubtotal, cartQty, cartTotal, changeQty, clearCart, setQty, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.16.916';
+import { emojiForSection, filterProducts, isWeightedProduct, looksLikeSectionEmoji, productAvailability, productBadges, weightedProductRules } from './catalog.js?v=2026.07.16.916';
+import { checkoutCreate, completeCheckoutAttempt, isMiniAppPaymentEnabled, paymentModeForCustomer } from './checkout.js?v=2026.07.16.916';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.16.916';
+import { escapeHtml, formatMeasure, greetingFor, money } from './utils.js?v=2026.07.16.916';
+import { persistMiniAppUiState } from './storage.js?v=2026.07.16.916';
+import { updateMainButton } from './telegram.js?v=2026.07.16.916';
+import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.16.916';
+import { cancelOrder, submitOrderEvaluation } from './orders.js?v=2026.07.16.916';
+import { loyaltyProgramEnabled, miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.16.916';
 import {
   activeOrderId,
   applyOrderStatusToState,
@@ -93,7 +93,7 @@ import {
   mapFromTrackingPayload,
   orderFlowPollingMs,
   shouldOpenTrackingAfterPayment
-} from './orderFlow.js?v=2026.07.16.713';
+} from './orderFlow.js?v=2026.07.16.916';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -334,6 +334,22 @@ function productElement(root, productId) {
     .find(element => String(element.dataset.productId || '') === String(productId || ''));
 }
 
+function customerPoints(state = {}) {
+  return Number(
+    state.loyalty?.saldoPontos ??
+    state.loyalty?.pontosDisponiveis ??
+    0
+  ) || 0;
+}
+
+function loyaltyChallenges(state = {}) {
+  const items = state.loyalty?.desafios ||
+    state.loyalty?.challenges ||
+    state.loyalty?.programa?.desafios ||
+    [];
+  return Array.isArray(items) ? items : [];
+}
+
 function customerName(state = {}) {
   const nameFromClient =
     (state.telegramIdentity?.verificada === true ? state.telegramIdentity?.nome : '') ||
@@ -390,6 +406,25 @@ function customerTelegramId(state = {}) {
     window.Telegram?.WebApp?.initDataUnsafe?.user?.id ||
     ''
   ).trim();
+}
+
+function customerReferralCode(state = {}) {
+  return String(
+    state.cliente?.codigoIndicacao ||
+    state.cliente?.codigo_indicacao ||
+    state.loyalty?.codigoIndicacao ||
+    state.loyalty?.codigo_indicacao ||
+    ''
+  ).trim();
+}
+
+function loyaltySyncUnavailable(state = {}) {
+  const loyalty = state.loyalty || {};
+  const historico = Array.isArray(loyalty.historico) ? loyalty.historico : [];
+  return loyalty.unavailable === true &&
+    !customerPoints(state) &&
+    !loyaltyChallenges(state).length &&
+    !historico.length;
 }
 
 function customerAddressSummary(state = {}) {
@@ -550,6 +585,14 @@ export function createRenderer(state) {
 
   function navigateTo(page, options = {}) {
     const nextPage = page || 'home';
+    if (nextPage === 'loyalty' && !loyaltyProgramEnabled(state)) {
+      state.sectionsMenuOpen = false;
+      state.pageMenuOpen = false;
+      state.page = 'home';
+      persistMiniAppUiState(state);
+      render();
+      return;
+    }
     if (nextPage === 'product' && !productDetailsEnabled()) {
       state.sectionsMenuOpen = false;
       state.pageMenuOpen = false;
@@ -714,7 +757,6 @@ export function createRenderer(state) {
       checkoutStep: 'cart',
       currentPage: state.page,
       paymentMode: paymentModeForCustomer(state),
-      paymentMethod: paymentMethodForCustomer(state),
       enabled: storeAcceptsOrders(state),
       hasPix: Boolean(state.pix)
     });
@@ -816,8 +858,18 @@ export function createRenderer(state) {
     return `<span class="product-photo-badge"${style ? ` style="${escapeHtml(style)}"` : ''}>${escapeHtml(text)}</span>`;
   }
 
+  function renderProductPointsChip(product = {}) {
+    if (!loyaltyProgramEnabled(state)) return '';
+    const points = Number(product.points || 0);
+    if (!points) return '';
+    return `<span class="product-points-chip">+ ${points} ⭐</span>`;
+  }
+
   function renderProductOverlayStack(product = {}, badges = productBadges(product).slice(0, 2)) {
-    const items = badges.map(renderProductPhotoBadge).filter(Boolean);
+    const items = [
+      ...badges.map(renderProductPhotoBadge),
+      renderProductPointsChip(product)
+    ].filter(Boolean);
     return items.length ? `<div class="product-overlay-stack">${items.join('')}</div>` : '';
   }
 
@@ -898,6 +950,9 @@ export function createRenderer(state) {
     const unit = cleanProductDetail(product.unit || product.unidadeVenda || product.unidadeMedida || product.tamanho);
     const stock = Number(product.stock ?? product.estoque_pronta_entrega ?? product.estoque_atual ?? product.estoque ?? 0);
     const availability = productAvailability(product);
+    const points = loyaltyProgramEnabled(state)
+      ? Number(product.points || product.product_point_offer_points || product.productPointOffer?.points || 0)
+      : 0;
     const group = cleanProductDetail(product.grupoNome || product.grupo_nome || product.nome_principal || product.produtoPaiNome);
     const code = cleanProductDetail(product.codigoInterno || product.codigo_interno || product.sku || product.codigoBarras || product.codigo_barras);
     const observation = cleanProductDetail(product.productObservation || product.observacaoProduto || product.observacao_produto);
@@ -916,6 +971,7 @@ export function createRenderer(state) {
       ['Grupo', group],
       ['Unidade', unit],
       ['Disponibilidade', stockText],
+      ['Pontos', points > 0 ? `Ganhe +${points} pontos` : ''],
       ['Tamanho', size && size !== unit ? size : ''],
       ['Sabor', flavor],
       ['Venda', saleMode && !['unit', 'unidade'].includes(saleMode.toLowerCase()) ? saleMode : ''],
@@ -1078,6 +1134,9 @@ export function createRenderer(state) {
       ['orders', svgIcon('package', 18), 'Pedidos'],
       ['profile', svgIcon('user', 18), 'Conta']
     ];
+    if (loyaltyProgramEnabled(state)) {
+      items.push(['loyalty', '⭐', 'Fidelidade']);
+    }
     return `
       <div class="drawer-app-shortcuts" aria-label="Menu principal">
         ${items.map(([page, icon, label]) => appMenuShortcut(page, icon, label, state.page === page)).join('')}
@@ -1325,18 +1384,13 @@ export function createRenderer(state) {
     const allowQuantityChange = state.checkout?.permitirAlterarQuantidade !== false;
     const allowClearCart = state.checkout?.permitirLimparCarrinho !== false;
     const miniAppPayment = isMiniAppPaymentEnabled(state);
-    const paymentMethod = paymentMethodForCustomer(state);
-    const finishLabel = miniAppPayment
-      ? (paymentMethod === 'pix' ? 'Pagar com Pix' : 'Confirmar pedido')
-      : 'Finalizar no Telegram';
+    const finishLabel = miniAppPayment ? 'Pagar no Mini App' : 'Finalizar no Telegram';
     const checkoutSubtitle = acceptsOrders
       ? (miniAppPayment ? 'Revise antes de pagar no Mini App' : 'Revise antes de finalizar no Telegram')
       : 'Loja fechada para novos pedidos';
     const checkoutNote = acceptsOrders
       ? (miniAppPayment
-          ? (paymentMethod === 'pix'
-              ? 'Pix copia e cola, QR Code, recebedor, valor e numero do pedido aparecem no Mini App.'
-              : 'Pagamento em dinheiro na entrega ou retirada. O painel recebera o pedido sem gerar Pix.')
+          ? 'Pix copia e cola, QR Code, recebedor, valor e numero do pedido aparecem no Mini App.'
           : 'Pix preservado: recebedor, valor e numero do pedido aparecem na confirmacao pelo Telegram.')
       : 'Loja fechada. A finalizacao sera liberada quando voltarmos a aceitar pedidos.';
     return `
@@ -1398,17 +1452,6 @@ export function createRenderer(state) {
               <strong id="cartSummaryTitle">Resumo do pedido</strong>
               <small>${escapeHtml(itemCountLabel)}</small>
             </div>
-            ${miniAppPayment ? `
-              <fieldset class="checkout-payment-method" aria-label="Forma de pagamento">
-                <legend>Forma de pagamento</legend>
-                <button type="button" class="checkout-payment-option${paymentMethod === 'pix' ? ' active' : ''}" data-payment-method="pix" aria-pressed="${paymentMethod === 'pix' ? 'true' : 'false'}">
-                  <strong>Pix</strong><small>Copie o codigo ou use o QR Code</small>
-                </button>
-                <button type="button" class="checkout-payment-option${paymentMethod === 'dinheiro' ? ' active' : ''}" data-payment-method="dinheiro" aria-pressed="${paymentMethod === 'dinheiro' ? 'true' : 'false'}">
-                  <strong>Dinheiro</strong><small>Pague na entrega ou retirada</small>
-                </button>
-              </fieldset>
-            ` : ''}
             <div class="cart-summary-values">
               <div class="cart-summary-row"><span>Subtotal</span><strong>${formatMoney(cartTotal(state))}</strong></div>
               <div class="cart-summary-row summary-total"><span>Total</span><strong>${formatMoney(cartTotal(state))}</strong></div>
@@ -1478,9 +1521,6 @@ export function createRenderer(state) {
   function renderMiniAppPayment() {
     const checkout = state.lastMiniAppCheckout || {};
     const pedido = state.pedidoAtual || checkout.pedido || checkout.ordem || checkout.order || {};
-    const paymentMethod = String(
-      pedido.formaPagamento || pedido.forma_pagamento || pedido.pagamento?.metodo || checkout.formaPagamento || state.selectedPaymentMethod || 'pix'
-    ).trim().toLowerCase() === 'dinheiro' ? 'dinheiro' : 'pix';
     const orderAwaitingWeight = awaitingFinalWeightState(pedido);
     const awaitingWeight = orderAwaitingWeight === null
       ? isAwaitingFinalWeight(checkout)
@@ -1534,9 +1574,7 @@ export function createRenderer(state) {
             <p class="greeting">Pedido recebido</p>
             <h1>Aguardando pesagem e valor final</h1>
             ${pedidoId ? `<strong class="order-id">Pedido ${escapeHtml(pedidoId)}</strong>` : ''}
-            <p>${paymentMethod === 'dinheiro'
-              ? 'A loja vai pesar os itens e confirmar o valor final antes do pagamento em dinheiro na entrega ou retirada.'
-              : 'A loja vai pesar os itens e confirmar o valor final. O pagamento sera liberado somente depois dessa conferencia.'}</p>
+            <p>A loja vai pesar os itens e confirmar o valor final. O pagamento sera liberado somente depois dessa conferencia.</p>
             ${estimatedTotal > 0 ? `<p><strong>Estimativa atual: ${formatMoney(estimatedTotal)}</strong></p>` : ''}
           </section>
           ${receipt}
@@ -1544,34 +1582,6 @@ export function createRenderer(state) {
             ${pedidoId
               ? `<button class="primary-wide" data-tracking-order="${escapeHtml(pedidoId)}">Acompanhar pedido</button>`
               : '<button class="primary-wide" data-page="orders">Acompanhar pedido</button>'}
-            <button data-page="home">Voltar aos produtos</button>
-          </section>
-        </main>
-      `;
-    }
-    if (paymentMethod === 'dinheiro') {
-      return `
-        <main class="page telegram-checkout-panel success-screen" id="miniAppPaymentPanel" data-page="payment" data-payment-method="dinheiro">
-          <div class="topbar">
-            <button data-page="orders" aria-label="Voltar">${svgIcon('arrowLeft', 20)}</button>
-            <strong>Pedido confirmado</strong>
-            <span></span>
-          </div>
-          <section class="success-card telegram-handoff-card">
-            <span class="success-icon" aria-hidden="true">${svgIcon('check', 38)}</span>
-            <p class="greeting">Pagamento em dinheiro</p>
-            <h1>Pague na ${pedido.modalidadeEntrega === 'entrega' ? 'entrega' : 'retirada'}</h1>
-            ${pedidoId ? `<strong class="order-id">Pedido ${escapeHtml(pedidoId)}</strong>` : ''}
-            <p>${escapeHtml(state.checkoutMessage || `Pedido de ${formatMoney(total)} confirmado. Separe o valor para pagar quando receber ou retirar.`)}</p>
-          </section>
-          <section class="payment-cash-card">
-            <div><span>Forma de pagamento</span><strong>Dinheiro</strong></div>
-            <div><span>Total do pedido</span><strong>${formatMoney(total)}</strong></div>
-            <small>Se precisar de troco, combine com a loja pelo Telegram.</small>
-          </section>
-          ${receipt}
-          <section class="telegram-success-actions">
-            <button class="primary-wide" data-page="orders">Acompanhar pedido</button>
             <button data-page="home">Voltar aos produtos</button>
           </section>
         </main>
@@ -1614,12 +1624,19 @@ export function createRenderer(state) {
   function orderActionCapabilities(order = {}) {
     const actions = order.acoes || order.actions || {};
     const status = String(order.status || '').trim().toLowerCase();
+    const evaluation = order.avaliacao || order.evaluation || null;
+    const evaluated = Boolean(evaluation || order.avaliado === true || order.evaluated === true);
     const explicitCancel = [actions.podeCancelar, actions.canCancel, order.podeCancelar, order.canCancel]
+      .find(value => typeof value === 'boolean');
+    const explicitEvaluate = [actions.podeAvaliar, actions.canEvaluate, order.podeAvaliar, order.canEvaluate]
       .find(value => typeof value === 'boolean');
     return {
       canCancel: explicitCancel === undefined
         ? ['novo', 'recebido', 'pendente', 'aguardando_pesagem', 'aguardando_pagamento'].includes(status)
-        : explicitCancel
+        : explicitCancel,
+      canEvaluate: !evaluated && (explicitEvaluate === undefined ? status === 'entregue' : explicitEvaluate),
+      evaluated,
+      evaluation
     };
   }
 
@@ -1628,8 +1645,15 @@ export function createRenderer(state) {
     if (!pedidoId) return '';
     const capabilities = orderActionCapabilities(order);
     const pending = state.orderActionPending === pedidoId;
+    const draft = state.evaluationDraft?.pedidoId === pedidoId
+      ? state.evaluationDraft
+      : { pedidoId, nota: 0, comentario: '' };
+    const evaluation = capabilities.evaluation || {};
+    const evaluationMessage = capabilities.evaluated
+      ? `Avaliacao enviada: ${Number(evaluation.nota || order.notaAvaliacao || 0) || '-'} de 5${evaluation.comentario ? ` - ${evaluation.comentario}` : ''}`
+      : '';
     const actionMessage = state.orderActionMessageOrderId === pedidoId ? state.orderActionMessage : '';
-    if (!capabilities.canCancel && !actionMessage) return '';
+    if (!capabilities.canCancel && !capabilities.canEvaluate && !evaluationMessage && !actionMessage) return '';
     return `
       <section class="order-customer-actions" aria-labelledby="orderActionsTitle">
         <div class="section-title">
@@ -1642,6 +1666,20 @@ export function createRenderer(state) {
           </button>
           <small>Disponivel somente antes da separacao. O sistema confirma a situacao novamente antes de cancelar.</small>
         ` : ''}
+        ${capabilities.canEvaluate ? `
+          <form id="orderEvaluationForm" data-order-id="${escapeHtml(pedidoId)}">
+            <strong>Avalie sua compra</strong>
+            <div class="order-rating" role="radiogroup" aria-label="Nota da compra">
+              ${[1, 2, 3, 4, 5].map(nota => `
+                <button type="button" data-evaluation-rating="${nota}" role="radio" aria-checked="${draft.nota === nota ? 'true' : 'false'}" class="${draft.nota === nota ? 'active' : ''}">${nota}</button>
+              `).join('')}
+            </div>
+            <label for="orderEvaluationComment">Comentario opcional</label>
+            <textarea id="orderEvaluationComment" maxlength="1000" rows="3" placeholder="Conte como foi sua experiencia">${escapeHtml(draft.comentario || '')}</textarea>
+            <button type="submit" class="primary-wide" ${pending || !draft.nota ? 'disabled' : ''}>${pending ? 'Enviando...' : 'Enviar avaliacao'}</button>
+          </form>
+        ` : ''}
+        ${evaluationMessage ? `<p class="order-evaluation-sent">${escapeHtml(evaluationMessage)}</p>` : ''}
       </section>
     `;
   }
@@ -1805,6 +1843,63 @@ export function createRenderer(state) {
     `;
   }
 
+  function renderLoyaltyChallengeCard(challenge = {}) {
+    const name = challenge.nome || challenge.name || 'Desafio';
+    const description = challenge.descricao || challenge.description || '';
+    const progress = Math.max(0, Math.floor(Number(challenge.progresso ?? challenge.progress ?? challenge.progressValue ?? 0) || 0));
+    const goal = Math.max(1, Math.floor(Number(challenge.meta ?? challenge.goal ?? challenge.goalValue ?? 1) || 1));
+    const remaining = Math.max(0, Math.floor(Number(challenge.restante ?? (goal - progress)) || 0));
+    const reward = Math.max(0, Math.floor(Number(challenge.recompensaPontos ?? challenge.rewardPoints ?? challenge.pontos ?? 0) || 0));
+    const progressLabel = remaining > 0
+      ? `Faltam ${remaining} ${remaining === 1 ? 'produto' : 'produtos'}`
+      : 'Desafio concluido';
+    return `
+      <article class="loyalty-challenge-card">
+        <div>
+          <strong>${escapeHtml(name)}</strong>
+          ${description ? `<p>${escapeHtml(description)}</p>` : ''}
+        </div>
+        <span>${escapeHtml(progressLabel)}</span>
+        ${reward ? `<small>+${escapeHtml(reward)} pontos</small>` : ''}
+      </article>
+    `;
+  }
+
+  function renderLoyalty() {
+    const pontos = Number(state.loyalty?.saldoPontos || 0);
+    const saldoReais = Number(state.loyalty?.saldoReais || 0);
+    const challenges = loyaltyChallenges(state);
+    const unavailable = loyaltySyncUnavailable(state);
+    return `
+      ${renderCustomerHeader('Fidelidade')}
+      <main class="page loyalty-panel" id="loyaltyPanel" data-page="loyalty">
+        <div class="topbar">
+          <button data-page="home">←</button>
+          <strong>Fidelidade</strong>
+          <span></span>
+        </div>
+        <section class="loyalty-hero">
+          <h2>Meus pontos</h2>
+          ${unavailable ? `
+            <strong>Sincronizacao indisponivel</strong>
+            <p>Nao foi possivel sincronizar seus pontos agora. O saldo continua salvo no Mercadinho M&J e aparece quando a loja estiver conectada.</p>
+          ` : `
+            <strong>⭐ ${pontos} pontos</strong>
+            <p>Saldo convertido: ${formatMoney(saldoReais)} em vantagem de compra.</p>
+          `}
+          <button data-page="home">Ver produtos</button>
+        </section>
+        <section class="loyalty-challenges">
+          <div class="section-title">
+            <h2>Desafios</h2>
+            <span>${challenges.length} ativos</span>
+          </div>
+          ${challenges.length ? challenges.map(renderLoyaltyChallengeCard).join('') : '<div class="empty">Os desafios cadastrados no painel aparecem aqui.</div>'}
+        </section>
+      </main>
+    `;
+  }
+
   function renderProfile() {
     const name = customerName(state);
     const cliente = state.cliente || {};
@@ -1826,11 +1921,13 @@ export function createRenderer(state) {
             ${profileItem('Nome', name)}
             ${profileItem('Telegram ID', customerTelegramId(state))}
             ${profileItem('Usuario Telegram', cliente.username || cliente.telegramUsername)}
+            ${profileItem('Codigo de indicacao', customerReferralCode(state))}
             ${profileItem('Telefone', cliente.telefone || cliente.phone)}
             ${profileItem('CPF', cliente.cpf)}
             ${profileItem('Nascimento', cliente.dataNascimento)}
             ${profileItem('Endereco', endereco)}
           </div>
+          ${loyaltyProgramEnabled(state) ? '<button data-page="loyalty">Programa de fidelidade</button>' : ''}
           <button data-page="home">Sair para produtos</button>
         </section>
       </main>
@@ -1882,9 +1979,6 @@ export function createRenderer(state) {
     sendMiniAppEvent(state, modoPagamento === 'miniapp' ? 'checkout_miniapp_payment_start' : 'checkout_telegram_handoff_start', { itemCount: cartCount(state), total: cartTotal(state) });
     const result = await checkoutCreate(state);
     const resultOrder = result?.pedido || result?.ordem || result?.order || null;
-    const resultPaymentMethod = String(
-      resultOrder?.formaPagamento || resultOrder?.forma_pagamento || resultOrder?.pagamento?.metodo || state.selectedPaymentMethod || 'pix'
-    ).trim().toLowerCase() === 'dinheiro' ? 'dinheiro' : 'pix';
     const resultAwaitingWeight = isAwaitingFinalWeight(result, result?.checkout, resultOrder);
     const resultMode = String(result?.checkout?.modo || result?.modo || '').trim().toLowerCase();
     const resultModeMiniApp = resultMode === 'miniapp' || resultAwaitingWeight || (!resultMode && Boolean(result?.pix));
@@ -1897,15 +1991,13 @@ export function createRenderer(state) {
       completeCheckoutAttempt(state);
       state.checkoutMessage = resultAwaitingWeight
         ? 'Pedido recebido. Aguardando pesagem e confirmacao do valor final.'
-        : (result?.mensagem || result?.message || (resultPaymentMethod === 'dinheiro'
-            ? 'Pedido confirmado. O pagamento em dinheiro sera feito na entrega ou retirada.'
-            : 'Pix gerado no Mini App. Copie o codigo ou use o QR Code para pagar.'));
+        : (result?.mensagem || result?.message || 'Pix gerado no Mini App. Copie o codigo ou use o QR Code para pagar.');
       state.sending = false;
       renderer.navigateTo('payment');
       return;
     }
     state.lastTelegramHandoff = result || {};
-    state.checkoutMessage = result?.telegram?.mensagem || result?.mensagem || result?.message || 'Carrinho enviado ao Telegram. Escolha a forma de pagamento pelo chat.';
+    state.checkoutMessage = result?.telegram?.mensagem || result?.mensagem || result?.message || 'Carrinho enviado ao Telegram. Termine entrega, retirada e Pix pelo chat.';
     state.sending = false;
     renderer.navigateTo('telegram-checkout');
     const webApp = window.Telegram?.WebApp;
@@ -1947,6 +2039,36 @@ export function createRenderer(state) {
       state.orderActionMessage = result?.mensagem || 'Pedido cancelado com sucesso.';
     } catch (error) {
       state.orderActionMessage = error?.message || 'Nao foi possivel cancelar o pedido.';
+    } finally {
+      state.orderActionPending = '';
+      render();
+    }
+  }
+
+  async function handleSubmitOrderEvaluation(form) {
+    const pedidoId = String(form?.dataset?.orderId || '').trim();
+    if (!pedidoId || state.orderActionPending) return;
+    const draft = state.evaluationDraft?.pedidoId === pedidoId
+      ? state.evaluationDraft
+      : { pedidoId, nota: 0, comentario: '' };
+    if (!draft.nota) {
+      state.orderActionMessage = 'Escolha uma nota de 1 a 5.';
+      state.orderActionMessageOrderId = pedidoId;
+      render();
+      return;
+    }
+    state.orderActionPending = pedidoId;
+    state.orderActionMessage = '';
+    state.orderActionMessageOrderId = pedidoId;
+    render();
+    try {
+      const result = await submitOrderEvaluation(state, pedidoId, draft);
+      const avaliacao = result?.avaliacao || { nota: draft.nota, comentario: draft.comentario };
+      applyCustomerOrderAction(pedidoId, result, { avaliacao, avaliado: true });
+      state.orderActionMessage = result?.mensagem || 'Avaliacao enviada. Obrigado por ajudar o Mercadinho M&J a melhorar.';
+      state.evaluationDraft = { pedidoId, nota: draft.nota, comentario: draft.comentario };
+    } catch (error) {
+      state.orderActionMessage = error?.message || 'Nao foi possivel enviar a avaliacao.';
     } finally {
       state.orderActionPending = '';
       render();
@@ -2150,18 +2272,34 @@ export function createRenderer(state) {
       render();
     });
     root.querySelector('#continueShopping')?.addEventListener('click', () => navigateTo(state.previousPage || 'home'));
-    root.querySelectorAll('[data-payment-method]').forEach(button => {
-      button.addEventListener('click', () => {
-        state.selectedPaymentMethod = button.dataset.paymentMethod === 'dinheiro' ? 'dinheiro' : 'pix';
-        state.clientOrderId = '';
-        state.clientOrderFingerprint = '';
-        render();
-      });
-    });
     root.querySelector('#finishInTelegram')?.addEventListener('click', finishCheckout);
     root.querySelector('#retryTelegramHandoff')?.addEventListener('click', finishCheckout);
     root.querySelector('#cancelCurrentOrder')?.addEventListener('click', event => {
       handleCancelCurrentOrder(event.currentTarget);
+    });
+    root.querySelectorAll('[data-evaluation-rating]').forEach(button => {
+      button.addEventListener('click', () => {
+        const pedidoId = String(root.querySelector('#orderEvaluationForm')?.dataset?.orderId || '').trim();
+        const comment = String(root.querySelector('#orderEvaluationComment')?.value || '');
+        state.evaluationDraft = {
+          pedidoId,
+          nota: Number(button.dataset.evaluationRating || 0),
+          comentario: comment
+        };
+        render();
+      });
+    });
+    root.querySelector('#orderEvaluationComment')?.addEventListener('input', event => {
+      const pedidoId = String(root.querySelector('#orderEvaluationForm')?.dataset?.orderId || '').trim();
+      state.evaluationDraft = {
+        pedidoId,
+        nota: Number(state.evaluationDraft?.pedidoId === pedidoId ? state.evaluationDraft.nota : 0),
+        comentario: String(event.target.value || '')
+      };
+    });
+    root.querySelector('#orderEvaluationForm')?.addEventListener('submit', event => {
+      event.preventDefault();
+      handleSubmitOrderEvaluation(event.currentTarget);
     });
     root.querySelector('#copyPixPayment')?.addEventListener('click', () => {
       const pix = state.pix?.copiaCola || state.lastMiniAppCheckout?.pix?.copiaCola || '';
@@ -2201,6 +2339,11 @@ export function createRenderer(state) {
       state.productId = '';
       persistMiniAppUiState(state);
     }
+    if (state.page === 'loyalty' && !loyaltyProgramEnabled(state)) {
+      state.page = 'home';
+      state.previousPage = 'home';
+      persistMiniAppUiState(state);
+    }
     const splashDuration = clampMs(activeUi.splash?.durationMs, MINIAPP_UI_DEFAULTS.splash.durationMs);
     applyThemeVariables(activeUi);
     document.documentElement.style.setProperty('--mj-splash-duration', `${splashDuration}ms`);
@@ -2212,6 +2355,7 @@ export function createRenderer(state) {
     else if (['delivery', 'telegram-checkout'].includes(state.page)) html = renderTelegramCheckout();
     else if (state.page === 'orders') html = renderOrders();
     else if (state.page === 'tracking') html = renderTracking();
+    else if (state.page === 'loyalty') html = renderLoyalty();
     else if (state.page === 'profile') html = renderProfile();
     else html = renderHome();
 

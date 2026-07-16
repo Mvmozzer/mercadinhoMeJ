@@ -1,5 +1,5 @@
-﻿import { restoreMiniAppUiState } from './storage.js?v=2026.07.16.713';
-import { normalizeWholesaleConfig } from './catalog.js?v=2026.07.16.713';
+﻿import { restoreMiniAppUiState } from './storage.js?v=2026.07.16.916';
+import { normalizeWholesaleConfig } from './catalog.js?v=2026.07.16.916';
 
 export const MINIAPP_UI_DEFAULTS = {
   header: {
@@ -63,7 +63,7 @@ export const MINIAPP_UI_DEFAULTS = {
 };
 
 const BANNER_TARGETS = new Set(['page', 'section', 'product', 'search', 'url', 'none']);
-const BANNER_PAGES = new Set(['home', 'categories', 'products', 'cart', 'orders', 'tracking', 'profile']);
+const BANNER_PAGES = new Set(['home', 'categories', 'products', 'cart', 'orders', 'tracking', 'loyalty', 'profile']);
 const BANNER_ANIMATIONS = new Set(['slide', 'fade', 'none']);
 
 function clampIntervalMs(value) {
@@ -180,6 +180,20 @@ export function normalizeMiniAppUi(raw = {}) {
   };
 }
 
+export function loyaltyProgramEnabled(state = {}) {
+  const loyalty = state.loyalty || {};
+  const programa = loyalty.programa || {};
+  const checkout = state.checkout || {};
+  return [
+    loyalty.ativo,
+    loyalty.active,
+    programa.ativo,
+    programa.active,
+    checkout.permitirUsarPontos,
+    checkout.permitir_usar_pontos
+  ].every(value => value !== false);
+}
+
 const OPEN_STORE_STATUSES = new Set(['aberta', 'aberto', 'open']);
 const BLOCKED_STORE_STATUSES = new Set([
   'fechada',
@@ -256,7 +270,8 @@ export function createState() {
       aceitaPedidos: false
     },
     cliente: { nome: 'cliente' },
-    checkout: {},
+    loyalty: { saldoPontos: 0 },
+    checkout: { permitirUsarPontos: true },
     pagamentos: {},
     sections: [],
     products: [],
@@ -271,8 +286,8 @@ export function createState() {
     orderActionMessage: '',
     orderActionMessageOrderId: '',
     orderActionPending: '',
+    evaluationDraft: { pedidoId: '', nota: 0, comentario: '' },
     selectedDeliveryMode: 'retirada',
-    selectedPaymentMethod: 'pix',
     bannerIndex: 0,
     miniappUi: normalizeMiniAppUi(saved.miniappUi || saved.miniappui || {})
   };
@@ -303,6 +318,9 @@ function snapshotTelegramId(snapshot = {}) {
     snapshot.cliente?.telegramId ||
     snapshot.cliente?.telegram_id ||
     snapshot.cliente?.chatId ||
+    snapshot.programa?.telegramId ||
+    snapshot.programa?.telegram_id ||
+    snapshot.programa?.chatId ||
     firstOrderTelegramId(snapshot)
   );
 }
@@ -318,7 +336,7 @@ function currentTelegramId(state = {}) {
 }
 
 function hasPersonalSnapshot(snapshot = {}) {
-  return Boolean(snapshot.cliente || snapshot.identidadeTelegram || Array.isArray(snapshot.pedidos) || Array.isArray(snapshot.pedidosAtivos));
+  return Boolean(snapshot.cliente || snapshot.identidadeTelegram || snapshot.programa || Array.isArray(snapshot.pedidos) || Array.isArray(snapshot.pedidosAtivos));
 }
 
 export function isPersonalSnapshotForCurrentSession(state = {}, snapshot = {}) {
@@ -336,6 +354,7 @@ export function applySnapshot(state, snapshot = {}) {
   if (canApplyPersonal && snapshot.cliente) state.cliente = { ...state.cliente, ...snapshot.cliente };
   if (canApplyPersonal && Array.isArray(snapshot.pedidos)) state.orders = snapshot.pedidos;
   if (snapshot.loja) applyStoreSnapshot(state, snapshot.loja);
+  if (canApplyPersonal && snapshot.programa) state.loyalty = { ...state.loyalty, ...snapshot.programa };
   if (snapshot.checkout) state.checkout = { ...state.checkout, ...snapshot.checkout };
   if (snapshot.pagamentos) state.pagamentos = { ...state.pagamentos, ...snapshot.pagamentos };
   if (snapshot.miniappUi) state.miniappUi = normalizeMiniAppUi(snapshot.miniappUi);
