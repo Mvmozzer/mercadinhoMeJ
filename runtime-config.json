@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-15T21:13:59.864-03:00",
-  "webBuild": "2026.07.15.839",
-  "apiBaseUrl": "",
-  "allowTemporaryApiBase": false,
-  "apiBaseKind": ""
+  "updatedAt": "2026-07-16T11:05:13.673-03:00",
+  "webBuild": "2026.07.16.713",
+  "apiBaseUrl": "https://bowl-idea-spas-defend.trycloudflare.com",
+  "allowTemporaryApiBase": true,
+  "apiBaseKind": "temporary_tunnel"
 }

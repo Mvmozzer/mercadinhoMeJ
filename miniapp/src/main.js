@@ -1,4 +1,4 @@
-import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.15.839';
+import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.16.713';
 import {
   atualizarStatusLoja,
   authenticateBridge,
@@ -8,12 +8,12 @@ import {
   loadCatalogWithFallback,
   loadCustomer,
   loadHealth
-} from './api.js?v=2026.07.15.839';
-import { createRenderer } from './render.js?v=2026.07.15.839';
-import { createState, applySnapshot, normalizeMiniAppUi, setRuntimeOnline } from './state.js?v=2026.07.15.839';
-import { normalizeCatalog } from './catalog.js?v=2026.07.15.839';
-import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.15.839';
-import { loadOrders } from './orders.js?v=2026.07.15.839';
+} from './api.js?v=2026.07.16.713';
+import { createRenderer } from './render.js?v=2026.07.16.713';
+import { createState, applySnapshot, normalizeMiniAppUi, setRuntimeOnline } from './state.js?v=2026.07.16.713';
+import { normalizeCatalog } from './catalog.js?v=2026.07.16.713';
+import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.16.713';
+import { loadOrders } from './orders.js?v=2026.07.16.713';
 
 function sincronizarStatusLoja(state, health) {
   return atualizarStatusLoja(state, health || {});
