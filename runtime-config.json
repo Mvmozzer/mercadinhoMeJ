@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-16T12:48:34.636-03:00",
-  "webBuild": "2026.07.16.914",
-  "apiBaseUrl": "https://environments-restaurants-decisions-ones.trycloudflare.com",
+  "updatedAt": "2026-07-16T12:50:37.195-03:00",
+  "webBuild": "2026.07.16.037",
+  "apiBaseUrl": "https://poems-ppc-ought-flowers.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
 }
