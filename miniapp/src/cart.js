@@ -1,5 +1,5 @@
-import { CART_KEY, readJson, writeJson } from './storage.js?v=2026.07.15.472';
-import { isWeightedProduct, measureConversionFactor, productAvailability, productWholesale, weightedProductRules } from './catalog.js?v=2026.07.15.472';
+import { CART_KEY, readJson, writeJson } from './storage.js?v=2026.07.15.839';
+import { isWeightedProduct, measureConversionFactor, productAvailability, productWholesale, weightedProductRules } from './catalog.js?v=2026.07.15.839';
 
 function itemQuantity(item = {}) {
   const quantity = Number(item.quantity ?? item.quantidade ?? item.qtd ?? 0);
@@ -133,7 +133,6 @@ function cartItemFromProduct(product = {}, quantity = 1) {
     priceBaseUnit: weightRules.priceBaseUnit,
     unidade_base_preco: weightRules.priceBaseUnit,
     section: product.section || product.secao_nome || product.secao || '',
-    points: Number(product.points || product.pontos || 0),
     saleMode,
     modoVenda: weightRules.weighted ? 'granel' : 'unidade',
     modo_venda: weightRules.weighted ? 'granel' : 'unidade',

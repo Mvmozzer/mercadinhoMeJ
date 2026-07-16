@@ -1,4 +1,4 @@
-import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.15.472';
+import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.15.839';
 import {
   atualizarStatusLoja,
   authenticateBridge,
@@ -8,13 +8,12 @@ import {
   loadCatalogWithFallback,
   loadCustomer,
   loadHealth
-} from './api.js?v=2026.07.15.472';
-import { createRenderer } from './render.js?v=2026.07.15.472';
-import { createState, applySnapshot, normalizeMiniAppUi, loyaltyProgramEnabled, setRuntimeOnline } from './state.js?v=2026.07.15.472';
-import { normalizeCatalog } from './catalog.js?v=2026.07.15.472';
-import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.15.472';
-import { loadLoyalty } from './loyalty.js?v=2026.07.15.472';
-import { loadOrders } from './orders.js?v=2026.07.15.472';
+} from './api.js?v=2026.07.15.839';
+import { createRenderer } from './render.js?v=2026.07.15.839';
+import { createState, applySnapshot, normalizeMiniAppUi, setRuntimeOnline } from './state.js?v=2026.07.15.839';
+import { normalizeCatalog } from './catalog.js?v=2026.07.15.839';
+import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.15.839';
+import { loadOrders } from './orders.js?v=2026.07.15.839';
 
 function sincronizarStatusLoja(state, health) {
   return atualizarStatusLoja(state, health || {});
@@ -34,15 +33,13 @@ function miniappRefreshSignature(state = {}) {
     pollingMs: state.pollingMs || 0,
     store: state.store || {},
     cliente: state.cliente || {},
-    loyalty: { ativo: state.loyalty?.ativo },
     checkout: state.checkout || {},
     orders: (state.orders || []).map(order => ({
       id: order.id || order.pedidoId || '',
       status: order.status || '',
       statusPagamento: order.statusPagamento || order.status_pagamento || order.pagamento?.status || '',
       updatedAt: order.updatedAt || order.atualizadoEm || '',
-      actions: order.acoes || order.actions || {},
-      evaluation: order.avaliacao || order.evaluation || null
+      actions: order.acoes || order.actions || {}
     })),
     wholesale: state.wholesale || state.atacado || {},
     products: (state.products || []).map(product => ({
@@ -108,7 +105,6 @@ async function refreshMiniAppVisualConfig(state) {
   if (health?.checkout?.pollingMs) state.pollingMs = health.checkout.pollingMs;
   sincronizarStatusLoja(state, health);
   if (health?.checkout) state.checkout = { ...state.checkout, ...health.checkout };
-  if (health?.programa) state.loyalty = { ...state.loyalty, ...health.programa };
   const customer = await loadCustomer(state);
   if (customer?.cliente) applySnapshot(state, {
     telegramId: customer.cliente.telegramId,
@@ -216,7 +212,6 @@ async function init() {
       identidadeTelegram: boot?.identidadeTelegram,
       loja: boot?.loja,
       cliente: boot?.cliente,
-      programa: boot?.programa,
       checkout: boot?.checkout,
       pagamentos: boot?.pagamentos,
       miniappUi: boot?.miniappUi,
@@ -241,11 +236,6 @@ async function init() {
       state.atacado = normalized.wholesale;
       reconcileCartWithCatalog(state);
     }
-  }
-  if (loyaltyProgramEnabled(state)) {
-    const loyalty = await loadLoyalty(state);
-    if (loyalty?.ok !== false) applySnapshot(state, { telegramId: loyalty.telegramId || loyalty.programa?.telegramId, programa: loyalty });
-    else state.loyalty = { ...state.loyalty, ...loyalty };
   }
   const orders = await loadOrders(state);
   if (Array.isArray(orders?.pedidos)) applySnapshot(state, { telegramId: orders.telegramId, pedidos: orders.pedidos });

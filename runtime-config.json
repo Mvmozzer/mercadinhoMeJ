@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-15T08:54:32.617-03:00",
-  "webBuild": "2026.07.15.472",
-  "apiBaseUrl": "https://coding-started-freeze-changes.trycloudflare.com",
-  "allowTemporaryApiBase": true,
-  "apiBaseKind": "temporary_tunnel"
+  "updatedAt": "2026-07-15T21:13:59.864-03:00",
+  "webBuild": "2026.07.15.839",
+  "apiBaseUrl": "",
+  "allowTemporaryApiBase": false,
+  "apiBaseKind": ""
 }

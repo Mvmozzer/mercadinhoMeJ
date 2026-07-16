@@ -17,7 +17,7 @@
       "descricao": "",
       "nome_completo": "Ovo Branco c/30 unidades",
       "nomeCompleto": "Ovo Branco c/30 unidades",
-      "preco": 16,
+      "preco": 20,
       "preco_normal": 20,
       "precoOriginal": 20,
       "preco_original": 20,
@@ -29,19 +29,19 @@
       "precoAtacado": 15.5,
       "quantidade_atacado": 3,
       "quantidadeAtacado": 3,
-      "estoque": 99,
-      "estoque_pronta_entrega": 99,
-      "disponibilidade": "retirada_rapida",
-      "disponibilidade_produto": "retirada_rapida",
-      "availabilityMode": "retirada_rapida",
-      "disponibilidade_label": "Retirada rapida",
-      "disponibilidadeLabel": "Retirada rapida",
-      "sob_encomenda": false,
-      "sobEncomenda": false,
+      "estoque": 98,
+      "estoque_pronta_entrega": 98,
+      "disponibilidade": "sob_encomenda",
+      "disponibilidade_produto": "sob_encomenda",
+      "availabilityMode": "sob_encomenda",
+      "disponibilidade_label": "Somente sob encomenda",
+      "disponibilidadeLabel": "Somente sob encomenda",
+      "sob_encomenda": true,
+      "sobEncomenda": true,
       "prazo_retirada_dias": 0,
       "prazoRetiradaDias": 0,
-      "previsao_retirada_texto": "Retirada hoje",
-      "previsaoRetiradaTexto": "Retirada hoje",
+      "previsao_retirada_texto": "",
+      "previsaoRetiradaTexto": "",
       "disponivel_para_compra": true,
       "availableForPurchase": true,
       "ativo": true,
@@ -50,9 +50,9 @@
       "imagem": "https://assets.ibecom.com.br/ib.item.image.large/l-2d006fce5d3f401b862c37f199740699.jpeg",
       "imagem_url": "https://assets.ibecom.com.br/ib.item.image.large/l-2d006fce5d3f401b862c37f199740699.jpeg",
       "imagemUrl": "https://assets.ibecom.com.br/ib.item.image.large/l-2d006fce5d3f401b862c37f199740699.jpeg",
-      "promocao": true,
-      "promocao_ativa": true,
-      "promocaoAtiva": true,
+      "promocao": false,
+      "promocao_ativa": false,
+      "promocaoAtiva": false,
       "promocao_inicio": "2026-07-12T23:25:45.774Z",
       "promocao_fim": "2026-07-15T23:24:00.000Z",
       "texto_promocao": "Por tempo limitado ou enquanto durar o estoque",
@@ -73,8 +73,8 @@
       "saleUnit": "un",
       "unidadeBasePreco": "un",
       "priceBaseUnit": "un",
-      "precoBaseCentavos": 1600,
-      "priceBaseCents": 1600,
+      "precoBaseCentavos": 2000,
+      "priceBaseCents": 2000,
       "pesoMinimo": 0,
       "minWeight": 0,
       "pesoMaximo": 0,
@@ -90,9 +90,9 @@
       "productObservation": "",
       "tarjas": [
         {
-          "texto": "Promoção",
-          "cor": "#FFFFFF",
-          "fundo": "#DC2626"
+          "texto": "Somente sob encomenda",
+          "cor": "#1E1E1E",
+          "fundo": "#FFECBD"
         },
         {
           "texto": "Fresco",
@@ -102,9 +102,9 @@
       ],
       "etiquetas": [
         {
-          "texto": "Promoção",
-          "cor": "#FFFFFF",
-          "fundo": "#DC2626"
+          "texto": "Somente sob encomenda",
+          "cor": "#1E1E1E",
+          "fundo": "#FFECBD"
         },
         {
           "texto": "Fresco",
@@ -114,54 +114,16 @@
       ],
       "labels": [
         {
-          "texto": "Promoção",
-          "cor": "#FFFFFF",
-          "fundo": "#DC2626"
+          "texto": "Somente sob encomenda",
+          "cor": "#1E1E1E",
+          "fundo": "#FFECBD"
         },
         {
           "texto": "Fresco",
           "cor": "#ffffff",
           "fundo": "#0956e6"
         }
-      ],
-      "product_point_offer": {
-        "id": "ovos:1",
-        "product_id": "ovos:1",
-        "productId": "ovos:1",
-        "points": 20,
-        "pontos": 20,
-        "minimum_order_value": 0,
-        "minimumOrderValue": 0,
-        "is_active": true,
-        "isActive": true,
-        "starts_at": "",
-        "startsAt": "",
-        "ends_at": "",
-        "endsAt": ""
-      },
-      "productPointOffer": {
-        "id": "ovos:1",
-        "product_id": "ovos:1",
-        "productId": "ovos:1",
-        "points": 20,
-        "pontos": 20,
-        "minimum_order_value": 0,
-        "minimumOrderValue": 0,
-        "is_active": true,
-        "isActive": true,
-        "starts_at": "",
-        "startsAt": "",
-        "ends_at": "",
-        "endsAt": ""
-      },
-      "product_point_offer_points": 20,
-      "product_point_offer_minimum_order_value": 0,
-      "product_point_offer_active": true,
-      "product_point_offer_starts_at": "",
-      "product_point_offer_ends_at": "",
-      "points_label_text": "",
-      "pointsLabelText": "",
-      "points_preview": 20
+      ]
     }
   ],
   "higiene": [
@@ -273,45 +235,7 @@
           "cor": "#ffffff",
           "fundo": "#d97706"
         }
-      ],
-      "product_point_offer": {
-        "id": "higiene:4",
-        "product_id": "higiene:4",
-        "productId": "higiene:4",
-        "points": 0,
-        "pontos": 0,
-        "minimum_order_value": 0,
-        "minimumOrderValue": 0,
-        "is_active": false,
-        "isActive": false,
-        "starts_at": "",
-        "startsAt": "",
-        "ends_at": "",
-        "endsAt": ""
-      },
-      "productPointOffer": {
-        "id": "higiene:4",
-        "product_id": "higiene:4",
-        "productId": "higiene:4",
-        "points": 0,
-        "pontos": 0,
-        "minimum_order_value": 0,
-        "minimumOrderValue": 0,
-        "is_active": false,
-        "isActive": false,
-        "starts_at": "",
-        "startsAt": "",
-        "ends_at": "",
-        "endsAt": ""
-      },
-      "product_point_offer_points": 0,
-      "product_point_offer_minimum_order_value": 0,
-      "product_point_offer_active": false,
-      "product_point_offer_starts_at": "",
-      "product_point_offer_ends_at": "",
-      "points_label_text": "",
-      "pointsLabelText": "",
-      "points_preview": 0
+      ]
     }
   ],
   "limpeza": []
