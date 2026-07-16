@@ -1,5 +1,5 @@
-﻿import { restoreMiniAppUiState } from './storage.js?v=2026.07.16.405';
-import { normalizeWholesaleConfig } from './catalog.js?v=2026.07.16.405';
+﻿import { restoreMiniAppUiState } from './storage.js?v=2026.07.16.081';
+import { normalizeWholesaleConfig } from './catalog.js?v=2026.07.16.081';
 
 export const MINIAPP_UI_DEFAULTS = {
   header: {
@@ -255,7 +255,7 @@ export function createState() {
       mensagem: 'Verificando disponibilidade da loja.',
       aceitaPedidos: false
     },
-    cliente: { nome: 'cliente' },
+    cliente: {},
     checkout: {},
     pagamentos: {},
     sections: [],

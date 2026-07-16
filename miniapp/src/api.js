@@ -1,6 +1,6 @@
-import { isTemporaryPublicApiBase } from './utils.js?v=2026.07.16.405';
-import { applySnapshot, applyStoreSnapshot } from './state.js?v=2026.07.16.405';
-import { awaitingFinalWeightState, isAwaitingFinalWeight } from './orderFlow.js?v=2026.07.16.405';
+import { isTemporaryPublicApiBase } from './utils.js?v=2026.07.16.081';
+import { applySnapshot, applyStoreSnapshot } from './state.js?v=2026.07.16.081';
+import { awaitingFinalWeightState, isAwaitingFinalWeight } from './orderFlow.js?v=2026.07.16.081';
 
 export const TELEGRAM_AUTH_PATH = '/api/telegram/auth';
 export const MINIAPP_API_PATHS = {
@@ -73,11 +73,22 @@ export async function carregarRuntimeConfigPages(state, options = {}) {
 
 export function headers(state) {
   const initData = globalThis.window?.Telegram?.WebApp?.initData || '';
-  const telegramId = String(globalThis.window?.Telegram?.WebApp?.initDataUnsafe?.user?.id || '').trim();
+  const telegramId = String(
+    state?.telegramId ||
+    globalThis.window?.Telegram?.WebApp?.initDataUnsafe?.user?.id ||
+    ''
+  ).trim();
   const storage = globalThis.localStorage || globalThis.window?.localStorage;
   const tokenOwner = String(storage?.getItem?.('mj_miniapp_bridge_token_owner') || '').trim();
-  const storedToken = globalThis.window?.MJMiniAppBridge?.getSessionToken?.() || storage?.getItem?.('mj_miniapp_bridge_token') || '';
-  const token = !initData && telegramId && tokenOwner === telegramId ? storedToken : '';
+  const bridgeToken = String(globalThis.window?.MJMiniAppBridge?.state?.sessionToken || '').trim();
+  const storedToken = String(
+    globalThis.window?.MJMiniAppBridge?.getSessionToken?.() ||
+    storage?.getItem?.('mj_miniapp_bridge_token') ||
+    ''
+  ).trim();
+  const token = !initData && telegramId && tokenOwner === telegramId
+    ? (bridgeToken || storedToken)
+    : '';
   return {
     'Content-Type': 'application/json',
     ...(initData ? { 'X-Telegram-Init-Data': initData } : {}),
@@ -119,9 +130,23 @@ export async function authenticateBridge(state) {
       apiBase: apiBase(state),
       devChatId: globalThis.window?.Telegram?.WebApp?.initDataUnsafe?.user?.id || url.searchParams.get('devChatId') || '',
     });
+    const telegramId = String(
+      data?.chatId ||
+      data?.telegramId ||
+      data?.snapshot?.chatId ||
+      data?.snapshot?.telegramId ||
+      data?.snapshot?.cliente?.telegramId ||
+      data?.snapshot?.cliente?.chatId ||
+      ''
+    ).trim();
+    const telegramIdNativo = String(globalThis.window?.Telegram?.WebApp?.initDataUnsafe?.user?.id || '').trim();
+    if (!telegramId || (telegramIdNativo && telegramIdNativo !== telegramId)) {
+      throw new Error('A identidade autenticada nao corresponde a conta atual do Telegram.');
+    }
+    state.telegramId = telegramId;
     state.authOk = true;
     state.bridgeReady = true;
-    if (data.snapshot) applySnapshot(state, data.snapshot);
+    if (data.snapshot) applySnapshot(state, { ...data.snapshot, telegramId });
     return data;
   } catch {
     return null;

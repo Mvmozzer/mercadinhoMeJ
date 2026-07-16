@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-16T11:16:45.365-03:00",
-  "webBuild": "2026.07.16.405",
-  "apiBaseUrl": "https://fuji-reality-tournament-summaries.trycloudflare.com",
+  "updatedAt": "2026-07-16T11:28:01.265-03:00",
+  "webBuild": "2026.07.16.081",
+  "apiBaseUrl": "https://api.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
 }
