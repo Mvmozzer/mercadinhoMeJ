@@ -73,16 +73,16 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartLineSubtotal, cartQty, cartTotal, changeQty, clearCart, setQty, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.16.695';
-import { emojiForSection, filterProducts, isWeightedProduct, looksLikeSectionEmoji, productAvailability, productBadges, weightedProductRules } from './catalog.js?v=2026.07.16.695';
-import { checkoutCreate, completeCheckoutAttempt, isMiniAppPaymentEnabled, paymentMethodForCustomer, paymentModeForCustomer } from './checkout.js?v=2026.07.16.695';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.16.695';
-import { escapeHtml, formatMeasure, greetingFor, money } from './utils.js?v=2026.07.16.695';
-import { persistMiniAppUiState } from './storage.js?v=2026.07.16.695';
-import { updateMainButton } from './telegram.js?v=2026.07.16.695';
-import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.16.695';
-import { cancelOrder } from './orders.js?v=2026.07.16.695';
-import { miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.16.695';
+import { cartCount, cartItems, cartLineSubtotal, cartQty, cartTotal, changeQty, clearCart, setQty, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.16.914';
+import { emojiForSection, filterProducts, isWeightedProduct, looksLikeSectionEmoji, productAvailability, productBadges, weightedProductRules } from './catalog.js?v=2026.07.16.914';
+import { checkoutCreate, completeCheckoutAttempt, isMiniAppPaymentEnabled, paymentMethodForCustomer, paymentModeForCustomer } from './checkout.js?v=2026.07.16.914';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.16.914';
+import { escapeHtml, formatMeasure, greetingFor, money } from './utils.js?v=2026.07.16.914';
+import { persistMiniAppUiState } from './storage.js?v=2026.07.16.914';
+import { updateMainButton } from './telegram.js?v=2026.07.16.914';
+import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.16.914';
+import { cancelOrder } from './orders.js?v=2026.07.16.914';
+import { miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.16.914';
 import {
   activeOrderId,
   applyOrderStatusToState,
@@ -93,7 +93,7 @@ import {
   mapFromTrackingPayload,
   orderFlowPollingMs,
   shouldOpenTrackingAfterPayment
-} from './orderFlow.js?v=2026.07.16.695';
+} from './orderFlow.js?v=2026.07.16.914';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -427,9 +427,6 @@ function productThumb(product) {
 function productPriceBlock(product = {}, quantity = 0) {
   const priceInfo = wholesalePriceInfo(product, quantity);
   const precoAtual = Number(priceInfo.price || product.price || 0);
-  const precoOriginal = Number(product.normalPrice || product.preco_normal || product.price || 0);
-  const isPromocao = (product.promocao === true || product.promocao_ativa === true || product.promocaoAtiva === true)
-    && Number(precoAtual) > 0 && Number(precoOriginal) > Number(precoAtual);
   const atacadoLinha = product.wholesaleActive === true && Number(product.wholesalePrice || product.preco_atacado || 0) > 0
     ? `<em class="wholesale-price-hint">Atacado ${formatMoney(product.wholesalePrice || product.preco_atacado)} a partir de ${Number(product.wholesaleMinQuantity || product.quantidade_atacado || 0)} un.</em>`
     : '';
@@ -438,10 +435,7 @@ function productPriceBlock(product = {}, quantity = 0) {
   if (priceInfo.wholesaleApplied) {
     return `<strong>${formatMoney(precoAtual)}</strong>${unitSuffix}<small>${formatMoney(priceInfo.retailPrice)}</small><em class="wholesale-price-hint wholesale-price-hint--active">Atacado aplicado</em>`;
   }
-  if (!isPromocao) {
-    return `<strong>${formatMoney(precoAtual)}</strong>${unitSuffix}${atacadoLinha}`;
-  }
-  return `<strong>${formatMoney(precoAtual)}</strong>${unitSuffix}<small>${formatMoney(precoOriginal)}</small>${atacadoLinha}`;
+  return `<strong>${formatMoney(precoAtual)}</strong>${unitSuffix}${atacadoLinha}`;
 }
 
 function svgIcon(name, size = 20) {

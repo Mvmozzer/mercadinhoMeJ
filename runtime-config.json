@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-16T11:38:15.009-03:00",
-  "webBuild": "2026.07.16.695",
-  "apiBaseUrl": "https://achieved-mls-bond-alone.trycloudflare.com",
+  "updatedAt": "2026-07-16T12:48:34.636-03:00",
+  "webBuild": "2026.07.16.914",
+  "apiBaseUrl": "https://environments-restaurants-decisions-ones.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
 }

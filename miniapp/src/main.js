@@ -1,4 +1,4 @@
-import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.16.695';
+import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.16.914';
 import {
   atualizarStatusLoja,
   authenticateBridge,
@@ -8,12 +8,12 @@ import {
   loadCatalogWithFallback,
   loadCustomer,
   loadHealth
-} from './api.js?v=2026.07.16.695';
-import { createRenderer } from './render.js?v=2026.07.16.695';
-import { createState, applySnapshot, normalizeMiniAppUi, setRuntimeOnline } from './state.js?v=2026.07.16.695';
-import { normalizeCatalog } from './catalog.js?v=2026.07.16.695';
-import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.16.695';
-import { loadOrders } from './orders.js?v=2026.07.16.695';
+} from './api.js?v=2026.07.16.914';
+import { createRenderer } from './render.js?v=2026.07.16.914';
+import { createState, applySnapshot, miniappStoreIsAvailable, normalizeMiniAppUi, setRuntimeOnline } from './state.js?v=2026.07.16.914';
+import { normalizeCatalog } from './catalog.js?v=2026.07.16.914';
+import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.16.914';
+import { loadOrders } from './orders.js?v=2026.07.16.914';
 
 function sincronizarStatusLoja(state, health) {
   return atualizarStatusLoja(state, health || {});
@@ -48,8 +48,11 @@ function miniappRefreshSignature(state = {}) {
       image: product.image || product.imagem || product.imagem_url || '',
       retailPrice: Number(product.price ?? product.preco ?? 0),
       normalPrice: Number(product.normalPrice ?? product.preco_normal ?? product.preco ?? product.price ?? 0),
-      promotionalPrice: Number(product.preco_promocional ?? product.precoPromocional ?? 0),
-      promotion: product.promocao === true || product.promocao_ativa === true || product.promocaoAtiva === true,
+      badges: (product.badges || product.tarjas || product.labels || []).map(badge => ({
+        text: String(badge?.text || badge?.texto || badge?.label || badge || '').trim(),
+        color: String(badge?.color || badge?.cor || '').trim(),
+        background: String(badge?.background || badge?.fundo || badge?.bg || '').trim()
+      })),
       wholesaleActive: product.wholesaleActive === true || product.atacado_ativo === true || product.atacadoAtivo === true,
       wholesalePrice: Number(product.wholesalePrice ?? product.preco_atacado ?? product.precoAtacado ?? 0),
       wholesaleMinQuantity: Number(product.wholesaleMinQuantity ?? product.quantidade_atacado ?? product.quantidadeAtacado ?? 0),
@@ -97,13 +100,16 @@ async function hydrateCustomerBeforeRender(state) {
   }
   return customer;
 }
-async function refreshMiniAppVisualConfig(state) {
+async function refreshMiniAppVisualConfig(state, options = {}) {
   const before = miniappRefreshSignature(state);
+  const availableBeforeHealth = miniappStoreIsAvailable(state);
   const health = await loadHealth(state);
   setRuntimeOnline(state, Boolean(health?.ok !== false && health?.loja));
+  if (state.runtimeOnline) sincronizarStatusLoja(state, health);
+  const availableAfterHealth = miniappStoreIsAvailable(state);
+  if (availableBeforeHealth !== availableAfterHealth) options.onAvailabilityChange?.(availableAfterHealth, health);
   if (!state.runtimeOnline) return { health, changed: miniappRefreshSignature(state) !== before };
   if (health?.checkout?.pollingMs) state.pollingMs = health.checkout.pollingMs;
-  sincronizarStatusLoja(state, health);
   if (health?.checkout) state.checkout = { ...state.checkout, ...health.checkout };
   const customer = await loadCustomer(state);
   if (customer?.cliente) applySnapshot(state, {
@@ -130,13 +136,24 @@ async function refreshMiniAppVisualConfig(state) {
   return { health, changed: miniappRefreshSignature(state) !== before };
 }
 function pollMiniApp(renderer, state) {
-  refreshMiniAppVisualConfig(state)
+  refreshMiniAppVisualConfig(state, {
+    onAvailabilityChange: () => renderer?.render?.()
+  })
     .then(({ changed }) => {
       if (changed) renderer?.render?.();
     })
     .catch(() => null);
 }
 function startPolling(renderer, state) { return window.setInterval(() => pollMiniApp(renderer, state), miniappPollingMs(state)); }
+function bindRuntimeRecovery(renderer, state) {
+  if (state.__runtimeRecoveryBound) return;
+  state.__runtimeRecoveryBound = true;
+  const refresh = () => pollMiniApp(renderer, state);
+  window.addEventListener?.('online', refresh);
+  document.addEventListener?.('visibilitychange', () => {
+    if (document.visibilityState === 'visible') refresh();
+  });
+}
 function applyBridgeSnapshot(renderer, state, snapshot = {}) {
   const before = miniappRefreshSignature(state);
   applySnapshot(state, snapshot);
@@ -247,6 +264,8 @@ async function init() {
   // Checkout marker: payment mode comes from panel config.
   bindBridgeCustomerSync(renderer, state);
   renderer.render();
+  bindRuntimeRecovery(renderer, state);
+  pollMiniApp(renderer, state);
   startPolling(renderer, state);
 }
 

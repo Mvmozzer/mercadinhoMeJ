@@ -1,4 +1,4 @@
-import { slugify } from './utils.js?v=2026.07.16.695';
+import { slugify } from './utils.js?v=2026.07.16.914';
 
 export const WHOLESALE_DEFAULTS = {
   ativo: true,
@@ -254,9 +254,7 @@ export function productImage(product = {}) {
 }
 
 export function productPrice(product = {}) {
-  const promo = num(product.preco_promocional || product.precoPromocional);
-  const base = num(product.preco || product.price || product.preco_normal || product.precoVendaAtual);
-  return product.promocao === true && promo > 0 ? promo : base;
+  return num(product.preco || product.price || product.preco_normal || product.precoVendaAtual);
 }
 
 export function emojiForSection(name = '') {
