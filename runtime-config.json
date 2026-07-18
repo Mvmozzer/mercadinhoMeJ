@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-16T17:42:03.114-03:00",
-  "webBuild": "2026.07.16.523",
-  "apiBaseUrl": "https://routines-flights-kyle-mercy.trycloudflare.com",
+  "updatedAt": "2026-07-18T10:03:04.318-03:00",
+  "webBuild": "2026.07.18.784",
+  "apiBaseUrl": "https://adams-fellowship-injection-cohen.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
 }

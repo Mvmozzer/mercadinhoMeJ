@@ -1,6 +1,6 @@
-import { cartPayload } from './cart.js?v=2026.07.16.523';
-import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.07.16.523';
-import { fallbackSendData, telegramPayloadBytes, TELEGRAM_SEND_DATA_MAX_BYTES } from './telegram.js?v=2026.07.16.523';
+import { cartPayload } from './cart.js?v=2026.07.18.784';
+import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.07.18.784';
+import { fallbackSendData, telegramPayloadBytes, TELEGRAM_SEND_DATA_MAX_BYTES } from './telegram.js?v=2026.07.18.784';
 
 const MINIAPP_CHECKOUT_CREATE_PATH = '/api/miniapp/checkout/create';
 const MINIAPP_TELEGRAM_HANDOFF_PATH = '/api/miniapp/checkout/telegram-handoff';
