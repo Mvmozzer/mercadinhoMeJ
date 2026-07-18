@@ -1,6 +1,6 @@
-import { isTemporaryPublicApiBase } from './utils.js?v=2026.07.18.857';
-import { applySnapshot, applyStoreSnapshot } from './state.js?v=2026.07.18.857';
-import { awaitingFinalWeightState, isAwaitingFinalWeight } from './orderFlow.js?v=2026.07.18.857';
+import { isTemporaryPublicApiBase } from './utils.js?v=2026.07.18.868';
+import { applySnapshot, applyStoreSnapshot } from './state.js?v=2026.07.18.868';
+import { awaitingFinalWeightState, isAwaitingFinalWeight } from './orderFlow.js?v=2026.07.18.868';
 
 export const TELEGRAM_AUTH_PATH = '/api/telegram/auth';
 export const MINIAPP_API_PATHS = {
