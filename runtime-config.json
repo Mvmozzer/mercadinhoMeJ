@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-18T15:04:28.819-03:00",
-  "webBuild": "2026.07.18.868",
-  "apiBaseUrl": "https://returning-attending-acquired-platinum.trycloudflare.com",
+  "updatedAt": "2026-07-22T08:18:23.070-03:00",
+  "webBuild": "2026.07.22.103",
+  "apiBaseUrl": "https://val-cook-contribute-subscribers.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
 }
