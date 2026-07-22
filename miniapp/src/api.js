@@ -1,6 +1,6 @@
-import { isTemporaryPublicApiBase } from './utils.js?v=2026.07.22.587';
-import { applySnapshot, applyStoreSnapshot } from './state.js?v=2026.07.22.587';
-import { awaitingFinalWeightState, isAwaitingFinalWeight } from './orderFlow.js?v=2026.07.22.587';
+import { isTemporaryPublicApiBase } from './utils.js?v=2026.07.22.741';
+import { applySnapshot, applyStoreSnapshot } from './state.js?v=2026.07.22.741';
+import { awaitingFinalWeightState, isAwaitingFinalWeight } from './orderFlow.js?v=2026.07.22.741';
 
 export const TELEGRAM_AUTH_PATH = '/api/telegram/auth';
 export const MINIAPP_API_PATHS = {
@@ -44,10 +44,15 @@ export function apiBase(state = {}) {
   return normalizeApiBaseUrl(state.apiBase || state.apiBaseUrl || apiBaseFromLocation());
 }
 
+export function hasAuthenticatedMiniAppIdentity(state = {}) {
+  const initData = String(globalThis.window?.Telegram?.WebApp?.initData || '').trim();
+  return Boolean(initData || state.authOk === true || state.bridgeReady === true);
+}
+
 export async function carregarRuntimeConfigPages(state, options = {}) {
   const loc = currentLocation();
   const localBase = apiBaseFromLocation();
-  const shouldFetchRuntimeConfig = options.force === true || /github\.io$/i.test(loc.hostname) || loc.protocol === 'file:';
+  const shouldFetchRuntimeConfig = /github\.io$/i.test(loc.hostname) || loc.protocol === 'file:';
   if (shouldFetchRuntimeConfig) {
     const candidates = ['./runtime-config.json', '../runtime-config.json'];
     for (const candidate of candidates) {
@@ -108,7 +113,11 @@ export async function requestApi(state, path, options = {}) {
   if (baseTemporariaBloqueada) throw new Error('Base pública temporária bloqueada para checkout.');
   const res = await fetch(base + path, { ...options, headers: { ...headers(state), ...(options.headers || {}) } });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok || data.ok === false) throw new Error(data.erro || data.error || `Falha HTTP ${res.status}`);
+  if (!res.ok || data.ok === false) {
+    const error = new Error(data.erro || data.error || `Falha HTTP ${res.status}`);
+    error.status = Number(res.status || 0);
+    throw error;
+  }
   return data;
 }
 
@@ -116,6 +125,7 @@ export async function retryApiFetchWithFreshRuntimeConfig(state, path, options =
   try {
     return await requestApi(state, path, options);
   } catch (error) {
+    if (error?.status === 401 || error?.status === 403) throw error;
     await carregarRuntimeConfigPages(state, { force: true });
     return requestApi(state, path, options);
   }
@@ -155,7 +165,10 @@ export async function authenticateBridge(state) {
 
 export async function loadBootstrap(state) { return retryApiFetchWithFreshRuntimeConfig(state, MINIAPP_API_PATHS.bootstrap); }
 export async function loadHealth(state) { return retryApiFetchWithFreshRuntimeConfig(state, MINIAPP_API_PATHS.health).catch(() => null); }
-export async function loadCustomer(state) { return retryApiFetchWithFreshRuntimeConfig(state, MINIAPP_API_PATHS.customer).catch(() => null); }
+export async function loadCustomer(state) {
+  if (!hasAuthenticatedMiniAppIdentity(state)) return null;
+  return retryApiFetchWithFreshRuntimeConfig(state, MINIAPP_API_PATHS.customer).catch(() => null);
+}
 export async function loadCatalog(state) { return retryApiFetchWithFreshRuntimeConfig(state, MINIAPP_API_PATHS.catalog); }
 const CATALOG_SOURCE_FIELD = '__mjCatalogSource';
 

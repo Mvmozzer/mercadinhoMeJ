@@ -1,19 +1,20 @@
-import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.22.587';
+import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.22.741';
 import {
   atualizarStatusLoja,
   authenticateBridge,
   carregarRuntimeConfigPages,
   catalogPayloadSource,
+  hasAuthenticatedMiniAppIdentity,
   loadBootstrap,
   loadCatalogWithFallback,
   loadCustomer,
   loadHealth
-} from './api.js?v=2026.07.22.587';
-import { createRenderer } from './render.js?v=2026.07.22.587';
-import { createState, applySnapshot, miniappStoreIsAvailable, normalizeMiniAppUi, setRuntimeOnline } from './state.js?v=2026.07.22.587';
-import { normalizeCatalog } from './catalog.js?v=2026.07.22.587';
-import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.22.587';
-import { loadOrders } from './orders.js?v=2026.07.22.587';
+} from './api.js?v=2026.07.22.741';
+import { createRenderer } from './render.js?v=2026.07.22.741';
+import { createState, applySnapshot, miniappStoreIsAvailable, normalizeMiniAppUi, setRuntimeOnline } from './state.js?v=2026.07.22.741';
+import { normalizeCatalog } from './catalog.js?v=2026.07.22.741';
+import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.22.741';
+import { loadOrders } from './orders.js?v=2026.07.22.741';
 
 function sincronizarStatusLoja(state, health) {
   return atualizarStatusLoja(state, health || {});
@@ -88,7 +89,7 @@ function withTimeout(promise, ms = 2500) {
   });
 }
 async function hydrateCustomerBeforeRender(state) {
-  if (!state.apiBase && !state.authOk && !state.bridgeReady) return null;
+  if (!hasAuthenticatedMiniAppIdentity(state)) return null;
   const customer = await withTimeout(loadCustomer(state).catch(() => null));
   if (customer?.cliente) {
     state.telegramId = String(customer.cliente.telegramId || customer.cliente.telegram_id || customer.cliente.chatId || state.telegramId || '').trim();
@@ -111,14 +112,16 @@ async function refreshMiniAppVisualConfig(state, options = {}) {
   if (!state.runtimeOnline) return { health, changed: miniappRefreshSignature(state) !== before };
   if (health?.checkout?.pollingMs) state.pollingMs = health.checkout.pollingMs;
   if (health?.checkout) state.checkout = { ...state.checkout, ...health.checkout };
-  const customer = await loadCustomer(state);
-  if (customer?.cliente) applySnapshot(state, {
-    telegramId: customer.cliente.telegramId,
-    cliente: customer.cliente,
-    identidadeTelegram: customer.identidadeTelegram
-  });
-  const orders = await loadOrders(state);
-  if (Array.isArray(orders?.pedidos)) applySnapshot(state, { telegramId: orders.telegramId, pedidos: orders.pedidos });
+  if (hasAuthenticatedMiniAppIdentity(state)) {
+    const customer = await loadCustomer(state);
+    if (customer?.cliente) applySnapshot(state, {
+      telegramId: customer.cliente.telegramId,
+      cliente: customer.cliente,
+      identidadeTelegram: customer.identidadeTelegram
+    });
+    const orders = await loadOrders(state);
+    if (Array.isArray(orders?.pedidos)) applySnapshot(state, { telegramId: orders.telegramId, pedidos: orders.pedidos });
+  }
   const ui = miniappUiFromPayload(health);
   if (ui) state.miniappUi = normalizeMiniAppUi(ui);
   const catalog = await loadCatalogWithFallback(state).catch(() => null);
@@ -161,6 +164,7 @@ function applyBridgeSnapshot(renderer, state, snapshot = {}) {
   renderer?.refreshActiveOrderFlow?.();
 }
 async function refreshPersonalDataFromBridge(renderer, state) {
+  if (!hasAuthenticatedMiniAppIdentity(state)) return;
   const before = miniappRefreshSignature(state);
   const [customer, orders] = await Promise.all([
     loadCustomer(state).catch(() => null),
@@ -254,8 +258,10 @@ async function init() {
       reconcileCartWithCatalog(state);
     }
   }
-  const orders = await loadOrders(state);
-  if (Array.isArray(orders?.pedidos)) applySnapshot(state, { telegramId: orders.telegramId, pedidos: orders.pedidos });
+  if (hasAuthenticatedMiniAppIdentity(state)) {
+    const orders = await loadOrders(state);
+    if (Array.isArray(orders?.pedidos)) applySnapshot(state, { telegramId: orders.telegramId, pedidos: orders.pedidos });
+  }
   applySnapshot(state, window.__MJ_SNAPSHOT__ || {});
   await hydrateCustomerBeforeRender(state);
   if (!state.products.length) state.error = 'Catálogo vazio no painel.';

@@ -1,4 +1,4 @@
-import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.07.22.587';
+import { hasAuthenticatedMiniAppIdentity, retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.07.22.741';
 
 function orderPath(pedidoId, action = '') {
   const id = String(pedidoId || '').trim();
@@ -7,6 +7,7 @@ function orderPath(pedidoId, action = '') {
 }
 
 export async function loadOrders(state) {
+  if (!hasAuthenticatedMiniAppIdentity(state)) return { ok: false, pedidos: [] };
   return retryApiFetchWithFreshRuntimeConfig(state, '/api/miniapp/pedidos')
     .catch(() => ({ ok: false, pedidos: [] }));
 }
