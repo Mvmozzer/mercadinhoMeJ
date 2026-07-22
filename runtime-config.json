@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-22T08:59:26.190-03:00",
-  "webBuild": "2026.07.22.566",
-  "apiBaseUrl": "https://disturbed-podcast-scanners-vsnet.trycloudflare.com",
+  "updatedAt": "2026-07-22T09:07:32.005-03:00",
+  "webBuild": "2026.07.22.052",
+  "apiBaseUrl": "https://filme-memo-now-correspondence.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
 }
