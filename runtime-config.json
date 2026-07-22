@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-22T08:18:23.070-03:00",
-  "webBuild": "2026.07.22.103",
-  "apiBaseUrl": "https://val-cook-contribute-subscribers.trycloudflare.com",
+  "updatedAt": "2026-07-22T08:59:26.190-03:00",
+  "webBuild": "2026.07.22.566",
+  "apiBaseUrl": "https://disturbed-podcast-scanners-vsnet.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
 }

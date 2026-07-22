@@ -1,5 +1,5 @@
-import { CART_KEY, readJson, writeJson } from './storage.js?v=2026.07.22.103';
-import { isWeightedProduct, measureConversionFactor, productAvailability, productWholesale, weightedProductRules } from './catalog.js?v=2026.07.22.103';
+import { CART_KEY, readJson, writeJson } from './storage.js?v=2026.07.22.566';
+import { isWeightedProduct, measureConversionFactor, productAvailability, productWholesale, weightedProductRules } from './catalog.js?v=2026.07.22.566';
 
 function itemQuantity(item = {}) {
   const quantity = Number(item.quantity ?? item.quantidade ?? item.qtd ?? 0);
