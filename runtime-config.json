@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-23T10:08:59.697-03:00",
-  "webBuild": "2026.07.23.139",
-  "apiBaseUrl": "https://homeless-thunder-gui-catch.trycloudflare.com",
+  "updatedAt": "2026-07-23T10:12:30.983-03:00",
+  "webBuild": "2026.07.23.350",
+  "apiBaseUrl": "https://freebsd-funky-milwaukee-subject.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
 }
