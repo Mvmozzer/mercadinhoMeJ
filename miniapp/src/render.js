@@ -73,16 +73,16 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartLineSubtotal, cartQty, cartTotal, changeQty, clearCart, setQty, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.23.082';
-import { emojiForSection, filterProducts, isWeightedProduct, looksLikeSectionEmoji, productAvailability, productBadges, weightedProductRules } from './catalog.js?v=2026.07.23.082';
-import { checkoutCreate, completeCheckoutAttempt, isMiniAppPaymentEnabled, paymentMethodForCustomer, paymentModeForCustomer } from './checkout.js?v=2026.07.23.082';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.23.082';
-import { escapeHtml, formatMeasure, greetingFor, money } from './utils.js?v=2026.07.23.082';
-import { persistMiniAppUiState } from './storage.js?v=2026.07.23.082';
-import { updateMainButton } from './telegram.js?v=2026.07.23.082';
-import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.23.082';
-import { cancelOrder } from './orders.js?v=2026.07.23.082';
-import { miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.23.082';
+import { cartCount, cartItems, cartLineSubtotal, cartQty, cartTotal, changeQty, clearCart, setQty, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.23.139';
+import { emojiForSection, filterProducts, isWeightedProduct, looksLikeSectionEmoji, productAvailability, productBadges, weightedProductRules } from './catalog.js?v=2026.07.23.139';
+import { checkoutCreate, completeCheckoutAttempt, isMiniAppPaymentEnabled, paymentMethodForCustomer, paymentModeForCustomer } from './checkout.js?v=2026.07.23.139';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.23.139';
+import { escapeHtml, formatMeasure, greetingFor, money } from './utils.js?v=2026.07.23.139';
+import { persistMiniAppUiState } from './storage.js?v=2026.07.23.139';
+import { updateMainButton } from './telegram.js?v=2026.07.23.139';
+import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.23.139';
+import { cancelOrder } from './orders.js?v=2026.07.23.139';
+import { miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.23.139';
 import {
   activeOrderId,
   applyOrderStatusToState,
@@ -93,7 +93,7 @@ import {
   mapFromTrackingPayload,
   orderFlowPollingMs,
   shouldOpenTrackingAfterPayment
-} from './orderFlow.js?v=2026.07.23.082';
+} from './orderFlow.js?v=2026.07.23.139';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -881,9 +881,7 @@ export function createRenderer(state) {
     const stock = Number(product.stock ?? product.estoque_pronta_entrega ?? product.estoque_atual ?? product.estoque ?? 0);
     if (!availability.preorder && stock <= 0) return 'Sem estoque para pronta entrega';
     if (availability.preorder) {
-      return availability.forecast
-        ? `Somente sob encomenda • ${availability.forecast}`
-        : 'Somente sob encomenda';
+      return availability.forecast || '';
     }
     return product.previsao_retirada_texto || product.previsaoRetiradaTexto || availability.forecast;
   }
@@ -1366,7 +1364,6 @@ export function createRenderer(state) {
                         <small>${escapeHtml(item.unit || 'un')} • ${formatMoney(item.price)} por ${escapeHtml(isWeightedProduct(item) ? (item.unit || 'kg') : 'unidade')}</small>
                         ${isWeightedProduct(item) ? `<small class="weighted-cart-notice">${escapeHtml(item.textoPesoAproximado || 'Peso aproximado; o valor final pode mudar apos a pesagem.')}</small>` : ''}
                         ${item.wholesaleApplied || item.atacado_aplicado ? `<small class="wholesale-cart-label">Atacado aplicado</small>` : ''}
-                        ${item.sob_encomenda || item.sobEncomenda ? `<small class="wholesale-cart-label">${escapeHtml(item.previsao_retirada_texto ? `Somente sob encomenda • ${item.previsao_retirada_texto}` : 'Somente sob encomenda')}</small>` : ''}
                       </div>
                       <div class="cart-item-controls">
                         ${allowQuantityChange ? `

@@ -1,4 +1,4 @@
-import { slugify } from './utils.js?v=2026.07.23.082';
+import { slugify } from './utils.js?v=2026.07.23.139';
 
 export const WHOLESALE_DEFAULTS = {
   ativo: true,
@@ -323,12 +323,10 @@ export function normalizeProduct(raw = {}, sectionName = '', index = 0) {
   const price = productPrice(raw);
   const description = String(raw.descricao || raw.description || raw.detalhes || '').trim();
   const brand = String(raw.marca || raw.brand || raw.fabricante || '').trim();
-  const badges = productBadges(raw);
+  const badges = productBadges(raw).filter(badge => (
+    !['sob encomenda', 'somente sob encomenda'].includes(String(badge.text || '').trim().toLowerCase())
+  ));
   const availability = productAvailability(raw);
-  if (availability.preorder) {
-    const withoutLegacyPreorder = badges.filter(badge => !['sob encomenda', 'somente sob encomenda'].includes(String(badge.text || '').trim().toLowerCase()));
-    badges.splice(0, badges.length, { text: 'Somente sob encomenda', color: '#1E1E1E', background: '#FFECBD' }, ...withoutLegacyPreorder);
-  }
   const wholesale = productWholesale(raw);
   const weighted = isWeightedProduct(raw);
   const saleMode = weighted ? 'weighted' : 'unit';
