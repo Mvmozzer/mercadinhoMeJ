@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-23T10:12:30.983-03:00",
-  "webBuild": "2026.07.23.350",
-  "apiBaseUrl": "https://freebsd-funky-milwaukee-subject.trycloudflare.com",
+  "updatedAt": "2026-07-23T10:38:20.747-03:00",
+  "webBuild": "2026.07.23.900",
+  "apiBaseUrl": "https://projector-kingdom-houston-discounted.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
 }
