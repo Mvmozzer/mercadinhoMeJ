@@ -1,7 +1,7 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-07-23T14:33:12.675-03:00",
-  "webBuild": "2026.07.23.992",
+  "updatedAt": "2026-07-23T14:33:38.115-03:00",
+  "webBuild": "2026.07.23.018",
   "apiBaseUrl": "https://cad-becoming-fun-temple.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
