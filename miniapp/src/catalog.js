@@ -1,4 +1,4 @@
-import { slugify } from './utils.js?v=2026.07.23.018';
+import { slugify } from './utils.js?v=2026.07.26.796';
 
 export const WHOLESALE_DEFAULTS = {
   ativo: true,
@@ -223,7 +223,7 @@ export function productAvailability(product = {}) {
     : 0;
   return {
     mode,
-    label: mode === 'sob_encomenda' ? 'Somente sob encomenda' : mode === 'oculto' ? 'Oculto' : 'Retirada hoje',
+    label: mode === 'sob_encomenda' ? 'Sob encomenda' : mode === 'oculto' ? 'Oculto' : 'Retirada hoje',
     preorder: mode === 'sob_encomenda',
     hidden: mode === 'oculto',
     automatic: automaticPreorder,

@@ -1,5 +1,5 @@
-import { CART_KEY, readJson, writeJson } from './storage.js?v=2026.07.23.018';
-import { isWeightedProduct, measureConversionFactor, productAvailability, productWholesale, weightedProductRules } from './catalog.js?v=2026.07.23.018';
+import { CART_KEY, readJson, writeJson } from './storage.js?v=2026.07.26.796';
+import { isWeightedProduct, measureConversionFactor, productAvailability, productWholesale, weightedProductRules } from './catalog.js?v=2026.07.26.796';
 
 function itemQuantity(item = {}) {
   const quantity = Number(item.quantity ?? item.quantidade ?? item.qtd ?? 0);
@@ -47,6 +47,12 @@ function productId(product = {}) {
 
 function cartItemId(item = {}) {
   return String(item.id || item.produto_id || item.produtoId || '').trim();
+}
+
+export function cartItemIsPreorder(item = {}) {
+  return item.sob_encomenda === true ||
+    item.sobEncomenda === true ||
+    productAvailability(item).preorder === true;
 }
 
 function productCatalogMap(products = []) {
@@ -199,7 +205,10 @@ export function cartCount(state) {
 }
 
 export function cartTotal(state) {
-  return Number(cartItems(state).reduce((sum, item) => sum + cartLineSubtotal(item), 0).toFixed(2));
+  return Number(cartItems(state).reduce(
+    (sum, item) => sum + (cartItemIsPreorder(item) ? 0 : cartLineSubtotal(item)),
+    0
+  ).toFixed(2));
 }
 
 export function changeQty(state, product, delta) {
@@ -235,12 +244,15 @@ export function clearCart(state) {
 
 export function cartPayload(state) {
   reconcileCartWithCatalog(state);
-  return cartItems(state).map(item => ({
+  return cartItems(state).map(item => {
+    const preorder = cartItemIsPreorder(item);
+    return ({
     produto_id: item.id,
     id: item.id,
     nome: item.name,
     quantidade: item.quantity,
-    preco: item.price,
+    preco: preorder ? 0 : item.price,
+    preco_catalogo_referencia: item.price,
     preco_varejo: item.retailPrice,
     preco_atacado: item.wholesalePrice,
     quantidade_atacado: item.wholesaleMinQuantity,
@@ -248,7 +260,9 @@ export function cartPayload(state) {
     progresso_atacado: item.wholesaleProgress,
     disponibilidade: item.disponibilidade,
     disponibilidade_label: item.disponibilidade_label,
-    sob_encomenda: item.sob_encomenda === true || item.sobEncomenda === true,
+    sob_encomenda: preorder,
+    preco_pendente: preorder,
+    status_encomenda_item: preorder ? 'preco_pendente' : '',
     prazo_retirada_dias: item.prazo_retirada_dias,
     previsao_retirada_texto: item.previsao_retirada_texto,
     saleMode: item.saleMode,
@@ -263,7 +277,8 @@ export function cartPayload(state) {
     quantidade_base_preco: quantityInPriceBase(item),
     quantidade_solicitada: item.quantity,
     peso_estimado: item.saleMode === 'weighted' ? item.quantity : null,
-    subtotal_estimado_exibido: cartLineSubtotal(item),
+    subtotal_estimado_exibido: preorder ? 0 : cartLineSubtotal(item),
     modo_venda: item.saleMode === 'weighted' ? 'granel' : 'unidade'
-  }));
+  });
+  });
 }

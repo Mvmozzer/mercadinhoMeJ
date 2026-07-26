@@ -73,16 +73,16 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItems, cartLineSubtotal, cartQty, cartTotal, changeQty, clearCart, setQty, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.23.018';
-import { emojiForSection, filterProducts, isWeightedProduct, looksLikeSectionEmoji, productAvailability, productBadges, weightedProductRules } from './catalog.js?v=2026.07.23.018';
-import { checkoutCreate, completeCheckoutAttempt, isMiniAppPaymentEnabled, paymentMethodForCustomer, paymentModeForCustomer } from './checkout.js?v=2026.07.23.018';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.23.018';
-import { escapeHtml, formatMeasure, greetingFor, money } from './utils.js?v=2026.07.23.018';
-import { persistMiniAppUiState } from './storage.js?v=2026.07.23.018';
-import { updateMainButton } from './telegram.js?v=2026.07.23.018';
-import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.23.018';
-import { cancelOrder } from './orders.js?v=2026.07.23.018';
-import { miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.23.018';
+import { cartCount, cartItemIsPreorder, cartItems, cartLineSubtotal, cartQty, cartTotal, changeQty, clearCart, setQty, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.26.796';
+import { emojiForSection, filterProducts, isWeightedProduct, looksLikeSectionEmoji, productAvailability, productBadges, weightedProductRules } from './catalog.js?v=2026.07.26.796';
+import { checkoutCreate, completeCheckoutAttempt, isMiniAppPaymentEnabled, paymentMethodForCustomer, paymentModeForCustomer } from './checkout.js?v=2026.07.26.796';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.26.796';
+import { escapeHtml, formatMeasure, greetingFor, money } from './utils.js?v=2026.07.26.796';
+import { persistMiniAppUiState } from './storage.js?v=2026.07.26.796';
+import { updateMainButton } from './telegram.js?v=2026.07.26.796';
+import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.26.796';
+import { cancelOrder } from './orders.js?v=2026.07.26.796';
+import { miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.26.796';
 import {
   activeOrderId,
   applyOrderStatusToState,
@@ -93,7 +93,7 @@ import {
   mapFromTrackingPayload,
   orderFlowPollingMs,
   shouldOpenTrackingAfterPayment
-} from './orderFlow.js?v=2026.07.23.018';
+} from './orderFlow.js?v=2026.07.26.796';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -425,6 +425,9 @@ function productThumb(product) {
 }
 
 function productPriceBlock(product = {}, quantity = 0) {
+  if (productAvailability(product).preorder) {
+    return '<strong>Sob encomenda</strong><em class="wholesale-price-hint">Valor definido posteriormente</em>';
+  }
   const priceInfo = wholesalePriceInfo(product, quantity);
   const precoAtual = Number(priceInfo.price || product.price || 0);
   const atacadoLinha = product.wholesaleActive === true && Number(product.wholesalePrice || product.preco_atacado || 0) > 0
@@ -1300,7 +1303,7 @@ export function createRenderer(state) {
           </div>
           ${renderWholesaleProgress(product, quantity)}
           <div class="detail-buy">
-            <strong>${formatMoney(priceInfo.price || product.price || 0)}</strong>
+            <strong>${productAvailability(product).preorder ? 'Valor a definir' : formatMoney(priceInfo.price || product.price || 0)}</strong>
             <button data-qty-plus="${escapeHtml(product.id)}" aria-label="Adicionar ao carrinho">+</button>
           </div>
         </section>
@@ -1318,14 +1321,19 @@ export function createRenderer(state) {
     const allowClearCart = state.checkout?.permitirLimparCarrinho !== false;
     const miniAppPayment = isMiniAppPaymentEnabled(state);
     const paymentMethod = paymentMethodForCustomer(state);
-    const finishLabel = miniAppPayment
+    const hasPreorder = items.some(cartItemIsPreorder);
+    const finishLabel = hasPreorder
+      ? 'Finalizar encomenda'
+      : miniAppPayment
       ? (paymentMethod === 'pix' ? 'Pagar com Pix' : 'Confirmar pedido')
       : 'Finalizar no Telegram';
     const checkoutSubtitle = acceptsOrders
-      ? (miniAppPayment ? 'Revise antes de pagar no Mini App' : 'Revise antes de finalizar no Telegram')
+      ? (hasPreorder ? 'Revise antes de enviar sua encomenda' : (miniAppPayment ? 'Revise antes de pagar no Mini App' : 'Revise antes de finalizar no Telegram'))
       : 'Loja fechada para novos pedidos';
     const checkoutNote = acceptsOrders
-      ? (miniAppPayment
+      ? (hasPreorder
+          ? 'A loja definira os precos dos itens sob encomenda e enviara a imagem para sua confirmacao. O Pix so sera gerado depois do aceite.'
+          : miniAppPayment
           ? (paymentMethod === 'pix'
               ? 'Pix copia e cola, QR Code, recebedor, valor e numero do pedido aparecem no Mini App.'
               : 'Pagamento em dinheiro na entrega ou retirada. O painel recebera o pedido sem gerar Pix.')
@@ -1361,7 +1369,9 @@ export function createRenderer(state) {
                     <div class="cart-item-body">
                       <div class="cart-item-text">
                         <strong>${escapeHtml(item.name)}</strong>
-                        <small>${escapeHtml(item.unit || 'un')} • ${formatMoney(item.price)} por ${escapeHtml(isWeightedProduct(item) ? (item.unit || 'kg') : 'unidade')}</small>
+                        ${cartItemIsPreorder(item)
+                          ? '<small class="wholesale-cart-label">Sob encomenda - valor definido posteriormente</small>'
+                          : `<small>${escapeHtml(item.unit || 'un')} • ${formatMoney(item.price)} por ${escapeHtml(isWeightedProduct(item) ? (item.unit || 'kg') : 'unidade')}</small>`}
                         ${isWeightedProduct(item) ? `<small class="weighted-cart-notice">${escapeHtml(item.textoPesoAproximado || 'Peso aproximado; o valor final pode mudar apos a pesagem.')}</small>` : ''}
                         ${item.wholesaleApplied || item.atacado_aplicado ? `<small class="wholesale-cart-label">Atacado aplicado</small>` : ''}
                       </div>
@@ -1374,8 +1384,8 @@ export function createRenderer(state) {
                           </div>
                         ` : `<div class="qty qty-readonly" aria-label="Quantidade ${escapeHtml(productQuantityLabel(item, item.quantity))}"><b>${escapeHtml(productQuantityLabel(item, item.quantity))}</b></div>`}
                         <div class="cart-item-total">
-                          <small>${isWeightedProduct(item) ? 'Subtotal estimado' : 'Total do item'}</small>
-                          <strong class="line-total">${formatMoney(cartLineSubtotal(item))}</strong>
+                          <small>${cartItemIsPreorder(item) ? 'Preco' : (isWeightedProduct(item) ? 'Subtotal estimado' : 'Total do item')}</small>
+                          <strong class="line-total">${cartItemIsPreorder(item) ? 'Valor a definir' : formatMoney(cartLineSubtotal(item))}</strong>
                         </div>
                       </div>
                     </div>
@@ -1389,7 +1399,7 @@ export function createRenderer(state) {
               <strong id="cartSummaryTitle">Resumo do pedido</strong>
               <small>${escapeHtml(itemCountLabel)}</small>
             </div>
-            ${miniAppPayment ? `
+            ${miniAppPayment && !hasPreorder ? `
               <fieldset class="checkout-payment-method" aria-label="Forma de pagamento">
                 <legend>Forma de pagamento</legend>
                 <button type="button" class="checkout-payment-option${paymentMethod === 'pix' ? ' active' : ''}" data-payment-method="pix" aria-pressed="${paymentMethod === 'pix' ? 'true' : 'false'}">
@@ -1401,8 +1411,9 @@ export function createRenderer(state) {
               </fieldset>
             ` : ''}
             <div class="cart-summary-values">
-              <div class="cart-summary-row"><span>Subtotal</span><strong>${formatMoney(cartTotal(state))}</strong></div>
-              <div class="cart-summary-row summary-total"><span>Total</span><strong>${formatMoney(cartTotal(state))}</strong></div>
+              <div class="cart-summary-row"><span>Itens com preco definido</span><strong>${formatMoney(cartTotal(state))}</strong></div>
+              ${hasPreorder ? '<div class="cart-summary-row"><span>Itens sob encomenda</span><strong>Valor a definir</strong></div>' : ''}
+              <div class="cart-summary-row summary-total"><span>${hasPreorder ? 'Total apos confirmacao' : 'Total'}</span><strong>${hasPreorder ? 'A definir' : formatMoney(cartTotal(state))}</strong></div>
             </div>
             <p class="telegram-checkout-note">${escapeHtml(checkoutNote)}</p>
             <div class="card-actions${acceptsOrders && !useNativeTelegramButton ? '' : ' card-actions--single'}">
@@ -1476,6 +1487,11 @@ export function createRenderer(state) {
     const awaitingWeight = orderAwaitingWeight === null
       ? isAwaitingFinalWeight(checkout)
       : orderAwaitingWeight;
+    const encomenda = pedido.encomenda || checkout.encomenda || {};
+    const statusEncomenda = String(encomenda.status || pedido.statusEncomenda || pedido.status_encomenda || '').trim().toLowerCase();
+    const awaitingPreorder = checkout.checkout?.aguardandoEncomenda === true ||
+      checkout.aguardandoEncomenda === true ||
+      ['preco_pendente', 'preco_definido', 'aguardando_confirmacao'].includes(statusEncomenda);
     const pix = state.pix || checkout.pix || {};
     const itens = Array.isArray(pedido.itens) && pedido.itens.length
       ? pedido.itens
@@ -1503,15 +1519,40 @@ export function createRenderer(state) {
         ${itens.map(item => {
           const quantidade = Number(item.quantidade || item.qtd || item.quantity || 1);
           const subtotal = Number(item.subtotal ?? cartLineSubtotal(item, quantidade));
+          const preorder = cartItemIsPreorder(item) || item.precoPendente === true || item.preco_pendente === true;
           return `
             <div>
               <span>${escapeHtml(productQuantityLabel(item, quantidade))}${isWeightedProduct(item) ? '' : 'x'} ${escapeHtml(item.nome || item.name || 'Produto')}</span>
-              <strong>${formatMoney(subtotal)}</strong>
+              <strong>${preorder ? 'Valor a definir' : formatMoney(subtotal)}</strong>
             </div>
           `;
         }).join('')}
       </section>
     `;
+    if (awaitingPreorder) {
+      return `
+        <main class="page telegram-checkout-panel success-screen" id="miniAppPaymentPanel" data-page="payment" data-awaiting-preorder="true">
+          <div class="topbar">
+            <button data-page="orders" aria-label="Voltar">${svgIcon('arrowLeft', 20)}</button>
+            <strong>Encomenda recebida</strong>
+            <span></span>
+          </div>
+          <section class="success-card telegram-handoff-card awaiting-weight-card">
+            <span class="success-icon" aria-hidden="true">${svgIcon('clock', 38)}</span>
+            <p class="greeting">Encomenda registrada</p>
+            <h1>Precos definidos pela loja</h1>
+            ${pedidoId ? `<strong class="order-id">Pedido ${escapeHtml(pedidoId)}</strong>` : ''}
+            <p>A loja vai informar os valores e enviar uma imagem no Telegram para voce confirmar ou cancelar.</p>
+            <p><strong>Nenhum Pix foi gerado.</strong> O pagamento sera liberado somente depois da sua confirmacao.</p>
+          </section>
+          ${receipt}
+          <section class="telegram-success-actions">
+            <button class="primary-wide" data-page="orders">Acompanhar encomenda</button>
+            <button data-page="home">Voltar aos produtos</button>
+          </section>
+        </main>
+      `;
+    }
     if (awaitingWeight) {
       return `
         <main class="page telegram-checkout-panel success-screen" id="miniAppPaymentPanel" data-page="payment" data-awaiting-final-weight="true">
@@ -1650,11 +1691,18 @@ export function createRenderer(state) {
         <section class="orders-list">
           ${state.orders.length ? state.orders.map(order => {
             const awaitingWeight = isAwaitingFinalWeight(order);
+            const statusEncomenda = String(order.encomenda?.status || order.statusEncomenda || order.status_encomenda || '').trim().toLowerCase();
+            const encomendaPendente = ['preco_pendente', 'preco_definido', 'aguardando_confirmacao'].includes(statusEncomenda);
+            const encomendaLabel = statusEncomenda === 'aguardando_confirmacao'
+              ? 'Encomenda aguardando sua confirmacao'
+              : statusEncomenda === 'preco_definido'
+                ? 'Encomenda com precos definidos'
+                : 'Encomenda - preco pendente';
             return `
-            <article class="order-card"${awaitingWeight ? ' data-awaiting-final-weight="true"' : ''}>
+            <article class="order-card"${awaitingWeight ? ' data-awaiting-final-weight="true"' : ''}${encomendaPendente ? ' data-awaiting-preorder="true"' : ''}>
               <strong>Pedido #${escapeHtml(orderId(order))}</strong>
-              <span>${escapeHtml(awaitingWeight ? 'Aguardando pesagem e valor final' : (order.status || 'Em andamento'))}</span>
-              <p>${escapeHtml(awaitingWeight ? 'O pagamento sera liberado apos a conferencia da loja.' : (order.pagamento?.status || order.status_pagamento || 'Aguardando pagamento'))}</p>
+              <span>${escapeHtml(encomendaPendente ? encomendaLabel : (awaitingWeight ? 'Aguardando pesagem e valor final' : (order.status || 'Em andamento')))}</span>
+              <p>${escapeHtml(encomendaPendente ? 'O Pix sera liberado somente depois da confirmacao da encomenda.' : (awaitingWeight ? 'O pagamento sera liberado apos a conferencia da loja.' : (order.pagamento?.status || order.status_pagamento || 'Aguardando pagamento')))}</p>
               <button data-tracking-order="${escapeHtml(orderId(order))}">${awaitingWeight ? 'Acompanhar pedido' : 'Acompanhar entrega'}</button>
             </article>
           `;
