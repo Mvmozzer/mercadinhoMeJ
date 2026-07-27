@@ -1,4 +1,4 @@
-import { slugify } from './utils.js?v=2026.07.26.266';
+import { slugify } from './utils.js?v=2026.07.26.921';
 
 export const WHOLESALE_DEFAULTS = {
   ativo: true,
@@ -417,7 +417,13 @@ export function normalizeCatalog(payload = {}) {
 
   const products = (rawProducts.length
     ? rawProducts.map((p, i) => normalizeProduct(p, p.secao || p.section || '', i))
-    : fromObject).filter(product => product && product.name && product.stock >= 0 && product.price > 0 && product.ativo !== false);
+    : fromObject).filter(product => (
+      product
+      && product.name
+      && product.stock >= 0
+      && (product.price > 0 || productAvailability(product).preorder)
+      && product.ativo !== false
+    ));
 
   const map = new Map();
 

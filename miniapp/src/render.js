@@ -73,27 +73,30 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItemIsPreorder, cartItems, cartLineSubtotal, cartQty, cartTotal, changeQty, clearCart, setQty, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.26.266';
-import { emojiForSection, filterProducts, isWeightedProduct, looksLikeSectionEmoji, productAvailability, productBadges, weightedProductRules } from './catalog.js?v=2026.07.26.266';
-import { checkoutCreate, completeCheckoutAttempt, isMiniAppPaymentEnabled, paymentMethodForCustomer, paymentModeForCustomer } from './checkout.js?v=2026.07.26.266';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.26.266';
-import { escapeHtml, formatMeasure, greetingFor, money } from './utils.js?v=2026.07.26.266';
-import { persistMiniAppUiState } from './storage.js?v=2026.07.26.266';
-import { updateMainButton } from './telegram.js?v=2026.07.26.266';
-import { loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.26.266';
-import { cancelOrder } from './orders.js?v=2026.07.26.266';
-import { miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.26.266';
+import { cartCount, cartItemIsPreorder, cartItems, cartLineSubtotal, cartQty, cartTotal, changeQty, clearCart, setQty, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.26.921';
+import { emojiForSection, filterProducts, isWeightedProduct, looksLikeSectionEmoji, productAvailability, productBadges, weightedProductRules } from './catalog.js?v=2026.07.26.921';
+import { checkoutCreate, completeCheckoutAttempt, isMiniAppPaymentEnabled, paymentMethodForCustomer, paymentModeForCustomer } from './checkout.js?v=2026.07.26.921';
+import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.26.921';
+import { escapeHtml, formatMeasure, greetingFor, money } from './utils.js?v=2026.07.26.921';
+import { persistMiniAppUiState } from './storage.js?v=2026.07.26.921';
+import { updateMainButton } from './telegram.js?v=2026.07.26.921';
+import { loadOrderDetail, loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.26.921';
+import { refreshPixStatus } from './pix.js?v=2026.07.26.921';
+import { cancelOrder } from './orders.js?v=2026.07.26.921';
+import { miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.26.921';
 import {
   activeOrderId,
   applyOrderStatusToState,
   applyTrackingToState,
   awaitingFinalWeightState,
+  awaitingPreorderState,
   isAwaitingFinalWeight,
+  isAwaitingPreorder,
   isFinalOrderStatus,
   mapFromTrackingPayload,
   orderFlowPollingMs,
   shouldOpenTrackingAfterPayment
-} from './orderFlow.js?v=2026.07.26.266';
+} from './orderFlow.js?v=2026.07.26.921';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -424,9 +427,9 @@ function productThumb(product) {
   return `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(product.name || 'Produto')}" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`;
 }
 
-function productPriceBlock(product = {}, quantity = 0) {
-  if (productAvailability(product).preorder) {
-    return '<strong>Sob encomenda</strong><em class="wholesale-price-hint">Valor definido posteriormente</em>';
+  function productPriceBlock(product = {}, quantity = 0) {
+    if (productAvailability(product).preorder) {
+      return '<strong>Sob encomenda</strong><em class="wholesale-price-hint">Valor a orçar</em>';
   }
   const priceInfo = wholesalePriceInfo(product, quantity);
   const precoAtual = Number(priceInfo.price || product.price || 0);
@@ -1303,7 +1306,7 @@ export function createRenderer(state) {
           </div>
           ${renderWholesaleProgress(product, quantity)}
           <div class="detail-buy">
-            <strong>${productAvailability(product).preorder ? 'Valor a definir' : formatMoney(priceInfo.price || product.price || 0)}</strong>
+            <strong>${productAvailability(product).preorder ? 'Valor a orçar' : formatMoney(priceInfo.price || product.price || 0)}</strong>
             <button data-qty-plus="${escapeHtml(product.id)}" aria-label="Adicionar ao carrinho">+</button>
           </div>
         </section>
@@ -1385,7 +1388,7 @@ export function createRenderer(state) {
                         ` : `<div class="qty qty-readonly" aria-label="Quantidade ${escapeHtml(productQuantityLabel(item, item.quantity))}"><b>${escapeHtml(productQuantityLabel(item, item.quantity))}</b></div>`}
                         <div class="cart-item-total">
                           <small>${cartItemIsPreorder(item) ? 'Preco' : (isWeightedProduct(item) ? 'Subtotal estimado' : 'Total do item')}</small>
-                          <strong class="line-total">${cartItemIsPreorder(item) ? 'Valor a definir' : formatMoney(cartLineSubtotal(item))}</strong>
+                          <strong class="line-total">${cartItemIsPreorder(item) ? 'Valor a orçar' : formatMoney(cartLineSubtotal(item))}</strong>
                         </div>
                       </div>
                     </div>
@@ -1412,7 +1415,7 @@ export function createRenderer(state) {
             ` : ''}
             <div class="cart-summary-values">
               <div class="cart-summary-row"><span>Itens com preco definido</span><strong>${formatMoney(cartTotal(state))}</strong></div>
-              ${hasPreorder ? '<div class="cart-summary-row"><span>Itens sob encomenda</span><strong>Valor a definir</strong></div>' : ''}
+              ${hasPreorder ? '<div class="cart-summary-row"><span>Itens sob encomenda</span><strong>Valor a orçar</strong></div>' : ''}
               <div class="cart-summary-row summary-total"><span>${hasPreorder ? 'Total apos confirmacao' : 'Total'}</span><strong>${hasPreorder ? 'A definir' : formatMoney(cartTotal(state))}</strong></div>
             </div>
             <p class="telegram-checkout-note">${escapeHtml(checkoutNote)}</p>
@@ -1489,16 +1492,24 @@ export function createRenderer(state) {
       : orderAwaitingWeight;
     const encomenda = pedido.encomenda || checkout.encomenda || {};
     const statusEncomenda = String(encomenda.status || pedido.statusEncomenda || pedido.status_encomenda || '').trim().toLowerCase();
-    const awaitingPreorder = checkout.checkout?.aguardandoEncomenda === true ||
-      checkout.aguardandoEncomenda === true ||
-      ['preco_pendente', 'preco_definido', 'aguardando_confirmacao'].includes(statusEncomenda);
+    const orderAwaitingPreorder = awaitingPreorderState(pedido);
+    const awaitingPreorder = orderAwaitingPreorder === null
+      ? isAwaitingPreorder(checkout)
+      : orderAwaitingPreorder;
     const pix = state.pix || checkout.pix || {};
     const itens = Array.isArray(pedido.itens) && pedido.itens.length
       ? pedido.itens
       : Array.isArray(checkout.itens) && checkout.itens.length
         ? checkout.itens
         : cartItems(state);
-    const total = Number(pedido.total ?? pix.valor ?? cartTotal(state) ?? 0);
+    const total = Number(
+      pix.valor ??
+      pedido.pagamento?.valor ??
+      pedido.total_final ??
+      pedido.total ??
+      cartTotal(state) ??
+      0
+    );
     const estimatedTotal = Number(
       pedido.totalEstimado ??
       pedido.total_estimado ??
@@ -1519,16 +1530,42 @@ export function createRenderer(state) {
         ${itens.map(item => {
           const quantidade = Number(item.quantidade || item.qtd || item.quantity || 1);
           const subtotal = Number(item.subtotal ?? cartLineSubtotal(item, quantidade));
-          const preorder = cartItemIsPreorder(item) || item.precoPendente === true || item.preco_pendente === true;
+          const preco = Number(item.preco ?? item.preco_unitario ?? item.price ?? 0);
+          const preorder = item.precoPendente === true ||
+            item.preco_pendente === true ||
+            (cartItemIsPreorder(item) && !(preco > 0));
           return `
             <div>
               <span>${escapeHtml(productQuantityLabel(item, quantidade))}${isWeightedProduct(item) ? '' : 'x'} ${escapeHtml(item.nome || item.name || 'Produto')}</span>
-              <strong>${preorder ? 'Valor a definir' : formatMoney(subtotal)}</strong>
+              <strong>${preorder ? 'Valor a orçar' : formatMoney(subtotal)}</strong>
             </div>
           `;
         }).join('')}
       </section>
     `;
+    if (statusEncomenda === 'cancelada' || String(pedido.status || '').trim().toLowerCase() === 'cancelado') {
+      return `
+        <main class="page telegram-checkout-panel success-screen" id="miniAppPaymentPanel" data-page="payment" data-preorder-cancelled="true">
+          <div class="topbar">
+            <button data-page="orders" aria-label="Voltar">${svgIcon('arrowLeft', 20)}</button>
+            <strong>Encomenda cancelada</strong>
+            <span></span>
+          </div>
+          <section class="success-card telegram-handoff-card awaiting-weight-card">
+            <span class="success-icon" aria-hidden="true">${svgIcon('clock', 38)}</span>
+            <p class="greeting">Pagamento encerrado</p>
+            <h1>Nenhum Pix foi gerado</h1>
+            ${pedidoId ? `<strong class="order-id">Pedido ${escapeHtml(pedidoId)}</strong>` : ''}
+            <p>Esta encomenda foi cancelada e nao possui pagamento pendente.</p>
+          </section>
+          ${receipt}
+          <section class="telegram-success-actions">
+            <button class="primary-wide" data-page="orders">Voltar aos pedidos</button>
+            <button data-page="home">Voltar aos produtos</button>
+          </section>
+        </main>
+      `;
+    }
     if (awaitingPreorder) {
       return `
         <main class="page telegram-checkout-panel success-screen" id="miniAppPaymentPanel" data-page="payment" data-awaiting-preorder="true">
@@ -1605,6 +1642,28 @@ export function createRenderer(state) {
           <section class="telegram-success-actions">
             <button class="primary-wide" data-page="orders">Acompanhar pedido</button>
             <button data-page="home">Voltar aos produtos</button>
+          </section>
+        </main>
+      `;
+    }
+    if (!copiaCola) {
+      return `
+        <main class="page telegram-checkout-panel success-screen" id="miniAppPaymentPanel" data-page="payment" data-payment-loading="true">
+          <div class="topbar">
+            <button data-page="orders" aria-label="Voltar">${svgIcon('arrowLeft', 20)}</button>
+            <strong>Pagamento</strong>
+            <span></span>
+          </div>
+          <section class="success-card telegram-handoff-card awaiting-weight-card">
+            <span class="success-icon" aria-hidden="true">${svgIcon('clock', 38)}</span>
+            <p class="greeting">Encomenda confirmada</p>
+            <h1>Preparando seu Pix</h1>
+            ${pedidoId ? `<strong class="order-id">Pedido ${escapeHtml(pedidoId)}</strong>` : ''}
+            <p>${escapeHtml(pix.mensagem || 'O pagamento esta sendo atualizado. Esta tela tentara novamente automaticamente.')}</p>
+          </section>
+          ${receipt}
+          <section class="telegram-success-actions">
+            <button class="primary-wide" data-page="orders">Acompanhar pedido</button>
           </section>
         </main>
       `;
@@ -1693,6 +1752,18 @@ export function createRenderer(state) {
             const awaitingWeight = isAwaitingFinalWeight(order);
             const statusEncomenda = String(order.encomenda?.status || order.statusEncomenda || order.status_encomenda || '').trim().toLowerCase();
             const encomendaPendente = ['preco_pendente', 'preco_definido', 'aguardando_confirmacao'].includes(statusEncomenda);
+            const statusPagamento = String(order.statusPagamento || order.status_pagamento || order.pagamento?.status || '').trim().toLowerCase();
+            const pagamentoEncerrado = [
+              'comprovante_recebido',
+              'pago',
+              'pagamento_confirmado',
+              'confirmado',
+              'cancelado',
+              'expirado'
+            ].includes(statusPagamento);
+            const podeAbrirPagamento = statusEncomenda === 'confirmada' &&
+              String(order.status || '').trim().toLowerCase() !== 'cancelado' &&
+              !pagamentoEncerrado;
             const encomendaLabel = statusEncomenda === 'aguardando_confirmacao'
               ? 'Encomenda aguardando sua confirmacao'
               : statusEncomenda === 'preco_definido'
@@ -1703,7 +1774,9 @@ export function createRenderer(state) {
               <strong>Pedido #${escapeHtml(orderId(order))}</strong>
               <span>${escapeHtml(encomendaPendente ? encomendaLabel : (awaitingWeight ? 'Aguardando pesagem e valor final' : (order.status || 'Em andamento')))}</span>
               <p>${escapeHtml(encomendaPendente ? 'O Pix sera liberado somente depois da confirmacao da encomenda.' : (awaitingWeight ? 'O pagamento sera liberado apos a conferencia da loja.' : (order.pagamento?.status || order.status_pagamento || 'Aguardando pagamento')))}</p>
-              <button data-tracking-order="${escapeHtml(orderId(order))}">${awaitingWeight ? 'Acompanhar pedido' : 'Acompanhar entrega'}</button>
+              ${podeAbrirPagamento
+                ? `<button data-payment-order="${escapeHtml(orderId(order))}">Ir para pagamento</button>`
+                : `<button data-tracking-order="${escapeHtml(orderId(order))}">${awaitingWeight ? 'Acompanhar pedido' : 'Acompanhar entrega'}</button>`}
             </article>
           `;
           }).join('') : '<div class="empty">Seus pedidos aparecerão aqui.</div>'}
@@ -1992,6 +2065,125 @@ export function createRenderer(state) {
     }
   }
 
+  function pixPayloadFrom(value = {}) {
+    const pedido = value?.pedido || value?.ordem || value?.order || value || {};
+    const direct = value?.pix ||
+      pedido.pix ||
+      pedido.pagamento?.pix ||
+      null;
+    if (direct) return direct;
+    const copiaCola = String(
+      pedido.pix_copia_e_cola ||
+      pedido.pagamento?.pixCopiaECola ||
+      pedido.pagamento?.pix_copia_e_cola ||
+      ''
+    ).trim();
+    if (!copiaCola) return null;
+    return {
+      copiaCola,
+      valor: Number(pedido.pix_valor || pedido.pagamento?.valor || pedido.total_final || pedido.total || 0),
+      txid: pedido.pix_txid || pedido.pagamento?.txid || ''
+    };
+  }
+
+  function pixPayloadHasCode(pix = {}) {
+    return Boolean(String(pix?.copiaCola || pix?.pix || '').trim());
+  }
+
+  function clearPendingPreorderCheckout(order = state.pedidoAtual || {}) {
+    if (!state.lastMiniAppCheckout) return;
+    state.lastMiniAppCheckout = {
+      ...state.lastMiniAppCheckout,
+      aguardandoEncomenda: false,
+      encomenda: {
+        ...(state.lastMiniAppCheckout.encomenda || {}),
+        ...(order.encomenda || {})
+      },
+      checkout: {
+        ...(state.lastMiniAppCheckout.checkout || {}),
+        aguardandoEncomenda: false
+      },
+      pedido: {
+        ...(state.lastMiniAppCheckout.pedido || {}),
+        ...order,
+        aguardandoEncomenda: false
+      }
+    };
+  }
+
+  async function hydrateConfirmedPreorderPayment(pedidoId, options = {}) {
+    const id = String(pedidoId || '').trim();
+    if (!id) return false;
+    const order = state.pedidoAtual || {};
+    const version = Number(order.encomenda?.versao || order.encomendaVersao || 0);
+    const paymentStatus = String(order.statusPagamento || order.status_pagamento || order.pagamento?.status || '').trim().toLowerCase();
+    const hydrationKey = `${id}:${version}:${paymentStatus || 'confirmada'}`;
+    if (state.__preorderPaymentHydrationKey === hydrationKey && options.force !== true) {
+      return false;
+    }
+    state.__preorderPaymentHydrationKey = hydrationKey;
+
+    const before = JSON.stringify({
+      order: state.pedidoAtual || null,
+      pix: state.pix || null
+    });
+    const detail = await loadOrderDetail(state, id);
+    if (detail?.pedido) {
+      applyOrderStatusToState(state, detail);
+      clearPendingPreorderCheckout(state.pedidoAtual || detail.pedido);
+    }
+
+    let pix = pixPayloadFrom(detail) || pixPayloadFrom(state.pedidoAtual || {}) || state.pix;
+    if (!pixPayloadHasCode(pix)) {
+      const pixResult = await refreshPixStatus(state);
+      pix = pixPayloadFrom(pixResult) || pix;
+    }
+    if (pix) state.pix = pix;
+
+    if (pixPayloadHasCode(state.pix)) {
+      const hydratedOrder = state.pedidoAtual || {};
+      const hydratedVersion = Number(hydratedOrder.encomenda?.versao || hydratedOrder.encomendaVersao || 0);
+      const hydratedPaymentStatus = String(
+        hydratedOrder.statusPagamento ||
+        hydratedOrder.status_pagamento ||
+        hydratedOrder.pagamento?.status ||
+        paymentStatus ||
+        'confirmada'
+      ).trim().toLowerCase();
+      state.__preorderPaymentHydrationKey = `${id}:${hydratedVersion}:${hydratedPaymentStatus}`;
+      state.checkoutMessage = detail?.mensagem ||
+        'Encomenda confirmada. O Pix final esta pronto para pagamento.';
+    } else {
+      state.__preorderPaymentHydrationKey = '';
+      state.checkoutMessage = pix?.mensagem ||
+        'Encomenda confirmada. Estamos atualizando o Pix final.';
+    }
+    return before !== JSON.stringify({
+      order: state.pedidoAtual || null,
+      pix: state.pix || null
+    });
+  }
+
+  async function handleOpenOrderPayment(button) {
+    const pedidoId = String(button?.dataset?.paymentOrder || '').trim();
+    if (!pedidoId) return;
+    const order = (state.orders || []).find(item => (
+      String(item.id || item.pedidoId || '').trim() === pedidoId
+    ));
+    if (order) {
+      state.pedidoAtual = {
+        ...order,
+        aguardandoEncomenda: false
+      };
+      state.pix = pixPayloadFrom(order) || null;
+      clearPendingPreorderCheckout(state.pedidoAtual);
+    }
+    state.checkoutMessage = 'Carregando o Pix final da encomenda.';
+    navigateTo('payment');
+    await hydrateConfirmedPreorderPayment(pedidoId, { force: true });
+    render();
+  }
+
   async function refreshActiveOrderFlow() {
     const pedidoId = activeOrderId(state);
     if (!pedidoId || !['payment', 'tracking'].includes(state.page) || state.__orderFlowRefreshing) return;
@@ -2001,9 +2193,70 @@ export function createRenderer(state) {
         const status = await loadOrderStatus(state, pedidoId);
         if (!status) return;
         const previousPix = JSON.stringify(state.pix || null);
-        const result = applyOrderStatusToState(state, status);
+        const previousPreorderState = awaitingPreorderState(state.pedidoAtual);
+        const fallbackPreorderState = previousPreorderState === null
+          ? awaitingPreorderState(state.lastMiniAppCheckout)
+          : previousPreorderState;
+        let result = applyOrderStatusToState(state, status);
+        const statusPreorderState = awaitingPreorderState(status);
+        const paymentStatus = String(
+          result.order?.statusPagamento ||
+          result.order?.status_pagamento ||
+          result.order?.pagamento?.status ||
+          ''
+        ).trim().toLowerCase();
+        const paymentReleased = [
+          'aguardando_pix',
+          'aguardando_comprovante',
+          'comprovante_recusado',
+          'pagamento_recusado'
+        ].includes(paymentStatus);
+        const orderCancelled = String(result.order?.status || '').trim().toLowerCase() === 'cancelado';
+        const explicitPreorderStatus = String(
+          status?.pedido?.encomenda?.status ||
+          status?.encomenda?.status ||
+          status?.pedido?.statusEncomenda ||
+          status?.statusEncomenda ||
+          status?.pedido?.status_encomenda ||
+          status?.status_encomenda ||
+          ''
+        ).trim().toLowerCase();
+        const releasedPreorderStatus = orderCancelled || explicitPreorderStatus === 'cancelada'
+          ? 'cancelada'
+          : (explicitPreorderStatus === 'confirmada' ||
+              statusPreorderState === false ||
+              (fallbackPreorderState === true && paymentReleased))
+            ? 'confirmada'
+            : '';
+        let preorderHydrated = false;
+        if (releasedPreorderStatus) {
+          result = applyOrderStatusToState(state, {
+            pedido: {
+              ...result.order,
+              aguardandoEncomenda: false,
+              encomenda: {
+                ...(result.order?.encomenda || {}),
+                status: releasedPreorderStatus
+              },
+              statusEncomenda: releasedPreorderStatus,
+              status_encomenda: releasedPreorderStatus
+            },
+            updatedAt: status.updatedAt
+          });
+          clearPendingPreorderCheckout(result.order);
+          if (releasedPreorderStatus === 'confirmada') {
+            preorderHydrated = await hydrateConfirmedPreorderPayment(pedidoId);
+            result = {
+              ...result,
+              order: state.pedidoAtual || result.order
+            };
+          } else {
+            state.pix = null;
+          }
+        }
+        const refreshedPreorderState = awaitingPreorderState(result.order);
         const refreshedWeightState = awaitingFinalWeightState(status, result.order);
-        if (refreshedWeightState === true) state.pix = null;
+        if (refreshedPreorderState === true || refreshedWeightState === true) state.pix = null;
         else if (refreshedWeightState === false) {
           if (state.lastMiniAppCheckout?.checkout) {
             state.lastMiniAppCheckout.checkout = {
@@ -2019,7 +2272,7 @@ export function createRenderer(state) {
           navigateTo('tracking');
           return;
         }
-        if (result.changed || previousPix !== JSON.stringify(state.pix || null)) render();
+        if (result.changed || preorderHydrated || previousPix !== JSON.stringify(state.pix || null)) render();
         return;
       }
 
@@ -2094,6 +2347,14 @@ export function createRenderer(state) {
         state.orderActionMessage = '';
         state.orderActionMessageOrderId = '';
         navigateTo('tracking');
+      });
+    });
+    root.querySelectorAll('[data-payment-order]').forEach(button => {
+      button.addEventListener('click', () => {
+        handleOpenOrderPayment(button).catch(() => {
+          state.checkoutMessage = 'Nao foi possivel atualizar o Pix agora. Tente novamente em instantes.';
+          render();
+        });
       });
     });
     root.querySelectorAll('[data-open-sections]').forEach(button => {

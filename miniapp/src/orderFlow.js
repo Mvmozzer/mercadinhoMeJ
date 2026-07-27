@@ -10,6 +10,9 @@ const PAID_STATUSES = new Set([
 
 const FINAL_STATUSES = new Set(['entregue', 'cancelado']);
 const FINAL_WEIGHT_FLAGS = ['aguardandoPesagem', 'aguardando_pesagem', 'awaitingWeight', 'awaitingFinalWeight'];
+const PREORDER_PENDING_STATUSES = new Set(['preco_pendente', 'preco_definido', 'aguardando_confirmacao']);
+const PREORDER_RELEASED_STATUSES = new Set(['confirmada', 'cancelada']);
+const PREORDER_FLAGS = ['aguardandoEncomenda', 'aguardando_encomenda', 'awaitingPreorder'];
 
 function clean(value = '') {
   return String(value || '').trim();
@@ -51,6 +54,44 @@ export function awaitingFinalWeightState(...sources) {
 
 export function isAwaitingFinalWeight(...sources) {
   return awaitingFinalWeightState(...sources) === true;
+}
+
+function preorderStatus(source = {}) {
+  return cleanLower(
+    source.encomenda?.status ||
+    source.statusEncomenda ||
+    source.status_encomenda ||
+    source.preorderStatus ||
+    ''
+  );
+}
+
+export function awaitingPreorderState(...sources) {
+  const queue = sources.filter(source => source && typeof source === 'object');
+  const visited = new Set();
+  let explicitFalse = false;
+  while (queue.length) {
+    const source = queue.shift();
+    if (!source || typeof source !== 'object' || visited.has(source)) continue;
+    visited.add(source);
+    const status = preorderStatus(source);
+    if (PREORDER_PENDING_STATUSES.has(status)) return true;
+    if (PREORDER_RELEASED_STATUSES.has(status)) return false;
+    for (const field of PREORDER_FLAGS) {
+      if (!Object.prototype.hasOwnProperty.call(source, field)) continue;
+      const value = booleanFlag(source[field]);
+      if (value === true) return true;
+      if (value === false) explicitFalse = true;
+    }
+    ['pedido', 'ordem', 'order', 'checkout'].forEach(field => {
+      if (source[field] && typeof source[field] === 'object') queue.push(source[field]);
+    });
+  }
+  return explicitFalse ? false : null;
+}
+
+export function isAwaitingPreorder(...sources) {
+  return awaitingPreorderState(...sources) === true;
 }
 
 function orderId(order = {}) {
@@ -122,6 +163,20 @@ function statusOrderFromPayload(state = {}, payload = {}) {
     ...(source.pagamento || {}),
     ...(payload.pagamento || {})
   };
+  const encomenda = {
+    ...(current.encomenda || {}),
+    ...(source.encomenda || {}),
+    ...(payload.encomenda || {})
+  };
+  const statusEncomenda = cleanLower(
+    source.statusEncomenda ||
+    source.status_encomenda ||
+    payload.statusEncomenda ||
+    payload.status_encomenda ||
+    encomenda.status ||
+    current.statusEncomenda ||
+    current.status_encomenda
+  );
   const statusPagamento = clean(
     source.statusPagamento ||
     source.status_pagamento ||
@@ -132,7 +187,9 @@ function statusOrderFromPayload(state = {}, payload = {}) {
     current.status_pagamento
   );
   const awaitingWeight = awaitingFinalWeightState(payload, source);
+  const awaitingPreorder = awaitingPreorderState(payload, source);
   if (statusPagamento) pagamento.status = statusPagamento;
+  if (statusEncomenda) encomenda.status = statusEncomenda;
   return {
     ...current,
     ...source,
@@ -141,6 +198,12 @@ function statusOrderFromPayload(state = {}, payload = {}) {
     statusPagamento,
     status_pagamento: statusPagamento || current.status_pagamento || '',
     pagamento,
+    encomenda,
+    statusEncomenda: statusEncomenda || current.statusEncomenda || '',
+    status_encomenda: statusEncomenda || current.status_encomenda || '',
+    aguardandoEncomenda: awaitingPreorder === null
+      ? isAwaitingPreorder(current)
+      : awaitingPreorder,
     aguardandoPesagem: awaitingWeight === null
       ? isAwaitingFinalWeight(current)
       : awaitingWeight,
@@ -155,7 +218,11 @@ function stableOrderSignature(order = {}) {
     id: orderId(order),
     status: order.status || '',
     statusPagamento: order.statusPagamento || order.status_pagamento || order.pagamento?.status || '',
+    statusEncomenda: preorderStatus(order),
+    aguardandoEncomenda: awaitingPreorderState(order),
     aguardandoPesagem: isAwaitingFinalWeight(order),
+    total: order.total ?? order.total_final ?? order.pagamento?.valor ?? '',
+    pix: order.pix?.copiaCola || order.pix?.pix || order.pagamento?.pix?.copiaCola || '',
     updatedAt: order.updatedAt || order.atualizadoEm || ''
   });
 }

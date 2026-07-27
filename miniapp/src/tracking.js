@@ -1,4 +1,4 @@
-import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.07.26.266';
+import { retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.07.26.921';
 
 export async function loadTracking(state, pedidoId) {
   return retryApiFetchWithFreshRuntimeConfig(state, `/api/miniapp/pedidos/${encodeURIComponent(pedidoId)}/tracking`)
@@ -9,5 +9,12 @@ export async function loadOrderStatus(state, pedidoId) {
   const id = String(pedidoId || '').trim();
   if (!id) return null;
   return retryApiFetchWithFreshRuntimeConfig(state, `/api/miniapp/pedidos/${encodeURIComponent(id)}/status`)
+    .catch(() => null);
+}
+
+export async function loadOrderDetail(state, pedidoId) {
+  const id = String(pedidoId || '').trim();
+  if (!id) return null;
+  return retryApiFetchWithFreshRuntimeConfig(state, `/api/miniapp/pedidos/${encodeURIComponent(id)}`)
     .catch(() => null);
 }

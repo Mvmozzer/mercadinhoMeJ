@@ -1,5 +1,5 @@
-import { CART_KEY, readJson, writeJson } from './storage.js?v=2026.07.26.266';
-import { isWeightedProduct, measureConversionFactor, productAvailability, productWholesale, weightedProductRules } from './catalog.js?v=2026.07.26.266';
+import { CART_KEY, readJson, writeJson } from './storage.js?v=2026.07.26.921';
+import { isWeightedProduct, measureConversionFactor, productAvailability, productWholesale, weightedProductRules } from './catalog.js?v=2026.07.26.921';
 
 function itemQuantity(item = {}) {
   const quantity = Number(item.quantity ?? item.quantidade ?? item.qtd ?? 0);
@@ -183,7 +183,7 @@ export function reconcileCartWithCatalog(state, options = {}) {
     });
     if (!safeQuantity) return;
     const normalized = cartItemFromProduct(product, safeQuantity);
-    if (!normalized.id || normalized.price <= 0) return;
+    if (!normalized.id || (normalized.price <= 0 && !cartItemIsPreorder(normalized))) return;
     next[normalized.id] = normalized;
   });
 
