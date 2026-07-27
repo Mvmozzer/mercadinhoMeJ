@@ -1694,6 +1694,12 @@ img{max-width:100%}
 .telegram-success-actions button:not(.primary-wide){background:transparent;color:var(--mj-primary);box-shadow:none}
 .payment-pix-card{display:grid;gap:12px;margin:0 14px;padding:14px;border:1px solid var(--mj-border);border-radius:var(--mj-radius);background:#fff;box-shadow:var(--mj-shadow-soft)}
 .payment-pix-card label{font-size:13px;font-weight:900;color:var(--mj-text)}
+.payment-proof-card{display:grid;gap:10px;margin:0 14px;padding:14px;border:1px solid var(--mj-border);border-radius:var(--mj-radius);background:#fff;box-shadow:var(--mj-shadow-soft)}
+.payment-proof-card h2,.payment-proof-card p{margin:0}
+.payment-proof-card label{font-size:13px;font-weight:900;color:var(--mj-text)}
+.payment-proof-card input[type="file"],.payment-proof-card textarea{width:100%;box-sizing:border-box;border:1px solid var(--mj-border);border-radius:12px;background:#fff;color:var(--mj-text);padding:11px;font:inherit}
+.payment-proof-card input:disabled,.payment-proof-card textarea:disabled{opacity:.6}
+.payment-proof-feedback{padding:10px;border-radius:10px;background:var(--mj-primary-soft);color:var(--mj-text);font-weight:800}
 .payment-cash-card{display:grid;gap:10px;margin:0 14px;padding:14px;border:1px solid var(--mj-border);border-radius:var(--mj-radius);background:#fff;box-shadow:var(--mj-shadow-soft)}
 .payment-cash-card div{display:flex;justify-content:space-between;gap:12px;font-size:13px}
 .payment-cash-card span,.payment-cash-card small{color:var(--mj-muted)}
@@ -1965,6 +1971,15 @@ img{max-width:100%}
   border-radius:var(--mj-radius);
   background:#fff;
   color:#B42323;
+  font-weight:900;
+}
+
+.order-confirm-preorder-button{
+  min-height:46px;
+  border:0;
+  border-radius:var(--mj-radius);
+  background:linear-gradient(135deg,var(--mj-button-gradient-from),var(--mj-button-gradient-to));
+  color:#fff;
   font-weight:900;
 }
 

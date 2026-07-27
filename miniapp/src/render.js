@@ -73,17 +73,17 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItemIsPreorder, cartItems, cartLineSubtotal, cartQty, cartTotal, changeQty, clearCart, setQty, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.26.921';
-import { emojiForSection, filterProducts, isWeightedProduct, looksLikeSectionEmoji, productAvailability, productBadges, weightedProductRules } from './catalog.js?v=2026.07.26.921';
-import { checkoutCreate, completeCheckoutAttempt, isMiniAppPaymentEnabled, paymentMethodForCustomer, paymentModeForCustomer } from './checkout.js?v=2026.07.26.921';
-import { sendMiniAppEvent, syncCart } from './api.js?v=2026.07.26.921';
-import { escapeHtml, formatMeasure, greetingFor, money } from './utils.js?v=2026.07.26.921';
-import { persistMiniAppUiState } from './storage.js?v=2026.07.26.921';
-import { updateMainButton } from './telegram.js?v=2026.07.26.921';
-import { loadOrderDetail, loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.26.921';
-import { refreshPixStatus } from './pix.js?v=2026.07.26.921';
-import { cancelOrder } from './orders.js?v=2026.07.26.921';
-import { miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.26.921';
+import { cartCount, cartItemIsPreorder, cartItems, cartLineSubtotal, cartQty, cartTotal, changeQty, clearCart, setQty, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.07.26.223';
+import { emojiForSection, filterProducts, isWeightedProduct, looksLikeSectionEmoji, productAvailability, productBadges, weightedProductRules } from './catalog.js?v=2026.07.26.223';
+import { checkoutCreate, completeCheckoutAttempt, isMiniAppPaymentEnabled, paymentMethodForCustomer, paymentModeForCustomer } from './checkout.js?v=2026.07.26.223';
+import { sendMiniAppEvent, syncCart, uploadPixReceipt } from './api.js?v=2026.07.26.223';
+import { escapeHtml, formatMeasure, greetingFor, money } from './utils.js?v=2026.07.26.223';
+import { persistMiniAppUiState } from './storage.js?v=2026.07.26.223';
+import { updateMainButton } from './telegram.js?v=2026.07.26.223';
+import { loadOrderDetail, loadOrderStatus, loadTracking } from './tracking.js?v=2026.07.26.223';
+import { refreshPixStatus } from './pix.js?v=2026.07.26.223';
+import { cancelOrder, cancelPreorder, confirmPreorder } from './orders.js?v=2026.07.26.223';
+import { miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.07.26.223';
 import {
   activeOrderId,
   applyOrderStatusToState,
@@ -96,7 +96,7 @@ import {
   mapFromTrackingPayload,
   orderFlowPollingMs,
   shouldOpenTrackingAfterPayment
-} from './orderFlow.js?v=2026.07.26.921';
+} from './orderFlow.js?v=2026.07.26.223';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -429,7 +429,7 @@ function productThumb(product) {
 
   function productPriceBlock(product = {}, quantity = 0) {
     if (productAvailability(product).preorder) {
-      return '<strong>Sob encomenda</strong><em class="wholesale-price-hint">Valor a orçar</em>';
+      return '<strong>Sob encomenda</strong><em class="wholesale-price-hint">Preço definido pela loja</em>';
   }
   const priceInfo = wholesalePriceInfo(product, quantity);
   const precoAtual = Number(priceInfo.price || product.price || 0);
@@ -1306,7 +1306,7 @@ export function createRenderer(state) {
           </div>
           ${renderWholesaleProgress(product, quantity)}
           <div class="detail-buy">
-            <strong>${productAvailability(product).preorder ? 'Valor a orçar' : formatMoney(priceInfo.price || product.price || 0)}</strong>
+            <strong>${productAvailability(product).preorder ? 'Preço definido pela loja' : formatMoney(priceInfo.price || product.price || 0)}</strong>
             <button data-qty-plus="${escapeHtml(product.id)}" aria-label="Adicionar ao carrinho">+</button>
           </div>
         </section>
@@ -1388,7 +1388,7 @@ export function createRenderer(state) {
                         ` : `<div class="qty qty-readonly" aria-label="Quantidade ${escapeHtml(productQuantityLabel(item, item.quantity))}"><b>${escapeHtml(productQuantityLabel(item, item.quantity))}</b></div>`}
                         <div class="cart-item-total">
                           <small>${cartItemIsPreorder(item) ? 'Preco' : (isWeightedProduct(item) ? 'Subtotal estimado' : 'Total do item')}</small>
-                          <strong class="line-total">${cartItemIsPreorder(item) ? 'Valor a orçar' : formatMoney(cartLineSubtotal(item))}</strong>
+                          <strong class="line-total">${cartItemIsPreorder(item) ? 'Preço definido pela loja' : formatMoney(cartLineSubtotal(item))}</strong>
                         </div>
                       </div>
                     </div>
@@ -1415,7 +1415,7 @@ export function createRenderer(state) {
             ` : ''}
             <div class="cart-summary-values">
               <div class="cart-summary-row"><span>Itens com preco definido</span><strong>${formatMoney(cartTotal(state))}</strong></div>
-              ${hasPreorder ? '<div class="cart-summary-row"><span>Itens sob encomenda</span><strong>Valor a orçar</strong></div>' : ''}
+              ${hasPreorder ? '<div class="cart-summary-row"><span>Itens sob encomenda</span><strong>Preço definido pela loja</strong></div>' : ''}
               <div class="cart-summary-row summary-total"><span>${hasPreorder ? 'Total apos confirmacao' : 'Total'}</span><strong>${hasPreorder ? 'A definir' : formatMoney(cartTotal(state))}</strong></div>
             </div>
             <p class="telegram-checkout-note">${escapeHtml(checkoutNote)}</p>
@@ -1524,6 +1524,43 @@ export function createRenderer(state) {
     const pedidoId = String(pedido.id || checkout.pedidoId || '').trim();
     const copiaCola = String(pix.copiaCola || pix.pix || '').trim();
     const qrCodeDataUrl = String(pix.qrCodeDataUrl || pix.qrCode || '').trim();
+    const statusPagamento = String(
+      pedido.statusPagamento ||
+      pedido.status_pagamento ||
+      pedido.pagamento?.status_operacional ||
+      pedido.pagamento?.status ||
+      pix.status ||
+      ''
+    ).trim().toLowerCase();
+    const comprovanteRecebido = ['comprovante_recebido', 'proof_received'].includes(statusPagamento);
+    const pagamentoConfirmado = ['pago', 'pagamento_confirmado', 'confirmado', 'confirmed'].includes(statusPagamento);
+    const comprovanteRecusado = ['comprovante_recusado', 'pagamento_recusado', 'recusado', 'rejected'].includes(statusPagamento);
+    const comprovanteMensagem = state.pixReceiptOrderId === pedidoId
+      ? String(state.pixReceiptMessage || '').trim()
+      : '';
+    const comprovantePendente = state.pixReceiptPending === pedidoId;
+    const comprovanteSection = pedidoId && copiaCola && !pagamentoConfirmado
+      ? `
+        <section class="payment-proof-card" aria-labelledby="pixReceiptTitle">
+          <h2 id="pixReceiptTitle">${comprovanteRecebido ? 'Comprovante recebido' : (comprovanteRecusado ? 'Enviar novo comprovante' : 'Enviar comprovante')}</h2>
+          ${comprovanteRecebido
+            ? '<p>Recebemos seu comprovante. A loja vai conferir o pagamento e atualizar o pedido.</p>'
+            : `
+              <p>${comprovanteRecusado
+                ? 'O pagamento anterior não foi confirmado. Confira o Pix e envie um novo comprovante.'
+                : 'Depois de pagar, envie uma foto, imagem ou PDF do comprovante sem sair do Mini App.'}</p>
+              <label for="pixReceiptFile">Arquivo do comprovante</label>
+              <input id="pixReceiptFile" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf" ${comprovantePendente ? 'disabled' : ''}>
+              <label for="pixReceiptText">Observação opcional</label>
+              <textarea id="pixReceiptText" rows="2" maxlength="500" placeholder="Ex.: pagamento feito pelo banco..." ${comprovantePendente ? 'disabled' : ''}></textarea>
+              <button type="button" class="primary-wide" id="sendPixReceipt" data-order-id="${escapeHtml(pedidoId)}" ${comprovantePendente ? 'disabled' : ''}>
+                ${comprovantePendente ? 'Enviando...' : 'Enviar comprovante'}
+              </button>
+            `}
+          ${comprovanteMensagem ? `<p class="payment-proof-feedback" role="status">${escapeHtml(comprovanteMensagem)}</p>` : ''}
+        </section>
+      `
+      : '';
     const receipt = `
       <section class="receipt">
         <h2>${svgIcon('receipt', 18)} Resumo</h2>
@@ -1537,7 +1574,7 @@ export function createRenderer(state) {
           return `
             <div>
               <span>${escapeHtml(productQuantityLabel(item, quantidade))}${isWeightedProduct(item) ? '' : 'x'} ${escapeHtml(item.nome || item.name || 'Produto')}</span>
-              <strong>${preorder ? 'Valor a orçar' : formatMoney(subtotal)}</strong>
+              <strong>${preorder ? 'Preço definido pela loja' : formatMoney(subtotal)}</strong>
             </div>
           `;
         }).join('')}
@@ -1692,6 +1729,7 @@ export function createRenderer(state) {
             ${pix.txid ? `<div><span>TXID</span><strong>${escapeHtml(pix.txid)}</strong></div>` : ''}
           </div>
         </section>
+        ${comprovanteSection}
         ${receipt}
         <section class="telegram-success-actions">
           <button class="primary-wide" id="copyPixPayment">Copiar Pix</button>
@@ -1705,12 +1743,27 @@ export function createRenderer(state) {
   function orderActionCapabilities(order = {}) {
     const actions = order.acoes || order.actions || {};
     const status = String(order.status || '').trim().toLowerCase();
+    const statusEncomenda = String(
+      order.encomenda?.status ||
+      order.statusEncomenda ||
+      order.status_encomenda ||
+      ''
+    ).trim().toLowerCase();
+    const preorderPending = ['preco_pendente', 'preco_definido', 'aguardando_confirmacao'].includes(statusEncomenda);
+    const encomendaConfirmada = statusEncomenda === 'confirmada';
     const explicitCancel = [actions.podeCancelar, actions.canCancel, order.podeCancelar, order.canCancel]
       .find(value => typeof value === 'boolean');
+    const explicitConfirmPreorder = [actions.podeConfirmarEncomenda, actions.canConfirmPreorder]
+      .find(value => typeof value === 'boolean');
     return {
-      canCancel: explicitCancel === undefined
-        ? ['novo', 'recebido', 'pendente', 'aguardando_pesagem', 'aguardando_pagamento'].includes(status)
-        : explicitCancel
+      preorderPending,
+      canConfirmPreorder: statusEncomenda === 'aguardando_confirmacao' &&
+        (explicitConfirmPreorder === undefined ? true : explicitConfirmPreorder),
+      canCancel: !encomendaConfirmada && (
+        explicitCancel === undefined
+          ? ['novo', 'recebido', 'pendente', 'aguardando_pesagem', 'aguardando_pagamento'].includes(status)
+          : explicitCancel
+      )
     };
   }
 
@@ -1720,18 +1773,24 @@ export function createRenderer(state) {
     const capabilities = orderActionCapabilities(order);
     const pending = state.orderActionPending === pedidoId;
     const actionMessage = state.orderActionMessageOrderId === pedidoId ? state.orderActionMessage : '';
-    if (!capabilities.canCancel && !actionMessage) return '';
+    const preorderVersion = Number(order.encomenda?.versao ?? order.encomenda_versao ?? 0);
+    if (!capabilities.canConfirmPreorder && !capabilities.canCancel && !actionMessage) return '';
     return `
       <section class="order-customer-actions" aria-labelledby="orderActionsTitle">
         <div class="section-title">
           <h2 id="orderActionsTitle">Acoes do pedido</h2>
         </div>
         ${actionMessage ? `<p class="order-action-message" role="status">${escapeHtml(actionMessage)}</p>` : ''}
-        ${capabilities.canCancel ? `
-          <button type="button" class="order-cancel-button" id="cancelCurrentOrder" data-order-id="${escapeHtml(pedidoId)}" ${pending ? 'disabled' : ''}>
-            ${pending ? 'Processando...' : 'Cancelar pedido'}
+        ${capabilities.canConfirmPreorder ? `
+          <button type="button" class="order-confirm-preorder-button" id="confirmCurrentPreorder" data-order-id="${escapeHtml(pedidoId)}" data-order-version="${escapeHtml(preorderVersion)}" ${pending ? 'disabled' : ''}>
+            ${pending ? 'Processando...' : 'Confirmar encomenda e gerar Pix'}
           </button>
-          <small>Disponivel somente antes da separacao. O sistema confirma a situacao novamente antes de cancelar.</small>
+        ` : ''}
+        ${capabilities.canCancel ? `
+          <button type="button" class="order-cancel-button" id="cancelCurrentOrder" data-order-id="${escapeHtml(pedidoId)}" data-order-version="${escapeHtml(preorderVersion)}" data-preorder-action="${capabilities.preorderPending ? 'true' : 'false'}" ${pending ? 'disabled' : ''}>
+            ${pending ? 'Processando...' : (capabilities.preorderPending ? 'Cancelar encomenda' : 'Cancelar pedido')}
+          </button>
+          <small>${capabilities.preorderPending ? 'A versao exibida sera conferida antes da acao.' : 'Disponivel somente antes da separacao. O sistema confirma a situacao novamente antes de cancelar.'}</small>
         ` : ''}
       </section>
     `;
@@ -2054,13 +2113,85 @@ export function createRenderer(state) {
     state.orderActionMessageOrderId = pedidoId;
     render();
     try {
-      const result = await cancelOrder(state, pedidoId);
+      const preorderAction = button?.dataset?.preorderAction === 'true';
+      const result = preorderAction
+        ? await cancelPreorder(state, pedidoId, {
+            versaoEncomenda: Number(button?.dataset?.orderVersion),
+            motivo: 'Encomenda cancelada pelo cliente no Mini App'
+          })
+        : await cancelOrder(state, pedidoId);
       applyCustomerOrderAction(pedidoId, result, { status: result?.pedido?.status || 'cancelado' });
       state.orderActionMessage = result?.mensagem || 'Pedido cancelado com sucesso.';
     } catch (error) {
       state.orderActionMessage = error?.message || 'Nao foi possivel cancelar o pedido.';
     } finally {
       state.orderActionPending = '';
+      render();
+    }
+  }
+
+  async function handleConfirmCurrentPreorder(button) {
+    const pedidoId = String(button?.dataset?.orderId || '').trim();
+    if (!pedidoId || state.orderActionPending) return;
+    if (typeof window.confirm === 'function' && !window.confirm('Confirmar esta encomenda e gerar o Pix com o valor exibido?')) return;
+    state.orderActionPending = pedidoId;
+    state.orderActionMessage = '';
+    state.orderActionMessageOrderId = pedidoId;
+    render();
+    try {
+      const result = await confirmPreorder(state, pedidoId, {
+        versaoEncomenda: Number(button?.dataset?.orderVersion)
+      });
+      const pedido = applyCustomerOrderAction(pedidoId, result, {
+        aguardandoEncomenda: false
+      });
+      state.pix = result?.pix || pixPayloadFrom(pedido) || null;
+      clearPendingPreorderCheckout(pedido);
+      state.orderActionMessage = result?.mensagem || 'Encomenda confirmada. O Pix final esta pronto.';
+      state.checkoutMessage = state.orderActionMessage;
+      navigateTo('payment');
+    } catch (error) {
+      state.orderActionMessage = error?.message || 'Nao foi possivel confirmar a encomenda.';
+    } finally {
+      state.orderActionPending = '';
+      render();
+    }
+  }
+
+  async function handleSendPixReceipt(button) {
+    const pedidoId = String(button?.dataset?.orderId || '').trim();
+    if (!pedidoId || state.pixReceiptPending) return;
+    const arquivo = root.querySelector('#pixReceiptFile')?.files?.[0] || null;
+    const texto = String(root.querySelector('#pixReceiptText')?.value || '').trim();
+    state.pixReceiptOrderId = pedidoId;
+    if (!arquivo && !texto) {
+      state.pixReceiptMessage = 'Selecione uma imagem ou PDF do comprovante.';
+      render();
+      return;
+    }
+    state.pixReceiptPending = pedidoId;
+    state.pixReceiptMessage = '';
+    render();
+    try {
+      await uploadPixReceipt(state, pedidoId, { arquivo, texto });
+      const pedidoAtual = state.pedidoAtual || {};
+      state.pedidoAtual = {
+        ...pedidoAtual,
+        statusPagamento: 'comprovante_recebido',
+        status_pagamento: 'comprovante_recebido',
+        pagamento: {
+          ...(pedidoAtual.pagamento || {}),
+          status: 'comprovante_recebido',
+          status_operacional: 'comprovante_recebido'
+        }
+      };
+      state.pixReceiptMessage = 'Comprovante enviado. A loja vai conferir o pagamento.';
+      const status = await loadOrderStatus(state, pedidoId).catch(() => null);
+      if (status) applyOrderStatusToState(state, status);
+    } catch (error) {
+      state.pixReceiptMessage = error?.message || 'Nao foi possivel enviar o comprovante. Tente novamente.';
+    } finally {
+      state.pixReceiptPending = '';
       render();
     }
   }
@@ -2463,10 +2594,16 @@ export function createRenderer(state) {
     root.querySelector('#cancelCurrentOrder')?.addEventListener('click', event => {
       handleCancelCurrentOrder(event.currentTarget);
     });
+    root.querySelector('#confirmCurrentPreorder')?.addEventListener('click', event => {
+      handleConfirmCurrentPreorder(event.currentTarget);
+    });
     root.querySelector('#copyPixPayment')?.addEventListener('click', () => {
       const pix = state.pix?.copiaCola || state.lastMiniAppCheckout?.pix?.copiaCola || '';
       if (!pix) return;
       navigator.clipboard?.writeText(pix).catch(() => null);
+    });
+    root.querySelector('#sendPixReceipt')?.addEventListener('click', event => {
+      handleSendPixReceipt(event.currentTarget);
     });
     root.querySelector('#search')?.addEventListener('input', event => {
       state.query = event.target.value;

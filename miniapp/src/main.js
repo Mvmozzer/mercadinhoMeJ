@@ -1,4 +1,4 @@
-import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.26.921';
+import { initTelegram, telegramUserId } from './telegram.js?v=2026.07.26.223';
 import {
   atualizarStatusLoja,
   authenticateBridge,
@@ -9,12 +9,12 @@ import {
   loadCatalogWithFallback,
   loadCustomer,
   loadHealth
-} from './api.js?v=2026.07.26.921';
-import { createRenderer } from './render.js?v=2026.07.26.921';
-import { createState, applySnapshot, miniappStoreIsAvailable, normalizeMiniAppUi, setRuntimeOnline } from './state.js?v=2026.07.26.921';
-import { normalizeCatalog } from './catalog.js?v=2026.07.26.921';
-import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.26.921';
-import { loadOrders } from './orders.js?v=2026.07.26.921';
+} from './api.js?v=2026.07.26.223';
+import { createRenderer } from './render.js?v=2026.07.26.223';
+import { createState, applySnapshot, miniappStoreIsAvailable, normalizeMiniAppUi, setRuntimeOnline } from './state.js?v=2026.07.26.223';
+import { normalizeCatalog } from './catalog.js?v=2026.07.26.223';
+import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.07.26.223';
+import { loadOrders } from './orders.js?v=2026.07.26.223';
 
 function sincronizarStatusLoja(state, health) {
   return atualizarStatusLoja(state, health || {});
@@ -39,6 +39,16 @@ function miniappRefreshSignature(state = {}) {
       id: order.id || order.pedidoId || '',
       status: order.status || '',
       statusPagamento: order.statusPagamento || order.status_pagamento || order.pagamento?.status || '',
+      statusEncomenda: order.encomenda?.status || order.statusEncomenda || order.status_encomenda || '',
+      encomendaVersao: Number(order.encomenda?.versao || order.encomenda_versao || 0),
+      encomendaPrecoPendente: order.encomenda?.precoPendente === true,
+      total: Number(order.total_final ?? order.total ?? 0),
+      itens: (order.itens || []).map(item => ({
+        nome: item.nome || item.name || '',
+        quantidade: Number(item.quantidade ?? item.qtd ?? 0),
+        preco: Number(item.preco ?? item.preco_unitario ?? 0),
+        precoPendente: item.precoPendente === true || item.preco_pendente === true
+      })),
       updatedAt: order.updatedAt || order.atualizadoEm || '',
       actions: order.acoes || order.actions || {}
     })),
