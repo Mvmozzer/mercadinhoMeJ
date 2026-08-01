@@ -1,4 +1,4 @@
-import { initTelegram, telegramUserId } from './telegram.js?v=2026.08.01.010';
+import { initTelegram, telegramUserId } from './telegram.js?v=2026.08.01.397';
 import {
   atualizarStatusLoja,
   authenticateBridge,
@@ -9,12 +9,18 @@ import {
   loadCatalogWithFallback,
   loadCustomer,
   loadHealth
-} from './api.js?v=2026.08.01.010';
-import { createRenderer } from './render.js?v=2026.08.01.010';
-import { createState, applySnapshot, miniappStoreIsAvailable, normalizeMiniAppUi, setRuntimeOnline } from './state.js?v=2026.08.01.010';
-import { normalizeCatalog } from './catalog.js?v=2026.08.01.010';
-import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.08.01.010';
-import { loadOrders } from './orders.js?v=2026.08.01.010';
+} from './api.js?v=2026.08.01.397';
+import { createRenderer } from './render.js?v=2026.08.01.397';
+import { createState, applySnapshot, miniappStoreIsAvailable, normalizeMiniAppUi, setRuntimeOnline } from './state.js?v=2026.08.01.397';
+import { normalizeCatalog } from './catalog.js?v=2026.08.01.397';
+import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.08.01.397';
+import { loadOrders } from './orders.js?v=2026.08.01.397';
+
+function removeLoadingLiveRegion(root = document.getElementById('miniapp-root') || document.body) {
+  root?.removeAttribute?.('role');
+  root?.removeAttribute?.('aria-live');
+  root?.removeAttribute?.('aria-label');
+}
 
 function sincronizarStatusLoja(state, health) {
   return atualizarStatusLoja(state, health || {});
@@ -279,6 +285,7 @@ async function init() {
   window.__mjMiniApp = { state, renderer };
   // Checkout marker: payment mode comes from panel config.
   bindBridgeCustomerSync(renderer, state);
+  removeLoadingLiveRegion();
   renderer.render();
   bindRuntimeRecovery(renderer, state);
   pollMiniApp(renderer, state);
@@ -287,6 +294,7 @@ async function init() {
 
 init().catch(error => {
   const root = document.getElementById('miniapp-root') || document.body;
+  removeLoadingLiveRegion(root);
   const box = document.createElement('div');
   box.className = 'fatal-error';
   box.setAttribute('role', 'alert');

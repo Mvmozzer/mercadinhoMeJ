@@ -1,6 +1,6 @@
-import { isTemporaryPublicApiBase } from './utils.js?v=2026.08.01.010';
-import { applySnapshot, applyStoreSnapshot } from './state.js?v=2026.08.01.010';
-import { awaitingFinalWeightState, isAwaitingFinalWeight } from './orderFlow.js?v=2026.08.01.010';
+import { isTemporaryPublicApiBase } from './utils.js?v=2026.08.01.397';
+import { applySnapshot, applyStoreSnapshot } from './state.js?v=2026.08.01.397';
+import { awaitingFinalWeightState, isAwaitingFinalWeight } from './orderFlow.js?v=2026.08.01.397';
 
 export const TELEGRAM_AUTH_PATH = '/api/telegram/auth';
 export const MINIAPP_API_PATHS = {
@@ -113,7 +113,11 @@ export async function requestApi(state, path, options = {}) {
   const url = new URL(currentLocation().href);
   const baseTemporariaBloqueada = isTemporaryPublicApiBase(base) && !url.searchParams.has('allowTempApi') && options.critical === true && state.allowTemporaryApiBase !== true;
   if (baseTemporariaBloqueada) throw new Error('Base pública temporária bloqueada para checkout.');
-  const res = await fetch(base + path, { ...options, headers: { ...headers(state), ...(options.headers || {}) } });
+  const requestHeaders = { ...headers(state), ...(options.headers || {}) };
+  if (typeof FormData !== 'undefined' && options.body instanceof FormData) {
+    delete requestHeaders['Content-Type'];
+  }
+  const res = await fetch(base + path, { ...options, headers: requestHeaders });
   const data = await res.json().catch(() => ({}));
   if (!res.ok || data.ok === false) {
     const error = new Error(data.erro || data.error || `Falha HTTP ${res.status}`);

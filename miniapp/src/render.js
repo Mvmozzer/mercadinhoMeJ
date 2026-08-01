@@ -73,17 +73,17 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItemIsPreorder, cartItems, cartLineSubtotal, cartPayload, cartQty, cartTotal, changeQty, clearCart, setQty, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.08.01.010';
-import { emojiForSection, filterProducts, isWeightedProduct, looksLikeSectionEmoji, productAvailability, productBadges, weightedProductRules } from './catalog.js?v=2026.08.01.010';
-import { checkoutCreate, completeCheckoutAttempt, deliveryModeForCustomer, isMiniAppPaymentEnabled, paymentMethodForCustomer, paymentModeForCustomer } from './checkout.js?v=2026.08.01.010';
-import { previewCheckout, sendMiniAppEvent, syncCart, uploadPixReceipt, validateCheckoutAddress } from './api.js?v=2026.08.01.010';
-import { escapeHtml, formatMeasure, greetingFor, money } from './utils.js?v=2026.08.01.010';
-import { persistMiniAppUiState } from './storage.js?v=2026.08.01.010';
-import { updateMainButton } from './telegram.js?v=2026.08.01.010';
-import { loadOrderDetail, loadOrderStatus, loadTracking } from './tracking.js?v=2026.08.01.010';
-import { refreshPixStatus } from './pix.js?v=2026.08.01.010';
-import { cancelOrder, cancelPreorder, confirmPreorder } from './orders.js?v=2026.08.01.010';
-import { miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.08.01.010';
+import { cartCount, cartItemIsPreorder, cartItems, cartLineSubtotal, cartPayload, cartQty, cartTotal, changeQty, clearCart, setQty, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.08.01.397';
+import { emojiForSection, filterProducts, isWeightedProduct, looksLikeSectionEmoji, productAvailability, productBadges, weightedProductRules } from './catalog.js?v=2026.08.01.397';
+import { checkoutCreate, completeCheckoutAttempt, deliveryModeForCustomer, isMiniAppPaymentEnabled, paymentMethodForCustomer, paymentModeForCustomer } from './checkout.js?v=2026.08.01.397';
+import { previewCheckout, sendMiniAppEvent, syncCart, uploadPixReceipt, validateCheckoutAddress } from './api.js?v=2026.08.01.397';
+import { escapeHtml, formatMeasure, greetingFor, money } from './utils.js?v=2026.08.01.397';
+import { persistMiniAppUiState } from './storage.js?v=2026.08.01.397';
+import { updateMainButton } from './telegram.js?v=2026.08.01.397';
+import { loadOrderDetail, loadOrderStatus, loadTracking } from './tracking.js?v=2026.08.01.397';
+import { refreshPixStatus } from './pix.js?v=2026.08.01.397';
+import { cancelOrder, cancelPreorder, confirmPreorder } from './orders.js?v=2026.08.01.397';
+import { miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.08.01.397';
 import {
   activeOrderId,
   applyOrderStatusToState,
@@ -96,7 +96,7 @@ import {
   mapFromTrackingPayload,
   orderFlowPollingMs,
   shouldOpenTrackingAfterPayment
-} from './orderFlow.js?v=2026.08.01.010';
+} from './orderFlow.js?v=2026.08.01.397';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -1427,8 +1427,18 @@ export function createRenderer(state) {
   }
 
   function renderDeliveryCheckout() {
-    initializeDeliveryChoice();
     const enabled = deliveryCheckoutEnabled();
+    if (!isMiniAppPaymentEnabled(state)) {
+      return `
+        <section class="checkout-delivery-card" aria-label="Forma de recebimento">
+          <strong>Recebimento confirmado no Telegram</strong>
+          <small>${enabled
+            ? 'Entrega ou retirada e eventual frete serao confirmados na conversa antes do pagamento.'
+            : 'A retirada no local sera confirmada na conversa; a entrega esta desativada pela loja.'}</small>
+        </section>
+      `;
+    }
+    initializeDeliveryChoice();
     const modalidade = deliveryModeForCustomer(state);
     const address = checkoutAddressForCustomer();
     const preview = state.checkoutPreview || {};
@@ -2086,16 +2096,21 @@ export function createRenderer(state) {
             const statusEncomenda = String(order.encomenda?.status || order.statusEncomenda || order.status_encomenda || '').trim().toLowerCase();
             const encomendaPendente = ['preco_pendente', 'preco_definido', 'aguardando_confirmacao'].includes(statusEncomenda);
             const statusPagamento = String(order.statusPagamento || order.status_pagamento || order.pagamento?.status || '').trim().toLowerCase();
+            const metodoPagamento = String(order.formaPagamento || order.forma_pagamento || order.pagamento?.metodo || '').trim().toLowerCase();
             const pagamentoEncerrado = [
               'comprovante_recebido',
+              'proof_received',
               'pago',
               'pagamento_confirmado',
               'confirmado',
               'cancelado',
               'expirado'
             ].includes(statusPagamento);
-            const podeAbrirPagamento = statusEncomenda === 'confirmada' &&
-              String(order.status || '').trim().toLowerCase() !== 'cancelado' &&
+            const statusPedido = String(order.status || '').trim().toLowerCase();
+            const podeAbrirPagamento = metodoPagamento === 'pix' &&
+              !encomendaPendente &&
+              !awaitingWeight &&
+              !['cancelado', 'canceled', 'cancelled', 'expirado', 'expired'].includes(statusPedido) &&
               !pagamentoEncerrado;
             const encomendaLabel = statusEncomenda === 'aguardando_confirmacao'
               ? 'Encomenda aguardando sua confirmacao'
@@ -2340,15 +2355,17 @@ export function createRenderer(state) {
       navigateTo('home');
       return;
     }
-    initializeDeliveryChoice();
-    if (deliveryModeForCustomer(state) === 'entrega') {
-      const entregaValida = await refreshDeliveryPreview();
-      if (!entregaValida) return;
+    const modoPagamento = paymentModeForCustomer(state);
+    if (modoPagamento === 'miniapp') {
+      initializeDeliveryChoice();
+      if (deliveryModeForCustomer(state) === 'entrega') {
+        const entregaValida = await refreshDeliveryPreview();
+        if (!entregaValida) return;
+      }
     }
     state.sending = true;
     state.checkoutMessage = 'Processando seu pedido com seguranca...';
     render();
-    const modoPagamento = paymentModeForCustomer(state);
     sendMiniAppEvent(state, modoPagamento === 'miniapp' ? 'checkout_miniapp_payment_start' : 'checkout_telegram_handoff_start', { itemCount: cartCount(state), total: cartTotal(state) });
     let result;
     try {
@@ -2579,6 +2596,10 @@ export function createRenderer(state) {
 
     if (pixPayloadHasCode(state.pix)) {
       const hydratedOrder = state.pedidoAtual || {};
+      const hydratedPreorderStatus = String(hydratedOrder.encomenda?.status || hydratedOrder.statusEncomenda || hydratedOrder.status_encomenda || '').trim().toLowerCase();
+      const isPreorderPayment = hydratedOrder.encomenda?.ativa === true || [
+        'preco_pendente', 'preco_definido', 'aguardando_confirmacao', 'confirmada'
+      ].includes(hydratedPreorderStatus);
       const hydratedVersion = Number(hydratedOrder.encomenda?.versao || hydratedOrder.encomendaVersao || 0);
       const hydratedPaymentStatus = String(
         hydratedOrder.statusPagamento ||
@@ -2589,11 +2610,20 @@ export function createRenderer(state) {
       ).trim().toLowerCase();
       state.__preorderPaymentHydrationKey = `${id}:${hydratedVersion}:${hydratedPaymentStatus}`;
       state.checkoutMessage = detail?.mensagem ||
-        'Encomenda confirmada. O Pix final esta pronto para pagamento.';
+        (isPreorderPayment
+          ? 'Encomenda confirmada. O Pix final esta pronto para pagamento.'
+          : 'Pagamento Pix carregado. Confira o recebedor e o valor antes de pagar.');
     } else {
       state.__preorderPaymentHydrationKey = '';
+      const pendingOrder = state.pedidoAtual || {};
+      const pendingPreorderStatus = String(pendingOrder.encomenda?.status || pendingOrder.statusEncomenda || pendingOrder.status_encomenda || '').trim().toLowerCase();
+      const isPreorderPayment = pendingOrder.encomenda?.ativa === true || [
+        'preco_pendente', 'preco_definido', 'aguardando_confirmacao', 'confirmada'
+      ].includes(pendingPreorderStatus);
       state.checkoutMessage = pix?.mensagem ||
-        'Encomenda confirmada. Estamos atualizando o Pix final.';
+        (isPreorderPayment
+          ? 'Encomenda confirmada. Estamos atualizando o Pix final.'
+          : 'Estamos atualizando os dados do Pix deste pedido.');
     }
     return before !== JSON.stringify({
       order: state.pedidoAtual || null,
@@ -2615,7 +2645,7 @@ export function createRenderer(state) {
       state.pix = pixPayloadFrom(order) || null;
       clearPendingPreorderCheckout(state.pedidoAtual);
     }
-    state.checkoutMessage = 'Carregando o Pix final da encomenda.';
+    state.checkoutMessage = 'Carregando os dados do pagamento Pix.';
     navigateTo('payment');
     await hydrateConfirmedPreorderPayment(pedidoId, { force: true });
     render();
