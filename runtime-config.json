@@ -1,8 +1,8 @@
 {
   "appName": "Mercadinho M&J",
-  "updatedAt": "2026-08-01T19:13:17.261-03:00",
-  "webBuild": "2026.08.01.397",
-  "apiBaseUrl": "https://trunk-tattoo-internship-institutional.trycloudflare.com",
+  "updatedAt": "2026-08-01T20:29:39.993-03:00",
+  "webBuild": "2026.08.01.979",
+  "apiBaseUrl": "https://liabilities-consumption-pension-keeps.trycloudflare.com",
   "allowTemporaryApiBase": true,
   "apiBaseKind": "temporary_tunnel"
 }
