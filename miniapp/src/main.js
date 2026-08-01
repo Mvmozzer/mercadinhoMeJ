@@ -1,4 +1,4 @@
-import { initTelegram, telegramUserId } from './telegram.js?v=2026.08.01.015';
+import { initTelegram, telegramUserId } from './telegram.js?v=2026.08.01.010';
 import {
   atualizarStatusLoja,
   authenticateBridge,
@@ -9,12 +9,12 @@ import {
   loadCatalogWithFallback,
   loadCustomer,
   loadHealth
-} from './api.js?v=2026.08.01.015';
-import { createRenderer } from './render.js?v=2026.08.01.015';
-import { createState, applySnapshot, miniappStoreIsAvailable, normalizeMiniAppUi, setRuntimeOnline } from './state.js?v=2026.08.01.015';
-import { normalizeCatalog } from './catalog.js?v=2026.08.01.015';
-import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.08.01.015';
-import { loadOrders } from './orders.js?v=2026.08.01.015';
+} from './api.js?v=2026.08.01.010';
+import { createRenderer } from './render.js?v=2026.08.01.010';
+import { createState, applySnapshot, miniappStoreIsAvailable, normalizeMiniAppUi, setRuntimeOnline } from './state.js?v=2026.08.01.010';
+import { normalizeCatalog } from './catalog.js?v=2026.08.01.010';
+import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.08.01.010';
+import { loadOrders } from './orders.js?v=2026.08.01.010';
 
 function sincronizarStatusLoja(state, health) {
   return atualizarStatusLoja(state, health || {});
@@ -287,5 +287,17 @@ async function init() {
 
 init().catch(error => {
   const root = document.getElementById('miniapp-root') || document.body;
-  root.innerHTML = `<div class="fatal-error"><strong>Não foi possível abrir o Mini App.</strong><small>${error.message || error}</small></div>`;
+  const box = document.createElement('div');
+  box.className = 'fatal-error';
+  box.setAttribute('role', 'alert');
+  const title = document.createElement('strong');
+  title.textContent = 'Nao foi possivel abrir o Mini App.';
+  const message = document.createElement('small');
+  message.textContent = String(error?.message || 'Falha inesperada ao carregar a loja.').slice(0, 240);
+  const retry = document.createElement('button');
+  retry.type = 'button';
+  retry.textContent = 'Tentar novamente';
+  retry.addEventListener('click', () => globalThis.location?.reload?.());
+  box.append(title, message, retry);
+  root.replaceChildren(box);
 });

@@ -1985,6 +1985,95 @@ img{max-width:100%}
 
 .order-customer-actions button:disabled{cursor:not-allowed;opacity:.55}
 
+.checkout-delivery-card{
+  display:grid;
+  gap:12px;
+  margin:2px 0 14px;
+  padding:14px;
+  border:1px solid var(--mj-border);
+  border-radius:var(--mj-radius);
+  background:var(--mj-card);
+}
+
+.checkout-delivery-card legend,
+.checkout-delivery-card > strong{padding:0 4px;font-size:14px;font-weight:900}
+.checkout-delivery-card > small,.checkout-delivery-hint{margin:0;color:var(--mj-muted);font-size:12px;line-height:1.45}
+.checkout-delivery-options{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.checkout-delivery-option{
+  display:grid;
+  gap:3px;
+  min-height:62px;
+  padding:10px;
+  border:1px solid var(--mj-border);
+  border-radius:12px;
+  background:#fff;
+  color:var(--mj-text);
+  text-align:left;
+}
+.checkout-delivery-option small{color:var(--mj-muted);font-size:11px}
+.checkout-delivery-option.active{border-color:var(--mj-primary);background:var(--mj-primary-soft);box-shadow:0 0 0 2px color-mix(in srgb,var(--mj-primary) 14%,transparent)}
+.checkout-address-grid{display:grid;grid-template-columns:1fr 82px;gap:10px}
+.checkout-address-field{display:grid;gap:5px;min-width:0}
+.checkout-address-field.wide{grid-column:1/-1}
+.checkout-address-field span{color:var(--mj-muted);font-size:11px;font-weight:800}
+.checkout-address-field input{
+  width:100%;
+  min-height:42px;
+  padding:9px 10px;
+  border:1px solid var(--mj-border);
+  border-radius:10px;
+  background:#fff;
+  color:var(--mj-text);
+}
+.checkout-save-address{display:flex;align-items:center;gap:8px;color:var(--mj-text);font-size:12px;font-weight:700}
+.checkout-save-address input{width:18px;height:18px;accent-color:var(--mj-primary)}
+.checkout-preview-button{min-height:44px;border:0;border-radius:12px;background:var(--mj-primary);color:#fff;font-weight:900}
+.checkout-preview-button:disabled{opacity:.6}
+.checkout-delivery-feedback{margin:0;padding:9px 10px;border-radius:10px;background:var(--mj-primary-soft);color:var(--mj-text);font-size:12px;font-weight:800;line-height:1.4}
+.checkout-preview-values{display:grid;gap:6px;padding-top:10px;border-top:1px solid var(--mj-border)}
+.checkout-preview-values span{display:flex;justify-content:space-between;gap:10px;color:var(--mj-muted);font-size:12px}
+.checkout-preview-values span:last-child{color:var(--mj-text);font-size:14px;font-weight:900}
+
+.checkout-failure-screen{background:var(--mj-bg)}
+.checkout-failure-card{
+  display:grid;
+  justify-items:center;
+  gap:10px;
+  margin:14px;
+  padding:24px 18px;
+  border:1px solid rgba(180,35,35,.28);
+  border-radius:var(--mj-radius);
+  background:#FFF4F4;
+  color:var(--mj-text);
+  text-align:center;
+}
+.failure-icon{width:62px;height:62px;display:grid;place-items:center;border-radius:999px;background:#B42323;color:#fff}
+.checkout-failure-card h1,.checkout-failure-card p{margin:0}
+
+.copy-pix-feedback{margin:0;padding:10px;border-radius:10px;background:var(--mj-primary-soft);color:var(--mj-text);font-size:12px;font-weight:800;text-align:center}
+.current-order-card{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:12px;
+  margin:12px 14px;
+  padding:14px;
+  border:1px solid var(--mj-border);
+  border-radius:var(--mj-radius);
+  background:#fff;
+  box-shadow:var(--mj-shadow);
+}
+.current-order-card div{display:grid;gap:3px;min-width:0}
+.current-order-card small,.current-order-card span{color:var(--mj-muted);font-size:11px}
+.current-order-card strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
+.current-order-card button,.order-reorder-button{min-height:40px;padding:8px 11px;border:1px solid var(--mj-primary);border-radius:10px;background:#fff;color:var(--mj-primary);font-weight:900}
+.pickup-tracking-card{text-align:center}
+.pickup-tracking-icon{width:54px;height:54px;margin:0 auto 10px;display:grid;place-items:center;border-radius:999px;background:var(--mj-primary-soft);color:var(--mj-primary)}
+.catalog-empty-state{margin:28px 14px;padding:24px}
+.fatal-error{min-height:100dvh;display:grid;place-content:center;gap:12px;padding:24px;background:var(--mj-bg,#f5f8fc);color:var(--mj-text,#142033);text-align:center}
+.fatal-error small{max-width:360px;color:var(--mj-muted,#60718a);line-height:1.5}
+.fatal-error button{min-height:46px;padding:10px 18px;border:0;border-radius:12px;background:var(--mj-primary,#006cff);color:#fff;font-weight:900}
+
 @media (max-width:360px){
   .hero-top-row{grid-template-columns:44px minmax(0,1fr) 44px}
   .brand-logo{width:48px;height:48px}

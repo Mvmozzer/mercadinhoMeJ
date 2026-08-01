@@ -1,6 +1,6 @@
-import { isTemporaryPublicApiBase } from './utils.js?v=2026.08.01.015';
-import { applySnapshot, applyStoreSnapshot } from './state.js?v=2026.08.01.015';
-import { awaitingFinalWeightState, isAwaitingFinalWeight } from './orderFlow.js?v=2026.08.01.015';
+import { isTemporaryPublicApiBase } from './utils.js?v=2026.08.01.010';
+import { applySnapshot, applyStoreSnapshot } from './state.js?v=2026.08.01.010';
+import { awaitingFinalWeightState, isAwaitingFinalWeight } from './orderFlow.js?v=2026.08.01.010';
 
 export const TELEGRAM_AUTH_PATH = '/api/telegram/auth';
 export const MINIAPP_API_PATHS = {
@@ -9,6 +9,8 @@ export const MINIAPP_API_PATHS = {
   customer: '/api/miniapp/me',
   catalog: '/api/miniapp/catalogo',
   cartSync: '/api/miniapp/carrinho/sync',
+  checkoutAddress: '/api/miniapp/checkout/endereco',
+  checkoutPreview: '/api/miniapp/checkout/preview',
   checkoutCreate: '/api/miniapp/checkout/create',
 };
 
@@ -237,6 +239,20 @@ export function syncCart(state, payload) {
   });
   return state.__cartSyncPromise;
 }
+export function validateCheckoutAddress(state, address = {}, save = false) {
+  return retryApiFetchWithFreshRuntimeConfig(state, MINIAPP_API_PATHS.checkoutAddress, {
+    method: 'POST',
+    critical: true,
+    body: JSON.stringify({ ...address, salvarCadastro: save === true })
+  });
+}
+export function previewCheckout(state, payload = {}) {
+  return retryApiFetchWithFreshRuntimeConfig(state, MINIAPP_API_PATHS.checkoutPreview, {
+    method: 'POST',
+    critical: true,
+    body: JSON.stringify(payload)
+  });
+}
 export async function sendMiniAppEvent(state, tipo, payload = {}) { return retryApiFetchWithFreshRuntimeConfig(state, '/api/miniapp/events', { method: 'POST', body: JSON.stringify({ tipo, payload }) }).catch(() => null); }
 export async function bridgeSendAction(state, action, payload = {}) { return globalThis.window?.MJMiniAppBridge?.sendAction ? globalThis.window.MJMiniAppBridge.sendAction(action, payload) : null; }
 
@@ -251,26 +267,21 @@ export async function uploadPixReceipt(state, pedidoId, options = {}) {
   }
   if (!id) throw new Error('Pedido não encontrado para enviar comprovante.');
   const path = `/api/miniapp/pedidos/${encodeURIComponent(id)}/comprovante`;
-  const texto = String(options.texto || '').trim();
-  if (options.arquivo) {
-    const body = new FormData();
-    body.append('comprovante', options.arquivo);
-    if (texto) body.append('texto', texto);
-    const requestHeaders = headers(state);
-    delete requestHeaders['Content-Type'];
-    return retryApiFetchWithFreshRuntimeConfig(state, path, {
-      method: 'POST',
-      body,
-      headers: requestHeaders
-    });
+  const arquivo = options.arquivo || null;
+  if (!arquivo) throw new Error('Selecione uma imagem do comprovante.');
+  const mime = String(arquivo.type || '').trim().toLowerCase();
+  const nome = String(arquivo.name || '').trim().toLowerCase();
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(mime) && !/\.(jpe?g|png|webp)$/.test(nome)) {
+    throw new Error('Use uma imagem JPG, PNG ou WEBP.');
   }
+  const body = new FormData();
+  body.append('comprovante', arquivo);
+  const requestHeaders = headers(state);
+  delete requestHeaders['Content-Type'];
   return retryApiFetchWithFreshRuntimeConfig(state, path, {
     method: 'POST',
-    body: JSON.stringify({ texto }),
-    headers: {
-      ...headers(state),
-      'Content-Type': 'application/json'
-    }
+    body,
+    headers: requestHeaders
   });
 }
 

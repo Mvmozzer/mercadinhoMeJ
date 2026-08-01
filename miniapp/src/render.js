@@ -73,17 +73,17 @@ function resolveBuildFromHtml() {
   return String(byHref || byQuery || '').trim();
 }
 
-import { cartCount, cartItemIsPreorder, cartItems, cartLineSubtotal, cartQty, cartTotal, changeQty, clearCart, setQty, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.08.01.015';
-import { emojiForSection, filterProducts, isWeightedProduct, looksLikeSectionEmoji, productAvailability, productBadges, weightedProductRules } from './catalog.js?v=2026.08.01.015';
-import { checkoutCreate, completeCheckoutAttempt, isMiniAppPaymentEnabled, paymentMethodForCustomer, paymentModeForCustomer } from './checkout.js?v=2026.08.01.015';
-import { sendMiniAppEvent, syncCart, uploadPixReceipt } from './api.js?v=2026.08.01.015';
-import { escapeHtml, formatMeasure, greetingFor, money } from './utils.js?v=2026.08.01.015';
-import { persistMiniAppUiState } from './storage.js?v=2026.08.01.015';
-import { updateMainButton } from './telegram.js?v=2026.08.01.015';
-import { loadOrderDetail, loadOrderStatus, loadTracking } from './tracking.js?v=2026.08.01.015';
-import { refreshPixStatus } from './pix.js?v=2026.08.01.015';
-import { cancelOrder, cancelPreorder, confirmPreorder } from './orders.js?v=2026.08.01.015';
-import { miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.08.01.015';
+import { cartCount, cartItemIsPreorder, cartItems, cartLineSubtotal, cartPayload, cartQty, cartTotal, changeQty, clearCart, setQty, wholesaleProgress, wholesalePriceInfo } from './cart.js?v=2026.08.01.010';
+import { emojiForSection, filterProducts, isWeightedProduct, looksLikeSectionEmoji, productAvailability, productBadges, weightedProductRules } from './catalog.js?v=2026.08.01.010';
+import { checkoutCreate, completeCheckoutAttempt, deliveryModeForCustomer, isMiniAppPaymentEnabled, paymentMethodForCustomer, paymentModeForCustomer } from './checkout.js?v=2026.08.01.010';
+import { previewCheckout, sendMiniAppEvent, syncCart, uploadPixReceipt, validateCheckoutAddress } from './api.js?v=2026.08.01.010';
+import { escapeHtml, formatMeasure, greetingFor, money } from './utils.js?v=2026.08.01.010';
+import { persistMiniAppUiState } from './storage.js?v=2026.08.01.010';
+import { updateMainButton } from './telegram.js?v=2026.08.01.010';
+import { loadOrderDetail, loadOrderStatus, loadTracking } from './tracking.js?v=2026.08.01.010';
+import { refreshPixStatus } from './pix.js?v=2026.08.01.010';
+import { cancelOrder, cancelPreorder, confirmPreorder } from './orders.js?v=2026.08.01.010';
+import { miniappStoreIsAvailable, storeAcceptsOrders } from './state.js?v=2026.08.01.010';
 import {
   activeOrderId,
   applyOrderStatusToState,
@@ -96,7 +96,7 @@ import {
   mapFromTrackingPayload,
   orderFlowPollingMs,
   shouldOpenTrackingAfterPayment
-} from './orderFlow.js?v=2026.08.01.015';
+} from './orderFlow.js?v=2026.08.01.010';
 
 const LOGO_ASSET_URL = new URL('../assets/logo-mj-mercadinho.png', import.meta.url).href;
 const SECTION_MENU_IMAGE_ASSETS = {
@@ -1218,6 +1218,7 @@ export function createRenderer(state) {
       ${renderCustomerHeader()}
       <main class="page home-page" data-page="home">
         ${searchBox('Buscar produtos')}
+        ${renderCurrentOrderCard()}
         ${renderBannerCarousel()}
         ${filtered ? renderSearchResults(filtered, 'Resultados da busca') : homeSections.map(renderHomeSectionCarousel).join('')}
       </main>
@@ -1314,7 +1315,184 @@ export function createRenderer(state) {
     `;
   }
 
+  function renderCatalogUnavailable() {
+    return `
+      ${renderCustomerHeader('Loja')}
+      <main class="page catalog-unavailable" data-page="home" aria-live="polite">
+        <section class="empty-state catalog-empty-state">
+          <span aria-hidden="true">${svgIcon('package', 34)}</span>
+          <strong>Produtos indisponiveis agora</strong>
+          <p>${escapeHtml(state.error || 'Nao foi possivel carregar o catalogo. Tente atualizar em instantes.')}</p>
+          <button type="button" class="primary-wide" data-reload-miniapp>Atualizar produtos</button>
+          ${state.orders?.length ? '<button type="button" data-page="orders">Ver meus pedidos</button>' : ''}
+        </section>
+      </main>
+    `;
+  }
+
+  function deliveryCheckoutEnabled() {
+    const checkout = state.checkout || {};
+    return checkout.entregaClienteAtiva === true || checkout.permitirEscolherEntrega === true;
+  }
+
+  function initializeDeliveryChoice() {
+    if (!deliveryCheckoutEnabled()) {
+      state.selectedDeliveryMode = 'retirada';
+      state.deliveryModeInitialized = true;
+      return;
+    }
+    if (state.deliveryModeInitialized) return;
+    const configured = String(
+      state.checkout?.modalidadeEntregaPadrao ||
+      state.checkout?.modalidade_entrega_padrao ||
+      'retirada'
+    ).trim().toLowerCase();
+    state.selectedDeliveryMode = configured === 'entrega' ? 'entrega' : 'retirada';
+    state.deliveryModeInitialized = true;
+  }
+
+  function checkoutAddressForCustomer() {
+    const cliente = state.cliente || {};
+    const saved = cliente.enderecoEntrega || cliente.endereco_entrega || cliente.endereco || {};
+    const edited = state.checkoutAddress || {};
+    const value = field => String(
+      edited[field] ??
+      (typeof saved === 'object' ? saved[field] : undefined) ??
+      cliente[field] ??
+      ''
+    ).trim();
+    return {
+      telefone: value('telefone').replace(/\D/g, '').slice(0, 13),
+      cep: value('cep').replace(/\D/g, '').slice(0, 8),
+      rua: value('rua'),
+      numero: value('numero'),
+      complemento: value('complemento'),
+      bairro: value('bairro'),
+      cidade: value('cidade'),
+      estado: value('estado').toUpperCase().slice(0, 2)
+    };
+  }
+
+  function checkoutPreviewPayload() {
+    const items = cartPayload(state).map(item => ({
+      ...item,
+      produto_id: item.produto_id || item.id,
+      quantidade: item.quantidade || item.quantity || item.qtd || 0
+    }));
+    const modalidade = deliveryModeForCustomer(state);
+    return {
+      items,
+      itens: items,
+      modalidade_entrega: modalidade,
+      forma_pagamento: paymentMethodForCustomer(state),
+      ...(modalidade === 'entrega' ? { entrega: checkoutAddressForCustomer() } : {})
+    };
+  }
+
+  function resetCheckoutPreview(message = '') {
+    state.checkoutPreview = null;
+    state.checkoutDeliveryMessage = message;
+    state.clientOrderId = '';
+    state.clientOrderFingerprint = '';
+  }
+
+  async function refreshDeliveryPreview() {
+    if (deliveryModeForCustomer(state) !== 'entrega') {
+      resetCheckoutPreview('Retirada selecionada. Nao ha frete.');
+      render();
+      return true;
+    }
+    if (state.checkoutPreviewPending) return false;
+    state.checkoutAddress = checkoutAddressForCustomer();
+    state.checkoutPreviewPending = true;
+    state.checkoutDeliveryMessage = 'Conferindo endereco e frete...';
+    render();
+    try {
+      const validacao = await validateCheckoutAddress(state, state.checkoutAddress, false);
+      if (validacao?.endereco) state.checkoutAddress = { ...state.checkoutAddress, ...validacao.endereco };
+      const preview = await previewCheckout(state, checkoutPreviewPayload());
+      state.checkoutPreview = preview || null;
+      state.checkoutDeliveryMessage = preview?.entregaDisponivel === false
+        ? 'Entrega indisponivel para este endereco.'
+        : `Entrega disponivel. Frete ${formatMoney(preview?.frete || 0)}.`;
+      return preview?.entregaDisponivel !== false;
+    } catch (error) {
+      state.checkoutPreview = null;
+      state.checkoutDeliveryMessage = error?.message || 'Nao foi possivel calcular a entrega agora.';
+      return false;
+    } finally {
+      state.checkoutPreviewPending = false;
+      render();
+    }
+  }
+
+  function renderDeliveryCheckout() {
+    initializeDeliveryChoice();
+    const enabled = deliveryCheckoutEnabled();
+    const modalidade = deliveryModeForCustomer(state);
+    const address = checkoutAddressForCustomer();
+    const preview = state.checkoutPreview || {};
+    if (!enabled) {
+      return `
+        <section class="checkout-delivery-card" aria-label="Forma de recebimento">
+          <strong>Retirada no local</strong>
+          <small>A entrega esta desativada pela loja neste momento.</small>
+        </section>
+      `;
+    }
+    const field = (name, label, options = {}) => `
+      <label class="checkout-address-field${options.wide ? ' wide' : ''}">
+        <span>${escapeHtml(label)}</span>
+        <input
+          type="${options.type || 'text'}"
+          data-delivery-field="${escapeHtml(name)}"
+          value="${escapeHtml(address[name] || '')}"
+          autocomplete="${escapeHtml(options.autocomplete || 'off')}"
+          inputmode="${escapeHtml(options.inputmode || 'text')}"
+          maxlength="${escapeHtml(options.maxlength || 120)}"
+          ${modalidade === 'entrega' && options.required !== false ? 'required' : ''}
+        >
+      </label>
+    `;
+    return `
+      <fieldset class="checkout-delivery-card">
+        <legend>Como voce quer receber?</legend>
+        <div class="checkout-delivery-options">
+          <button type="button" class="checkout-delivery-option${modalidade === 'retirada' ? ' active' : ''}" data-delivery-mode="retirada" aria-pressed="${modalidade === 'retirada'}">
+            <strong>Retirada</strong><small>Buscar no Mercadinho M&J</small>
+          </button>
+          <button type="button" class="checkout-delivery-option${modalidade === 'entrega' ? ' active' : ''}" data-delivery-mode="entrega" aria-pressed="${modalidade === 'entrega'}">
+            <strong>Entrega</strong><small>Calcular pelo endereco</small>
+          </button>
+        </div>
+        ${modalidade === 'entrega' ? `
+          <div class="checkout-address-grid">
+            ${field('telefone', 'Telefone com DDD', { autocomplete: 'tel', inputmode: 'tel', maxlength: 13, wide: true })}
+            ${field('cep', 'CEP', { autocomplete: 'postal-code', inputmode: 'numeric', maxlength: 8 })}
+            ${field('estado', 'UF', { autocomplete: 'address-level1', maxlength: 2 })}
+            ${field('rua', 'Rua', { autocomplete: 'address-line1', wide: true })}
+            ${field('numero', 'Numero', { autocomplete: 'address-line2' })}
+            ${field('complemento', 'Complemento', { autocomplete: 'address-line3', required: false })}
+            ${field('bairro', 'Bairro', { autocomplete: 'address-level3' })}
+            ${field('cidade', 'Cidade', { autocomplete: 'address-level2' })}
+          </div>
+          <label class="checkout-save-address"><input type="checkbox" id="saveDeliveryAddress" ${state.saveDeliveryAddress ? 'checked' : ''}> Salvar este endereco no meu cadastro</label>
+          <button type="button" class="checkout-preview-button" id="calculateDelivery" ${state.checkoutPreviewPending ? 'disabled' : ''}>${state.checkoutPreviewPending ? 'Calculando...' : 'Calcular entrega'}</button>
+        ` : '<p class="checkout-delivery-hint">Voce retira o pedido na loja e nao paga frete.</p>'}
+        ${state.checkoutDeliveryMessage ? `<p class="checkout-delivery-feedback" role="status">${escapeHtml(state.checkoutDeliveryMessage)}</p>` : ''}
+        ${modalidade === 'entrega' && state.checkoutPreview ? `
+          <div class="checkout-preview-values" aria-label="Previa calculada pelo servidor">
+            <span>Produtos <strong>${formatMoney(preview.subtotal || 0)}</strong></span>
+            <span>Frete <strong>${formatMoney(preview.frete || 0)}</strong></span>
+            <span>Total <strong>${formatMoney(preview.total || 0)}</strong></span>
+          </div>
+        ` : ''}
+      </fieldset>
+    `;
+  }
+
   function renderCart() {
+    initializeDeliveryChoice();
     const items = cartItems(state);
     const itemCount = cartCount(state);
     const itemCountLabel = `${itemCount} ${itemCount === 1 ? 'item' : 'itens'}`;
@@ -1324,8 +1502,12 @@ export function createRenderer(state) {
     const allowClearCart = state.checkout?.permitirLimparCarrinho !== false;
     const miniAppPayment = isMiniAppPaymentEnabled(state);
     const paymentMethod = paymentMethodForCustomer(state);
+    const deliveryMode = deliveryModeForCustomer(state);
+    const deliveryPreview = deliveryMode === 'entrega' ? state.checkoutPreview : null;
     const hasPreorder = items.some(cartItemIsPreorder);
-    const finishLabel = hasPreorder
+    const finishLabel = state.sending
+      ? 'Processando pedido...'
+      : hasPreorder
       ? 'Finalizar encomenda'
       : miniAppPayment
       ? (paymentMethod === 'pix' ? 'Pagar com Pix' : 'Confirmar pedido')
@@ -1402,6 +1584,8 @@ export function createRenderer(state) {
               <strong id="cartSummaryTitle">Resumo do pedido</strong>
               <small>${escapeHtml(itemCountLabel)}</small>
             </div>
+            ${state.reorderMessage ? `<p class="order-action-message" role="status">${escapeHtml(state.reorderMessage)}</p>` : ''}
+            ${renderDeliveryCheckout()}
             ${miniAppPayment && !hasPreorder ? `
               <fieldset class="checkout-payment-method" aria-label="Forma de pagamento">
                 <legend>Forma de pagamento</legend>
@@ -1415,13 +1599,14 @@ export function createRenderer(state) {
             ` : ''}
             <div class="cart-summary-values">
               <div class="cart-summary-row"><span>Itens com preco definido</span><strong>${formatMoney(cartTotal(state))}</strong></div>
+              ${deliveryMode === 'entrega' ? `<div class="cart-summary-row"><span>Frete</span><strong>${deliveryPreview ? formatMoney(deliveryPreview.frete || 0) : 'Calcule acima'}</strong></div>` : ''}
               ${hasPreorder ? '<div class="cart-summary-row"><span>Itens sob encomenda</span><strong>Preço definido pela loja</strong></div>' : ''}
-              <div class="cart-summary-row summary-total"><span>${hasPreorder ? 'Total apos confirmacao' : 'Total'}</span><strong>${hasPreorder ? 'A definir' : formatMoney(cartTotal(state))}</strong></div>
+              <div class="cart-summary-row summary-total"><span>${hasPreorder ? 'Total apos confirmacao' : 'Total'}</span><strong>${hasPreorder ? 'A definir' : (deliveryMode === 'entrega' ? (deliveryPreview ? formatMoney(deliveryPreview.total || 0) : 'Calcule o frete') : formatMoney(cartTotal(state)))}</strong></div>
             </div>
             <p class="telegram-checkout-note">${escapeHtml(checkoutNote)}</p>
             <div class="card-actions${acceptsOrders && !useNativeTelegramButton ? '' : ' card-actions--single'}">
               <button id="continueShopping" data-page="${state.previousPage || 'home'}">Continuar comprando</button>
-              ${acceptsOrders && !useNativeTelegramButton ? `<button id="finishInTelegram">${escapeHtml(finishLabel)}</button>` : ''}
+              ${acceptsOrders && !useNativeTelegramButton ? `<button id="finishInTelegram" ${state.sending ? 'disabled' : ''}>${escapeHtml(finishLabel)}</button>` : ''}
             </div>
           </section>
         ` : `
@@ -1444,15 +1629,15 @@ export function createRenderer(state) {
     const total = Number(carrinho.total ?? cartTotal(state) ?? 0);
     const orderId = String(handoff.orderId || handoff.pedidoId || `MJ-${new Date().getFullYear()}-${String(Math.abs(Math.round(total * 100))).padStart(4, '0')}`).trim();
     return `
-      <main class="page telegram-checkout-panel success-screen" id="telegramCheckoutPanel" data-page="telegram-checkout">
+      <main class="page telegram-checkout-panel ${handoffFailed ? 'checkout-failure-screen' : 'success-screen'}" id="telegramCheckoutPanel" data-page="telegram-checkout" data-handoff-status="${handoffFailed ? 'failed' : 'sent'}">
         <div class="topbar">
           <button data-page="cart" aria-label="Voltar">${svgIcon('arrowLeft', 20)}</button>
           <strong>Pagamento</strong>
           <span></span>
         </div>
-        <section class="success-card telegram-handoff-card">
-          <span class="success-icon" aria-hidden="true">${svgIcon('check', 44)}</span>
-          <p class="greeting">Continue no Telegram</p>
+        <section class="${handoffFailed ? 'checkout-failure-card' : 'success-card'} telegram-handoff-card" role="${handoffFailed ? 'alert' : 'status'}">
+          <span class="${handoffFailed ? 'failure-icon' : 'success-icon'}" aria-hidden="true">${svgIcon(handoffFailed ? 'x' : 'check', 44)}</span>
+          <p class="greeting">${handoffFailed ? 'Envio interrompido' : 'Continue no Telegram'}</p>
           <h1>${handoffFailed ? 'Nao enviado ao Telegram' : 'Pedido enviado ao Telegram'}</h1>
           <strong class="order-id">${escapeHtml(orderId)}</strong>
           <p>${escapeHtml(state.checkoutMessage || `Total de ${formatMoney(total)} enviado para o Telegram. O Telegram conclui entrega e pagamento.`)}</p>
@@ -1472,8 +1657,9 @@ export function createRenderer(state) {
           }).join('')}
         </section>
         <section class="telegram-success-actions">
-          <button class="primary-wide" data-page="orders">Acompanhar pedido</button>
-          <button id="retryTelegramHandoff">Enviar carrinho novamente</button>
+          ${handoffFailed
+            ? '<button class="primary-wide" id="retryTelegramHandoff">Tentar enviar novamente</button>'
+            : '<button class="primary-wide" data-page="orders">Acompanhar pedido</button>'}
           <button data-page="cart">Voltar ao carrinho</button>
         </section>
       </main>
@@ -1548,11 +1734,9 @@ export function createRenderer(state) {
             : `
               <p>${comprovanteRecusado
                 ? 'O pagamento anterior não foi confirmado. Confira o Pix e envie um novo comprovante.'
-                : 'Depois de pagar, envie uma foto, imagem ou PDF do comprovante sem sair do Mini App.'}</p>
+                : 'Depois de pagar, envie uma imagem do comprovante sem sair do Mini App.'}</p>
               <label for="pixReceiptFile">Arquivo do comprovante</label>
-              <input id="pixReceiptFile" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf" ${comprovantePendente ? 'disabled' : ''}>
-              <label for="pixReceiptText">Observação opcional</label>
-              <textarea id="pixReceiptText" rows="2" maxlength="500" placeholder="Ex.: pagamento feito pelo banco..." ${comprovantePendente ? 'disabled' : ''}></textarea>
+              <input id="pixReceiptFile" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" ${comprovantePendente ? 'disabled' : ''}>
               <button type="button" class="primary-wide" id="sendPixReceipt" data-order-id="${escapeHtml(pedidoId)}" ${comprovantePendente ? 'disabled' : ''}>
                 ${comprovantePendente ? 'Enviando...' : 'Enviar comprovante'}
               </button>
@@ -1733,6 +1917,7 @@ export function createRenderer(state) {
         ${receipt}
         <section class="telegram-success-actions">
           <button class="primary-wide" id="copyPixPayment">Copiar Pix</button>
+          ${state.copyPixMessage ? `<p class="copy-pix-feedback" role="status">${escapeHtml(state.copyPixMessage)}</p>` : ''}
           <button data-page="orders">Acompanhar pedido</button>
           <button data-page="cart">Voltar ao carrinho</button>
         </section>
@@ -1796,6 +1981,94 @@ export function createRenderer(state) {
     `;
   }
 
+  function orderDeliveryMode(order = {}) {
+    const raw = String(order.modalidadeEntrega || order.modalidade_entrega || '').trim().toLowerCase();
+    if (raw === 'entrega' || order.retiradaNoLocal === false || order.retirada_no_local === false) return 'entrega';
+    return 'retirada';
+  }
+
+  function paymentStatusLabel(status = '') {
+    const raw = String(status || '').trim().toLowerCase();
+    const labels = {
+      aguardando_pix: 'Aguardando pagamento Pix',
+      aguardando_pagamento: 'Aguardando pagamento',
+      pendente: 'Aguardando pagamento',
+      comprovante_recebido: 'Comprovante recebido e em conferencia',
+      comprovante_recusado: 'Comprovante recusado; envie uma nova imagem',
+      pagamento_recusado: 'Pagamento nao confirmado',
+      pago: 'Pagamento confirmado',
+      confirmado: 'Pagamento confirmado',
+      pagamento_confirmado: 'Pagamento confirmado',
+      na_entrega: 'Pagamento na entrega ou retirada',
+      cancelado: 'Pagamento cancelado',
+      expirado: 'Pagamento expirado'
+    };
+    return labels[raw] || (raw ? raw.replace(/_/g, ' ') : 'Aguardando pagamento');
+  }
+
+  function renderCurrentOrderCard() {
+    const order = (state.orders || []).find(item => !isFinalOrderStatus(item?.status));
+    if (!order) return '';
+    const id = String(order.id || order.pedidoId || '').trim();
+    const modalidade = orderDeliveryMode(order);
+    const total = Number(order.total_final ?? order.total ?? order.pagamento?.valor ?? 0);
+    return `
+      <section class="current-order-card" aria-labelledby="currentOrderTitle">
+        <div>
+          <small>Pedido atual</small>
+          <strong id="currentOrderTitle">#${escapeHtml(id)} · ${escapeHtml(trackingStatusLabel(String(order.status || '').trim().toLowerCase()))}</strong>
+          <span>${escapeHtml(modalidade === 'retirada' ? 'Retirada no local' : 'Entrega')}${total > 0 ? ` · ${formatMoney(total)}` : ''}</span>
+        </div>
+        <button type="button" data-tracking-order="${escapeHtml(id)}">${modalidade === 'retirada' ? 'Ver retirada' : 'Acompanhar'}</button>
+      </section>
+    `;
+  }
+
+  function productForPreviousOrderItem(item = {}) {
+    const identifiers = [item.produtoId, item.produto_id, item.productId, item.id, item.codigo, item.sku]
+      .map(value => String(value || '').trim())
+      .filter(Boolean);
+    let product = (state.products || []).find(candidate => identifiers.includes(String(candidate.id || '').trim()));
+    if (!product) {
+      const codigo = String(item.codigoBarras || item.codigo_barras || item.barcode || '').trim();
+      if (codigo) product = (state.products || []).find(candidate => String(candidate.codigoBarras || candidate.codigo_barras || candidate.barcode || '').trim() === codigo);
+    }
+    if (!product) {
+      const nome = String(item.nome || item.name || '').trim().toLowerCase();
+      if (nome) product = (state.products || []).find(candidate => String(candidate.name || candidate.nome || '').trim().toLowerCase() === nome);
+    }
+    if (!product || productAvailability(product).hidden) return null;
+    const stock = Number(product.stock ?? product.estoque_pronta_entrega ?? product.estoque_atual ?? product.estoque ?? 0);
+    if (!productAvailability(product).preorder && stock <= 0) return null;
+    return product;
+  }
+
+  function reorderPreviousOrder(pedidoId) {
+    const order = (state.orders || []).find(item => String(item.id || item.pedidoId || '').trim() === String(pedidoId || '').trim());
+    const items = order?.itens || order?.items || [];
+    let added = 0;
+    let unavailable = 0;
+    items.forEach(item => {
+      const product = productForPreviousOrderItem(item);
+      if (!product) {
+        unavailable += 1;
+        return;
+      }
+      const quantity = Math.max(0, Number(item.quantidade ?? item.qtd ?? item.quantity ?? 1) || 1);
+      setQty(state, product, cartQty(state, product.id) + quantity);
+      added += 1;
+    });
+    if (!added) {
+      state.reorderMessage = 'Os produtos deste pedido nao estao disponiveis no catalogo atual.';
+      render();
+      return;
+    }
+    syncCart(state, { itens: cartItems(state) });
+    state.reorderMessage = `${added} produto(s) adicionado(s) ao carrinho${unavailable ? `; ${unavailable} indisponivel(is)` : ''}. Revise quantidades e precos atuais.`;
+    resetCheckoutPreview();
+    navigateTo('cart');
+  }
+
   function renderOrders() {
     const orderId = order => String(order?.id || order?.pedidoId || '').trim();
     return `
@@ -1806,6 +2079,7 @@ export function createRenderer(state) {
           <strong>Meus pedidos</strong>
           <span></span>
         </div>
+        ${state.reorderMessage ? `<p class="order-action-message" role="status">${escapeHtml(state.reorderMessage)}</p>` : ''}
         <section class="orders-list">
           ${state.orders.length ? state.orders.map(order => {
             const awaitingWeight = isAwaitingFinalWeight(order);
@@ -1831,11 +2105,12 @@ export function createRenderer(state) {
             return `
             <article class="order-card"${awaitingWeight ? ' data-awaiting-final-weight="true"' : ''}${encomendaPendente ? ' data-awaiting-preorder="true"' : ''}>
               <strong>Pedido #${escapeHtml(orderId(order))}</strong>
-              <span>${escapeHtml(encomendaPendente ? encomendaLabel : (awaitingWeight ? 'Aguardando pesagem e valor final' : (order.status || 'Em andamento')))}</span>
-              <p>${escapeHtml(encomendaPendente ? 'O Pix sera liberado somente depois da confirmacao da encomenda.' : (awaitingWeight ? 'O pagamento sera liberado apos a conferencia da loja.' : (order.pagamento?.status || order.status_pagamento || 'Aguardando pagamento')))}</p>
+              <span>${escapeHtml(encomendaPendente ? encomendaLabel : (awaitingWeight ? 'Aguardando pesagem e valor final' : trackingStatusLabel(String(order.status || '').trim().toLowerCase())))}</span>
+              <p>${escapeHtml(encomendaPendente ? 'O Pix sera liberado somente depois da confirmacao da encomenda.' : (awaitingWeight ? 'O pagamento sera liberado apos a conferencia da loja.' : paymentStatusLabel(order.pagamento?.status || order.status_pagamento || order.statusPagamento)))}</p>
               ${podeAbrirPagamento
                 ? `<button data-payment-order="${escapeHtml(orderId(order))}">Ir para pagamento</button>`
-                : `<button data-tracking-order="${escapeHtml(orderId(order))}">${awaitingWeight ? 'Acompanhar pedido' : 'Acompanhar entrega'}</button>`}
+                : `<button data-tracking-order="${escapeHtml(orderId(order))}">${awaitingWeight ? 'Acompanhar pedido' : (orderDeliveryMode(order) === 'retirada' ? 'Acompanhar retirada' : 'Acompanhar entrega')}</button>`}
+              ${(order.itens || order.items || []).length ? `<button class="order-reorder-button" data-reorder-order="${escapeHtml(orderId(order))}">Comprar novamente</button>` : ''}
             </article>
           `;
           }).join('') : '<div class="empty">Seus pedidos aparecerão aqui.</div>'}
@@ -1870,20 +2145,27 @@ export function createRenderer(state) {
 
   function trackingStatusLabel(status) {
     const labels = {
+      novo: 'Pedido recebido',
+      recebido: 'Pedido recebido',
+      pendente: 'Aguardando pagamento',
       aguardando_pesagem: 'Aguardando pesagem e valor final',
       aguardando_pagamento: 'Aguardando pagamento',
       pago: 'Pagamento confirmado',
       preparando: 'Em preparacao',
       pronto: 'Pedido pronto',
+      retirada_local: 'Disponivel para retirada',
+      aguardando_entregador: 'Aguardando entregador',
+      aguardando_notificacao_entregador: 'Chamando entregador',
       saiu_entrega: 'Saiu para entrega',
       entregue: 'Entregue',
       cancelado: 'Cancelado'
     };
-    return labels[status] || status || 'Aguardando atualizacao';
+    return labels[status] || (status ? String(status).replace(/_/g, ' ') : 'Aguardando atualizacao');
   }
 
-  function trackingStepsForStatus(status = '', pagamentoStatus = '', awaitingWeight = false) {
+  function trackingStepsForStatus(status = '', pagamentoStatus = '', awaitingWeight = false, modalidade = 'retirada') {
     const atual = String(status || '').trim().toLowerCase();
+    const retirada = modalidade !== 'entrega';
     if (atual === 'cancelado') {
       return [{
         key: 'cancelado',
@@ -1898,20 +2180,29 @@ export function createRenderer(state) {
         { key: 'aguardando_pesagem', title: 'Pesagem dos itens', text: 'Aguardando conferencia e valor final', state: 'current' },
         { key: 'aguardando_pagamento', title: 'Pagamento', text: 'Sera liberado depois da pesagem', state: '' },
         { key: 'preparando', title: 'Em preparacao', text: 'Separacao dos produtos', state: '' },
-        { key: 'entregue', title: 'Pedido finalizado', text: 'Retirada ou entrega concluida', state: '' }
+        { key: 'entregue', title: 'Pedido finalizado', text: retirada ? 'Retirada concluida' : 'Entrega concluida', state: '' }
       ];
     }
-    const ordem = ['aguardando_pagamento', 'pago', 'preparando', 'pronto', 'saiu_entrega', 'entregue'];
-    const indice = Math.max(0, ordem.indexOf(atual));
+    const ordem = retirada
+      ? ['aguardando_pagamento', 'pago', 'preparando', 'pronto', 'retirada_local', 'entregue']
+      : ['aguardando_pagamento', 'pago', 'preparando', 'pronto', 'saiu_entrega', 'entregue'];
+    const statusAliases = { novo: 'aguardando_pagamento', recebido: 'aguardando_pagamento', pendente: 'aguardando_pagamento' };
+    const statusNormalizado = statusAliases[atual] || atual;
     const pagamentoOk = ['pago', 'confirmado', 'aprovado', 'paid'].includes(String(pagamentoStatus || '').trim().toLowerCase());
-    return [
+    let indice = ordem.indexOf(statusNormalizado);
+    if (indice < 0) indice = pagamentoOk ? 1 : 0;
+    if (pagamentoOk) indice = Math.max(indice, 1);
+    const steps = [
       { key: 'aguardando_pagamento', title: 'Pedido recebido', text: 'Pedido registrado na loja' },
       { key: 'pago', title: 'Pagamento confirmado', text: pagamentoOk || indice >= 1 ? 'Pagamento liberado' : 'Aguardando confirmacao' },
       { key: 'preparando', title: 'Em preparacao', text: 'Separacao dos produtos' },
-      { key: 'pronto', title: 'Pedido pronto', text: 'Aguardando retirada ou entrega' },
-      { key: 'saiu_entrega', title: 'Saiu para entrega', text: 'Entrega em andamento' },
-      { key: 'entregue', title: 'Entregue', text: 'Pedido finalizado' }
-    ].map((step, stepIndex) => ({
+      { key: 'pronto', title: 'Pedido pronto', text: retirada ? 'Aguardando liberacao para retirada' : 'Aguardando o entregador' },
+      retirada
+        ? { key: 'retirada_local', title: 'Disponivel para retirada', text: 'Pode buscar no Mercadinho M&J' }
+        : { key: 'saiu_entrega', title: 'Saiu para entrega', text: 'Entrega em andamento' },
+      { key: 'entregue', title: retirada ? 'Retirado' : 'Entregue', text: 'Pedido finalizado' }
+    ];
+    return steps.map((step, stepIndex) => ({
       ...step,
       state: stepIndex < indice ? 'done' : stepIndex === indice ? 'current' : ''
     }));
@@ -1938,6 +2229,7 @@ export function createRenderer(state) {
       ? 'Status sincronizado com o painel.'
       : 'Atualizacoes seguem pelo Telegram.';
     const entregaAtiva = String(pedido.modalidadeEntrega || pedido.modalidade_entrega || '').toLowerCase() === 'entrega' || pedido.retiradaNoLocal === false;
+    const modalidade = entregaAtiva ? 'entrega' : 'retirada';
     return `
       <main class="page tracking-panel" id="trackingPanel" data-page="tracking">
         <div class="topbar page-brand-hero">
@@ -1959,17 +2251,17 @@ export function createRenderer(state) {
           <p>${escapeHtml(tracking?.resumo || `Pedido #${pedido.id || pedido.pedidoId || ''} - ${resumo}`)}</p>
         </section>
         <section class="tracking-timeline">
-          ${trackingStepsForStatus(statusAtual, pagamentoStatus, awaitingWeight).map(renderTrackingStep).join('')}
+          ${trackingStepsForStatus(statusAtual, pagamentoStatus, awaitingWeight, modalidade).map(renderTrackingStep).join('')}
         </section>
         ${renderOrderCustomerActions(pedido)}
-        <section class="tracking-map-card">
+        <section class="tracking-map-card${entregaAtiva ? '' : ' pickup-tracking-card'}">
           ${mapaUrl ? `
             <a class="track-map" href="${escapeHtml(mapaUrl)}" target="_blank" rel="noopener">Abrir localizacao ao vivo do entregador</a>
             <p>${escapeHtml(mapa.mensagem || 'Mesmo mapa compartilhado pelo entregador no Telegram.')}</p>
             ${mapa.atualizadaEm ? `<small>Atualizada em ${escapeHtml(mapa.atualizadaEm)}</small>` : ''}
           ` : `
-            <div class="map-road"></div><div class="map-pin"></div>
-            <p>${escapeHtml(entregaAtiva ? 'Aguardando o entregador compartilhar a localizacao ao vivo.' : 'Pedido sem entrega ao vivo no momento.')}</p>
+            ${entregaAtiva ? '<div class="map-road"></div><div class="map-pin"></div>' : `<span class="pickup-tracking-icon" aria-hidden="true">${svgIcon('package', 30)}</span>`}
+            <p>${escapeHtml(entregaAtiva ? 'Aguardando o entregador compartilhar a localizacao ao vivo.' : 'Este pedido sera retirado no Mercadinho M&J. Acompanhe acima quando estiver disponivel.')}</p>
           `}
         </section>
       </main>
@@ -2048,10 +2340,25 @@ export function createRenderer(state) {
       navigateTo('home');
       return;
     }
+    initializeDeliveryChoice();
+    if (deliveryModeForCustomer(state) === 'entrega') {
+      const entregaValida = await refreshDeliveryPreview();
+      if (!entregaValida) return;
+    }
     state.sending = true;
+    state.checkoutMessage = 'Processando seu pedido com seguranca...';
+    render();
     const modoPagamento = paymentModeForCustomer(state);
     sendMiniAppEvent(state, modoPagamento === 'miniapp' ? 'checkout_miniapp_payment_start' : 'checkout_telegram_handoff_start', { itemCount: cartCount(state), total: cartTotal(state) });
-    const result = await checkoutCreate(state);
+    let result;
+    try {
+      result = await checkoutCreate(state);
+    } catch (error) {
+      state.sending = false;
+      state.checkoutMessage = error?.message || 'Nao foi possivel concluir o pedido agora. Tente novamente.';
+      render();
+      return;
+    }
     const resultOrder = result?.pedido || result?.ordem || result?.order || null;
     const resultPaymentMethod = String(
       resultOrder?.formaPagamento || resultOrder?.forma_pagamento || resultOrder?.pagamento?.metodo || state.selectedPaymentMethod || 'pix'
@@ -2162,10 +2469,9 @@ export function createRenderer(state) {
     const pedidoId = String(button?.dataset?.orderId || '').trim();
     if (!pedidoId || state.pixReceiptPending) return;
     const arquivo = root.querySelector('#pixReceiptFile')?.files?.[0] || null;
-    const texto = String(root.querySelector('#pixReceiptText')?.value || '').trim();
     state.pixReceiptOrderId = pedidoId;
-    if (!arquivo && !texto) {
-      state.pixReceiptMessage = 'Selecione uma imagem ou PDF do comprovante.';
+    if (!arquivo) {
+      state.pixReceiptMessage = 'Selecione uma imagem do comprovante.';
       render();
       return;
     }
@@ -2173,7 +2479,7 @@ export function createRenderer(state) {
     state.pixReceiptMessage = '';
     render();
     try {
-      await uploadPixReceipt(state, pedidoId, { arquivo, texto });
+      await uploadPixReceipt(state, pedidoId, { arquivo });
       const pedidoAtual = state.pedidoAtual || {};
       state.pedidoAtual = {
         ...pedidoAtual,
@@ -2457,7 +2763,47 @@ export function createRenderer(state) {
     });
   }
 
+  function bindOpenDialogAccessibility() {
+    const dialog = state.sectionsMenuOpen
+      ? root.querySelector('#sectionsDrawer')
+      : state.pageMenuOpen
+        ? root.querySelector('#pagesDrawer')
+        : null;
+    if (dialog && (state.sectionsMenuOpen || state.pageMenuOpen)) {
+      const focusable = () => Array.from(dialog.querySelectorAll('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'));
+      dialog.addEventListener('keydown', event => {
+        if (event.key !== 'Tab') return;
+        const items = focusable();
+        if (!items.length) return;
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      });
+      window.setTimeout(() => (dialog.querySelector('[data-close-sections], [data-close-pages]') || focusable()[0])?.focus?.({ preventScroll: true }), 0);
+    }
+    if (!state.__dialogKeyboardBound && document?.addEventListener) {
+      document.addEventListener('keydown', event => {
+        if (event.key !== 'Escape' || (!state.sectionsMenuOpen && !state.pageMenuOpen)) return;
+        event.preventDefault();
+        state.dialogRestoreFocus = state.sectionsMenuOpen ? 'sections' : 'pages';
+        state.sectionsMenuOpen = false;
+        state.pageMenuOpen = false;
+        render();
+      });
+      state.__dialogKeyboardBound = true;
+    }
+  }
+
   function bind() {
+    root.querySelector('[data-reload-miniapp]')?.addEventListener('click', () => {
+      globalThis.location?.reload?.();
+    });
     root.querySelectorAll('button[data-page], a[data-page]').forEach(button => {
       button.addEventListener('click', () => navigateTo(button.dataset.page));
     });
@@ -2488,9 +2834,13 @@ export function createRenderer(state) {
         });
       });
     });
+    root.querySelectorAll('[data-reorder-order]').forEach(button => {
+      button.addEventListener('click', () => reorderPreviousOrder(button.dataset.reorderOrder));
+    });
     root.querySelectorAll('[data-open-sections]').forEach(button => {
       button.addEventListener('click', () => {
         if (!sectionsMenuEnabled()) return;
+        state.dialogRestoreFocus = '';
         state.sectionsMenuOpen = true;
         state.pageMenuOpen = false;
         render();
@@ -2498,6 +2848,7 @@ export function createRenderer(state) {
     });
     root.querySelectorAll('[data-open-pages]').forEach(button => {
       button.addEventListener('click', () => {
+        state.dialogRestoreFocus = '';
         state.sectionsMenuOpen = false;
         state.pageMenuOpen = true;
         render();
@@ -2518,12 +2869,14 @@ export function createRenderer(state) {
     });
     root.querySelectorAll('[data-close-sections]').forEach(element => {
       element.addEventListener('click', () => {
+        state.dialogRestoreFocus = 'sections';
         state.sectionsMenuOpen = false;
         render();
       });
     });
     root.querySelectorAll('[data-close-pages]').forEach(element => {
       element.addEventListener('click', () => {
+        state.dialogRestoreFocus = 'pages';
         state.pageMenuOpen = false;
         render();
       });
@@ -2589,6 +2942,28 @@ export function createRenderer(state) {
         render();
       });
     });
+    root.querySelectorAll('[data-delivery-mode]').forEach(button => {
+      button.addEventListener('click', () => {
+        state.selectedDeliveryMode = button.dataset.deliveryMode === 'entrega' ? 'entrega' : 'retirada';
+        state.deliveryModeInitialized = true;
+        resetCheckoutPreview(state.selectedDeliveryMode === 'retirada' ? 'Retirada selecionada. Nao ha frete.' : 'Informe o endereco e calcule a entrega.');
+        render();
+      });
+    });
+    root.querySelectorAll('[data-delivery-field]').forEach(input => {
+      input.addEventListener('input', () => {
+        const field = String(input.dataset.deliveryField || '').trim();
+        if (!field) return;
+        state.checkoutAddress = { ...checkoutAddressForCustomer(), [field]: input.value };
+        resetCheckoutPreview('Endereco alterado. Calcule a entrega novamente.');
+      });
+    });
+    root.querySelector('#saveDeliveryAddress')?.addEventListener('change', event => {
+      state.saveDeliveryAddress = event.target.checked === true;
+    });
+    root.querySelector('#calculateDelivery')?.addEventListener('click', () => {
+      refreshDeliveryPreview();
+    });
     root.querySelector('#finishInTelegram')?.addEventListener('click', finishCheckout);
     root.querySelector('#retryTelegramHandoff')?.addEventListener('click', finishCheckout);
     root.querySelector('#cancelCurrentOrder')?.addEventListener('click', event => {
@@ -2597,10 +2972,36 @@ export function createRenderer(state) {
     root.querySelector('#confirmCurrentPreorder')?.addEventListener('click', event => {
       handleConfirmCurrentPreorder(event.currentTarget);
     });
-    root.querySelector('#copyPixPayment')?.addEventListener('click', () => {
+    root.querySelector('#copyPixPayment')?.addEventListener('click', async () => {
       const pix = state.pix?.copiaCola || state.lastMiniAppCheckout?.pix?.copiaCola || '';
-      if (!pix) return;
-      navigator.clipboard?.writeText(pix).catch(() => null);
+      if (!pix) {
+        state.copyPixMessage = 'Codigo Pix indisponivel. Atualize o pedido e tente novamente.';
+        render();
+        return;
+      }
+      let copied = false;
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(pix);
+          copied = true;
+        }
+      } catch (_) {
+        copied = false;
+      }
+      if (!copied) {
+        const textarea = root.querySelector('#pixCopyText');
+        try {
+          textarea?.focus();
+          textarea?.select?.();
+          copied = document.execCommand?.('copy') === true;
+        } catch (_) {
+          copied = false;
+        }
+      }
+      state.copyPixMessage = copied
+        ? 'Pix copiado. Confira o recebedor e o valor antes de pagar.'
+        : 'Nao foi possivel copiar automaticamente. Selecione o codigo acima e copie manualmente.';
+      render();
     });
     root.querySelector('#sendPixReceipt')?.addEventListener('click', event => {
       handleSendPixReceipt(event.currentTarget);
@@ -2619,6 +3020,7 @@ export function createRenderer(state) {
     });
 
     root.querySelector('#trackingPanel')?.classList.add('active-page');
+    bindOpenDialogAccessibility();
   }
 
   function render() {
@@ -2641,7 +3043,8 @@ export function createRenderer(state) {
     const splashDuration = clampMs(activeUi.splash?.durationMs, MINIAPP_UI_DEFAULTS.splash.durationMs);
     applyThemeVariables(activeUi);
     document.documentElement.style.setProperty('--mj-splash-duration', `${splashDuration}ms`);
-    if (state.page === 'categories') html = renderCategories();
+    if (!state.products.length && ['home', 'categories', 'products', 'product', 'cart'].includes(state.page)) html = renderCatalogUnavailable();
+    else if (state.page === 'categories') html = renderCategories();
     else if (state.page === 'products') html = renderProducts();
     else if (state.page === 'product') html = renderProductDetail();
     else if (state.page === 'cart') html = renderCart();
@@ -2681,6 +3084,11 @@ export function createRenderer(state) {
         searchInput.setSelectionRange?.(start, end);
       }
       state.searchInputFocus = null;
+    }
+    if (state.dialogRestoreFocus) {
+      const selector = state.dialogRestoreFocus === 'sections' ? '[data-open-sections]' : '[data-open-pages]';
+      window.setTimeout(() => root.querySelector(selector)?.focus?.({ preventScroll: true }), 0);
+      state.dialogRestoreFocus = '';
     }
     scheduleBannerAutoSlide(activeUi);
     syncOrderFlowPolling();
