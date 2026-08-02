@@ -1,4 +1,4 @@
-import { hasAuthenticatedMiniAppIdentity, retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.08.01.947';
+import { hasAuthenticatedMiniAppIdentity, retryApiFetchWithFreshRuntimeConfig } from './api.js?v=2026.08.01.331';
 
 function orderPath(pedidoId, action = '') {
   const id = String(pedidoId || '').trim();
