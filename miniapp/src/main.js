@@ -1,4 +1,4 @@
-import { initTelegram, telegramUserId } from './telegram.js?v=2026.08.01.331';
+import { initTelegram, telegramUserId } from './telegram.js?v=2026.08.03.282';
 import {
   atualizarStatusLoja,
   authenticateBridge,
@@ -9,12 +9,12 @@ import {
   loadCatalogWithFallback,
   loadCustomer,
   loadHealth
-} from './api.js?v=2026.08.01.331';
-import { createRenderer } from './render.js?v=2026.08.01.331';
-import { createState, applySnapshot, miniappStoreIsAvailable, normalizeMiniAppUi, setRuntimeOnline } from './state.js?v=2026.08.01.331';
-import { normalizeCatalog } from './catalog.js?v=2026.08.01.331';
-import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.08.01.331';
-import { loadOrders } from './orders.js?v=2026.08.01.331';
+} from './api.js?v=2026.08.03.282';
+import { createRenderer } from './render.js?v=2026.08.03.282';
+import { createState, applySnapshot, miniappStoreIsAvailable, normalizeMiniAppUi, setRuntimeOnline } from './state.js?v=2026.08.03.282';
+import { normalizeCatalog } from './catalog.js?v=2026.08.03.282';
+import { reconcileCartWithCatalog, restoreCart } from './cart.js?v=2026.08.03.282';
+import { loadOrders } from './orders.js?v=2026.08.03.282';
 
 function removeLoadingLiveRegion(root = document.getElementById('miniapp-root') || document.body) {
   root?.removeAttribute?.('role');
